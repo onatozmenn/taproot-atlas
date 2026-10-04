@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import handler from '../api/ask';
+import handler from '../../api/ask';
 
 function res() {
   let code = 0;

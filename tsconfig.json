@@ -10,5 +10,5 @@
     "rootDir": ".",
     "types": ["node"]
   },
-  "include": ["types/**/*", "lib/**/*", "prompts/**/*", "tests/**/*"]
+  "include": ["types/**/*", "lib/**/*", "prompts/**/*", "api/**/*", "tests/**/*"]
 }
