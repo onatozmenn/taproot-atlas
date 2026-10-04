@@ -1,8 +1,9 @@
 {
-  "snapshotVersion": "echo-sdwis-2021-2026-v1",
+  "snapshotVersion": "echo-sdwis-2021-2026-fixture-v1",
   "captureTime": "2026-01-02T00:00:00Z",
-  "provenanceNote": "Recorded fixture shaped like an EPA ECHO SDWIS response for the NYC showcase system. Replace with a live ECHO web-services fetch (same shape) when wiring production.",
-  "pwsid": "NY0023456",
+  "provenanceNote": "DEMONSTRATION FIXTURE in the shape of an EPA ECHO SDWIS record. It is NOT a captured EPA response: no live ECHO query was recorded. Serve only behind an explicit fixture label (see recordSource), and verify live records at sourceQueryUrl before any publication.",
+  "sourceQueryUrl": "https://echo.epa.gov/detailed-facility-report?fid=NY7003493",
+  "pwsid": "NY7003493",
   "queryWindow": { "startDate": "2021-01-01", "endDate": "2026-01-01" },
   "totalViolationsFound": 0,
   "records": []

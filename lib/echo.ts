@@ -1,6 +1,9 @@
-// lib/echo.ts — EPA SDWIS compliance client (Closes #2).
-// Fetch is injectable so CI runs on recorded fixtures, never live calls.
+// lib/echo.ts — EPA SDWIS compliance client.
+// Two explicit paths: a bundled DEMONSTRATION FIXTURE for offline use
+// (readSnapshotCompliance) and a network client for live ECHO wiring
+// (fetchEchoCompliance, http(s) only — never file: URLs, always abortable).
 import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
+import echoFixture from '../data/echo-nyc.json' with { type: 'json' };
 
 export const ECHO_QUERY_WINDOW = {
   startDate: '2021-01-01',
@@ -23,69 +26,114 @@ export class EchoError extends Error {
 
 interface EchoSnapshotShape {
   pwsid: string;
+  queryWindow: { startDate: string; endDate: string };
   totalViolationsFound: number;
   records: SdwisComplianceProfile['records'];
   captureTime?: string;
+  sourceQueryUrl?: string;
+}
+
+function toProfile(
+  pwsid: string,
+  snap: EchoSnapshotShape,
+  window: { startDate: string; endDate: string },
+  now: string,
+): SdwisComplianceProfile {
+  if (!snap || typeof snap !== 'object') {
+    throw new EchoError(`ECHO response for ${pwsid} was not an object`, 'bad_response');
+  }
+  if (snap.pwsid !== pwsid || !Array.isArray(snap.records)) {
+    throw new EchoError(`ECHO response did not match PWSID ${pwsid}`, 'bad_response');
+  }
+  if (typeof snap.totalViolationsFound !== 'number' || !Number.isInteger(snap.totalViolationsFound)) {
+    throw new EchoError(`ECHO response for ${pwsid} had no numeric violation count`, 'bad_response');
+  }
+  if (
+    !snap.queryWindow ||
+    snap.queryWindow.startDate !== window.startDate ||
+    snap.queryWindow.endDate !== window.endDate
+  ) {
+    throw new EchoError(
+      `ECHO response for ${pwsid} does not cover the requested window ${window.startDate} to ${window.endDate}`,
+      'bad_response',
+    );
+  }
+  return {
+    pwsid,
+    queryWindow: { ...window },
+    totalViolationsFound: snap.totalViolationsFound,
+    records: snap.records,
+    echoReportUrl: snap.sourceQueryUrl ?? echoReportUrl(pwsid),
+    dataCaptureTime: snap.captureTime ?? now,
+  };
+}
+
+/**
+ * Offline path: bundled demonstration fixture (see data/echo-nyc.json
+ * provenanceNote). Safe in browsers; must be served behind a fixture label.
+ */
+export function readSnapshotCompliance(
+  pwsid: string,
+  window: { startDate: string; endDate: string } = { ...ECHO_QUERY_WINDOW },
+  now: string = new Date().toISOString(),
+): SdwisComplianceProfile {
+  return toProfile(pwsid, echoFixture as unknown as EchoSnapshotShape, window, now);
 }
 
 export interface EchoClientOptions {
-  /** Overrideable data URL; defaults to the versioned local snapshot. */
-  sourceUrl?: string;
-  fetchJson?: (url: string) => Promise<unknown>;
+  /** Live ECHO endpoint returning the EchoSnapshotShape contract (documented in docs/DATA.md). */
+  sourceUrl: string;
+  fetchJson?: (url: string, init?: { signal: AbortSignal }) => Promise<unknown>;
+  window?: { startDate: string; endDate: string };
   now?: () => string;
   timeoutMs?: number;
 }
 
-async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise<T>((_, reject) => {
-        timer = setTimeout(() => reject(new EchoError(`Timed out after ${ms}ms`, 'timeout')), ms);
-      }),
-    ]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
-}
-
 /**
- * Load the SDWIS compliance window for a PWSID.
+ * Live path: fetch an ECHO SDWIS record and validate it before reporting.
  * Zero violations is data ("no records found in window"), never a verdict.
  */
 export async function fetchEchoCompliance(
   pwsid: string,
-  options: EchoClientOptions = {},
+  options: EchoClientOptions,
 ): Promise<SdwisComplianceProfile> {
   const {
-    sourceUrl = new URL('../data/echo-nyc.json', import.meta.url).href,
-    fetchJson = async (url: string) => {
-      const res = await fetch(url);
+    sourceUrl,
+    fetchJson = async (url: string, init?: { signal: AbortSignal }) => {
+      const res = await fetch(url, { signal: init?.signal });
       if (!res.ok) throw new EchoError(`ECHO fetch failed: HTTP ${res.status}`, 'bad_response');
       return (await res.json()) as unknown;
     },
+    window = { ...ECHO_QUERY_WINDOW },
     now = () => new Date().toISOString(),
     timeoutMs = 8000,
   } = options;
 
-  let raw: unknown;
+  if (!/^https?:\/\//i.test(sourceUrl)) {
+    throw new EchoError(`ECHO source must be an http(s) URL, got: ${sourceUrl}`, 'bad_response');
+  }
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const onTimeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new EchoError(`Timed out after ${timeoutMs}ms`, 'timeout'));
+    }, timeoutMs);
+  });
   try {
-    raw = await withTimeout(fetchJson(sourceUrl), timeoutMs);
+    const raw = await Promise.race([fetchJson(sourceUrl, { signal: controller.signal }), onTimeout]).catch(
+      (err: unknown) => {
+        if ((err as Error)?.name === 'AbortError') {
+          throw new EchoError(`Timed out after ${timeoutMs}ms`, 'timeout');
+        }
+        throw err;
+      },
+    );
+    return toProfile(pwsid, raw as EchoSnapshotShape, window, now());
   } catch (err) {
     if (err instanceof EchoError) throw err;
     throw new EchoError(`ECHO fetch failed: ${(err as Error).message}`, 'network');
+  } finally {
+    if (timer) clearTimeout(timer);
   }
-  const snap = raw as EchoSnapshotShape;
-  if (!snap || typeof snap !== 'object' || snap.pwsid !== pwsid || !Array.isArray(snap.records)) {
-    throw new EchoError(`ECHO response did not match PWSID ${pwsid}`, 'bad_response');
-  }
-  return {
-    pwsid,
-    queryWindow: { ...ECHO_QUERY_WINDOW },
-    totalViolationsFound: snap.totalViolationsFound,
-    records: snap.records,
-    echoReportUrl: echoReportUrl(pwsid),
-    dataCaptureTime: snap.captureTime ?? now(),
-  };
 }

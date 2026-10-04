@@ -1,19 +1,28 @@
 {
   "snapshotVersion": "epa-service-area-2026-01",
   "captureTime": "2026-01-02T00:00:00Z",
-  "provenanceNote": "Simplified showcase snapshot derived from EPA Service Area Boundaries + NYC DEP watershed geography. Polygons are schematic, not legal service-area definitions.",
+  "provenanceNote": "Coarse MODELED extent approximating the five NYC boroughs, derived from EPA Service Area Boundary geography and simplified for the showcase. It is not a legal service-area definition and must never carry verified_agency confidence; production resolves against agency-published polygons.",
   "systems": [
     {
-      "pwsid": "NY0023456",
+      "pwsid": "NY7003493",
       "systemName": "NYC DEP Catskill-Delaware",
-      "boundaryType": "verified_agency",
+      "boundaryType": "modeled_epa",
       "primaryBasins": ["Catskill", "Delaware"],
       "polygon": [
-        [-74.3, 40.45],
-        [-73.65, 40.45],
-        [-73.65, 40.95],
-        [-74.3, 40.95],
-        [-74.3, 40.45]
+        [-74.26, 40.5],
+        [-73.93, 40.5],
+        [-73.75, 40.58],
+        [-73.7, 40.65],
+        [-73.77, 40.8],
+        [-73.85, 40.92],
+        [-73.93, 40.92],
+        [-73.95, 40.8],
+        [-74.02, 40.75],
+        [-74.02, 40.68],
+        [-74.1, 40.64],
+        [-74.2, 40.58],
+        [-74.26, 40.55],
+        [-74.26, 40.5]
       ]
     }
   ]

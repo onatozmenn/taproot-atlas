@@ -1,24 +1,24 @@
 {
-  "snapshotVersion": "nyc-2025-v1",
+  "snapshotVersion": "nyc-2024-v1",
   "captureTime": "2026-01-02T00:00:00Z",
-  "provenanceNote": "Curated fixture of NYC DEP Annual Drinking Water Supply and Quality Report metrics (2025 reporting period). Values mirror the fixture already used in tests; extend with the full published table when ingesting the real PDF.",
+  "provenanceNote": "Curated fixture of NYC DEP Annual Drinking Water Supply and Quality Report metrics (2024 reporting period, released 2025, captured 2026-01-02). Values mirror the published table shape; extend with the full report table when ingesting the source document below.",
   "sourceDocumentUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page",
-  "reportPeriod": "2025 Annual",
-  "pwsid": "NY0023456",
+  "reportPeriod": "2024 Annual",
+  "pwsid": "NY7003493",
   "metrics": [
     {
       "parameter": "Turbidity",
       "reportedValue": "0.08 NTU",
       "regulatoryThreshold": "0.3 NTU TT",
       "complianceStatus": "within_standard",
-      "testDate": "2025-12-01"
+      "testDate": "2024-12-01"
     },
     {
       "parameter": "Total Coliform",
       "reportedValue": "0 positive samples",
       "regulatoryThreshold": "5.0% positive TT",
       "complianceStatus": "within_standard",
-      "testDate": "2025-12-01"
+      "testDate": "2024-12-01"
     }
   ]
 }

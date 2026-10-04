@@ -4,13 +4,13 @@ import { ingestNycMetrics, nycSnapshotVersion, nycReportPeriod } from '../dist/l
 
 describe('ingestNycMetrics', () => {
   it('returns versioned metrics with full provenance for the showcase PWSID', () => {
-    const metrics = ingestNycMetrics('NY0023456');
+    const metrics = ingestNycMetrics('NY7003493');
     assert.ok(metrics.length >= 1);
     for (const m of metrics) {
       assert.ok(m.parameter.length > 0);
       assert.ok(m.provenance.sourceDocumentUrl.startsWith('https://'));
-      assert.equal(m.provenance.reportPeriod, '2025 Annual');
-      assert.equal(m.provenance.sourceVersionId, 'nyc-2025-v1');
+      assert.equal(m.provenance.reportPeriod, '2024 Annual');
+      assert.equal(m.provenance.sourceVersionId, 'nyc-2024-v1');
       assert.ok(m.provenance.captureTime.length > 0);
     }
   });
@@ -20,7 +20,7 @@ describe('ingestNycMetrics', () => {
   });
 
   it('snapshot version and report period are pinned', () => {
-    assert.equal(nycSnapshotVersion(), 'nyc-2025-v1');
-    assert.equal(nycReportPeriod(), '2025 Annual');
+    assert.equal(nycSnapshotVersion(), 'nyc-2024-v1');
+    assert.equal(nycReportPeriod(), '2024 Annual');
   });
 });

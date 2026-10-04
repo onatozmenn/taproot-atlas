@@ -3,6 +3,9 @@
 // the UI must never show a Verified badge for these points.
 export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
+/** Client-side cap applied AFTER distance sorting, so the closest points win. */
+export const MAX_RESULTS = 20;
+
 export interface DrinkingPoint {
   name: string;
   lat: number;
@@ -22,7 +25,8 @@ export class OsmError extends Error {
 }
 
 export function overpassQuery(lat: number, lon: number, radiusM = 2000): string {
-  return `[out:json][timeout:10];node["amenity"="drinking_water"](around:${radiusM},${lat},${lon});out 20;`;
+  // Ask for a superset; the closest MAX_RESULTS are picked after sorting.
+  return `[out:json][timeout:10];node["amenity"="drinking_water"](around:${radiusM},${lat},${lon});out 100;`;
 }
 
 function haversineM(aLat: number, aLon: number, bLat: number, bLon: number): number {
@@ -43,7 +47,7 @@ interface OverpassElement {
 }
 
 export interface OsmClientOptions {
-  fetchJson?: (url: string, body: string) => Promise<unknown>;
+  fetchJson?: (url: string, body: string, init?: { signal: AbortSignal }) => Promise<unknown>;
   timeoutMs?: number;
 }
 
@@ -54,8 +58,8 @@ export async function findDrinkingPoints(
   options: OsmClientOptions = {},
 ): Promise<DrinkingPoint[]> {
   const {
-    fetchJson = async (url: string, body: string) => {
-      const res = await fetch(url, { method: 'POST', body });
+    fetchJson = async (url: string, body: string, init?: { signal: AbortSignal }) => {
+      const res = await fetch(url, { method: 'POST', body, signal: init?.signal });
       if (res.status === 429) throw new OsmError('Overpass rate limit reached', 'rate_limited');
       if (!res.ok) throw new OsmError(`Overpass fetch failed: HTTP ${res.status}`, 'bad_response');
       return (await res.json()) as unknown;
@@ -63,17 +67,33 @@ export async function findDrinkingPoints(
     timeoutMs = 12000,
   } = options;
 
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const onTimeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new OsmError(`Timed out after ${timeoutMs}ms`, 'timeout'));
+    }, timeoutMs);
+  });
   let raw: unknown;
   try {
     raw = await Promise.race([
-      fetchJson(OVERPASS_URL, overpassQuery(lat, lon)),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new OsmError(`Timed out after ${timeoutMs}ms`, 'timeout')), timeoutMs),
-      ),
-    ]);
+      fetchJson(OVERPASS_URL, overpassQuery(lat, lon), { signal: controller.signal }),
+      onTimeout,
+    ]).catch((err: unknown) => {
+      if ((err as Error)?.name === 'AbortError') {
+        throw new OsmError(`Timed out after ${timeoutMs}ms`, 'timeout');
+      }
+      throw err;
+    });
   } catch (err) {
     if (err instanceof OsmError) throw err;
     throw new OsmError(`Overpass fetch failed: ${(err as Error).message}`, 'network');
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+  if (!raw || typeof raw !== 'object') {
+    throw new OsmError('Overpass response was not an object', 'bad_response');
   }
   const elements = (raw as { elements?: OverpassElement[] }).elements;
   if (!Array.isArray(elements)) throw new OsmError('Overpass response had no elements', 'bad_response');
@@ -86,5 +106,6 @@ export async function findDrinkingPoints(
       distanceM: Math.round(haversineM(lat, lon, e.lat, e.lon)),
       osmUrl: `https://www.openstreetmap.org/node/${e.id}`,
     }))
-    .sort((a, b) => a.distanceM - b.distanceM);
+    .sort((a, b) => a.distanceM - b.distanceM)
+    .slice(0, MAX_RESULTS);
 }

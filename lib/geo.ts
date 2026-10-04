@@ -49,11 +49,12 @@ export function pointInPolygon(point: [number, number], polygon: [number, number
 
 /**
  * Resolve a coordinate to its public water system.
- * Outside every known polygon returns an explicit unverified fallback —
- * never a guessed PWSID.
+ * Accepts an injectable service-area collection (defaults to the bundled
+ * snapshot). Outside every known polygon returns an explicit unverified
+ * fallback — never a guessed PWSID.
  */
-export function resolveSystem(lat: number, lon: number): ResolvedSystem {
-  for (const area of SNAPSHOT.systems) {
+export function resolveSystem(lat: number, lon: number, areas: ServiceArea[] = SNAPSHOT.systems): ResolvedSystem {
+  for (const area of areas) {
     if (pointInPolygon([lon, lat], area.polygon)) {
       return {
         pwsid: area.pwsid,

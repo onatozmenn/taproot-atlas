@@ -2,7 +2,7 @@
 // Turns the versioned snapshot into QualityMetricRecord[] with full provenance.
 // Re-ingests never rewrite history: a new report ships a new sourceVersionId.
 import type { QualityMetricRecord } from '../types/water-intelligence.js';
-import nycSnapshot from '../data/nyc-2025.json' with { type: 'json' };
+import nycSnapshot from '../data/nyc-2024.json' with { type: 'json' };
 
 interface NycSnapshot {
   snapshotVersion: string;

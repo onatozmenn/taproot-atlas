@@ -56,6 +56,7 @@ export interface WaterOriginSchematic {
   primaryBasins: string[];
   schematicFlow: {
     type: 'FeatureCollection';
+    disclaimer: string;
     features: Array<{
       type: 'Feature';
       geometry: GeoJsonGeometry;
@@ -90,5 +91,7 @@ export interface ValidatedApiResponse {
   validationStatus: {
     passedLlmAudit: boolean;
     auditTimestamp: string;
+    /** snapshot_fixture = bundled demo record; live_fetch = captured ECHO response. */
+    recordSource: 'snapshot_fixture' | 'live_fetch';
   };
 }
