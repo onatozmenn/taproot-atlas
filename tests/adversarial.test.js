@@ -22,7 +22,7 @@ describe('adversarial audit cases', () => {
 
   it('allows verified basin names in natural phrasing', () => {
     const r = audit(
-      'Water for NYC DEP Catskill-Delaware (PWSID: NY0023456) comes from the Catskill watershed and Delaware basin. Turbidity was 0.08 NTU per the 2025 Annual report.',
+      'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) comes from the Catskill watershed and Delaware basin. Turbidity was 0.08 NTU per the 2024 Annual report.',
     );
     assert.equal(r.isValid, true, JSON.stringify(r.violations));
   });
@@ -39,7 +39,7 @@ describe('adversarial audit cases', () => {
 
   it('does not flag measurement units as coordinates', () => {
     const r = audit(
-      'Turbidity was 0.08 NTU against a 0.3 NTU TT standard per the 2025 Annual report for NYC DEP Catskill-Delaware (PWSID: NY0023456).',
+      'Turbidity was 0.08 NTU against a 0.3 NTU TT standard per the 2024 Annual report for NYC DEP Catskill-Delaware (PWSID: NY7003493).',
     );
     assert.equal(r.isValid, true, JSON.stringify(r.violations));
   });

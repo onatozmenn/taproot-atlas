@@ -12,15 +12,15 @@ const resolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic
 
 describe('extractNormalizedNumbers', () => {
   it('extracts integers and decimals', () => {
-    assert.deepEqual(extractNormalizedNumbers('0.08 NTU, limit 0.3, 2025'), ['0.08', '0.3', '2025']);
+    assert.deepEqual(extractNormalizedNumbers('0.08 NTU, limit 0.3, 2024'), ['0.08', '0.3', '2024']);
   });
 });
 
 describe('buildResolverFacts', () => {
   it('allows only ground-truth numbers and entities', () => {
     const facts = buildResolverFacts(schematic);
-    assert.ok(facts.allowedNumbers.includes('2025'));
-    assert.ok(facts.allowedEntities.includes('ny0023456'));
+    assert.ok(facts.allowedNumbers.includes('2024'));
+    assert.ok(facts.allowedEntities.includes('ny7003493'));
     assert.ok(facts.allowedEntities.includes('turbidity'));
   });
 });
@@ -28,8 +28,8 @@ describe('buildResolverFacts', () => {
 describe('auditLlmNarrative', () => {
   it('passes a grounded compliance sentence', () => {
     const text =
-      'Water for NYC DEP Catskill-Delaware (PWSID: NY0023456) is sourced from the Catskill and Delaware basins. ' +
-      'Turbidity was 0.08 NTU against a 0.3 NTU TT standard per the 2025 Annual report, within EPA standards based on the 2025-12-01 test.';
+      'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins. ' +
+      'Turbidity was 0.08 NTU against a 0.3 NTU TT standard per the 2024 Annual report, within EPA standards based on the 2024-12-01 test.';
     const r = auditLlmNarrative(text, resolverOutput);
     assert.equal(r.isValid, true, JSON.stringify(r.violations));
   });
@@ -47,7 +47,7 @@ describe('auditLlmNarrative', () => {
 
   it('allows Safe Drinking Water Act statutory phrasing', () => {
     const text =
-      'Compliance with Safe Drinking Water Act standards for NYC DEP Catskill-Delaware (PWSID: NY0023456) shows 0 violations from 2021-01-01 to 2026-01-01.';
+      'Compliance with Safe Drinking Water Act standards for NYC DEP Catskill-Delaware (PWSID: NY7003493) shows 0 violations from 2021-01-01 to 2026-01-01.';
     const r = auditLlmNarrative(text, resolverOutput);
     assert.equal(r.isValid, true, JSON.stringify(r.violations));
   });

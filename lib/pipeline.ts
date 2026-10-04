@@ -8,7 +8,8 @@ import type {
   WaterOriginSchematic,
 } from '../types/water-intelligence.js';
 import { resolveSystem } from './geo.js';
-import { fetchEchoCompliance, echoReportUrl, ECHO_QUERY_WINDOW } from './echo.js';
+import { readSnapshotCompliance, echoReportUrl, ECHO_QUERY_WINDOW } from './echo.js';
+import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
 import { ingestNycMetrics } from './nyc.js';
 import { buildSchematicFlow, showcaseNodes, SCHEMATIC_DISCLAIMER } from './schematic.js';
 import { narrateGroundTruth, joinNarrative, type Narrative } from './narrator.js';
@@ -24,7 +25,9 @@ export interface AskInput {
 }
 
 export interface PipelineDeps {
-  fetchEcho?: typeof fetchEchoCompliance;
+  /** Live compliance fetch. Absent → bundled fixture (recordSource: snapshot_fixture). */
+  fetchEcho?: (pwsid: string) => Promise<SdwisComplianceProfile>;
+  recordSource?: 'snapshot_fixture' | 'live_fetch';
   narrate?: (schematic: WaterOriginSchematic) => Narrative;
   now?: () => string;
 }
@@ -57,7 +60,8 @@ export async function answerTapWater(
   deps: PipelineDeps = {},
 ): Promise<ValidatedApiResponse> {
   const {
-    fetchEcho = fetchEchoCompliance,
+    fetchEcho = async (pwsid: string) => readSnapshotCompliance(pwsid, undefined, auditTimestamp),
+    recordSource = deps.fetchEcho ? 'live_fetch' : 'snapshot_fixture',
     narrate = narrateGroundTruth,
     now = () => new Date().toISOString(),
   } = deps;
@@ -90,8 +94,9 @@ export async function answerTapWater(
   const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
   const narrative = narrate(schematic);
   const audit = auditLlmNarrative(joinNarrative(narrative), resolverOutput);
+  const validationStatus = { passedLlmAudit: audit.isValid, auditTimestamp, recordSource };
   if (audit.isValid) {
-    return { narrative, groundTruth: schematic, validationStatus: { passedLlmAudit: true, auditTimestamp } };
+    return { narrative, groundTruth: schematic, validationStatus };
   }
   const fallbackText = generateDeterministicSummary(schematic);
   return {
@@ -102,6 +107,6 @@ export async function answerTapWater(
       stewardshipNote: schematic.disclaimer,
     },
     groundTruth: schematic,
-    validationStatus: { passedLlmAudit: false, auditTimestamp },
+    validationStatus: { ...validationStatus, passedLlmAudit: false },
   };
 }

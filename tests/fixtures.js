@@ -1,12 +1,14 @@
 // tests/fixtures.js — shared ground truth for deterministic tests.
 export function mockSchematic() {
   return {
-    pwsid: 'NY0023456',
+    pwsid: 'NY7003493',
     systemName: 'NYC DEP Catskill-Delaware',
-    boundaryType: 'verified_agency',
+    boundaryType: 'modeled_epa',
     primaryBasins: ['Catskill', 'Delaware'],
     schematicFlow: {
       type: 'FeatureCollection',
+      disclaimer:
+        'Flow paths and boundaries are schematic approximations for orientation only; they do not depict operational engineering alignments.',
       features: [
         {
           type: 'Feature',
@@ -21,11 +23,11 @@ export function mockSchematic() {
       ],
     },
     regulatoryCompliance: {
-      pwsid: 'NY0023456',
+      pwsid: 'NY7003493',
       queryWindow: { startDate: '2021-01-01', endDate: '2026-01-01' },
       totalViolationsFound: 0,
       records: [],
-      echoReportUrl: 'https://echo.epa.gov/detailed-facility-report?fid=NY0023456',
+      echoReportUrl: 'https://echo.epa.gov/detailed-facility-report?fid=NY7003493',
       dataCaptureTime: '2026-01-02T00:00:00Z',
     },
     latestReportedMetrics: [
@@ -34,12 +36,12 @@ export function mockSchematic() {
         reportedValue: '0.08 NTU',
         regulatoryThreshold: '0.3 NTU TT',
         complianceStatus: 'within_standard',
-        testDate: '2025-12-01',
+        testDate: '2024-12-01',
         provenance: {
           sourceDocumentUrl: 'https://www.nyc.gov/site/dep/water/drinking-water.page',
-          reportPeriod: '2025 Annual',
+          reportPeriod: '2024 Annual',
           captureTime: '2026-01-02T00:00:00Z',
-          sourceVersionId: 'nyc-2025-v1',
+          sourceVersionId: 'nyc-2024-v1',
         },
       },
       {
@@ -47,12 +49,12 @@ export function mockSchematic() {
         reportedValue: '0 positive samples',
         regulatoryThreshold: '5.0% positive TT',
         complianceStatus: 'within_standard',
-        testDate: '2025-12-01',
+        testDate: '2024-12-01',
         provenance: {
           sourceDocumentUrl: 'https://www.nyc.gov/site/dep/water/drinking-water.page',
-          reportPeriod: '2025 Annual',
+          reportPeriod: '2024 Annual',
           captureTime: '2026-01-02T00:00:00Z',
-          sourceVersionId: 'nyc-2025-v1',
+          sourceVersionId: 'nyc-2024-v1',
         },
       },
     ],
