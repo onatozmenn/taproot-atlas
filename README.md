@@ -39,8 +39,8 @@ Dashboard → Project → Settings → Environment Variables:
 | Variable | Value |
 | -------- | ----- |
 | `AI_BASE_URL` | Narrator root (default `https://api.openai.com/v1`; Zen: `https://opencode.ai/zen/v1`) |
-| `AI_API_MODE` | `chat-completions` (OpenAI) or `responses` (Zen GPT) |
-| `AI_MODEL` | Model id (default `gpt-4o-mini`; Zen: `gpt-6-luna`) |
+| `AI_API_MODE` | `responses` (GPT-6 Luna on either provider) or `chat-completions` |
+| `AI_MODEL` | Model id (default `gpt-6-luna`) |
 | `AI_API_KEY` | Narrator key (empty = audited template; never commit it) |
 | `JEV_BASE_URL` | JEV root (default `https://opencode.ai/zen`, i.e. `/v1/systemone`) |
 | `JEV_MODEL` | JEV model (default `jev-1.13-free`, free tier) |

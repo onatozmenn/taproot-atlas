@@ -30,8 +30,8 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
 
   const apiKey = process.env.AI_API_KEY ?? '';
   const baseUrl = process.env.AI_BASE_URL ?? 'https://api.openai.com/v1';
-  const model = process.env.AI_MODEL ?? 'gpt-4o-mini';
-  const apiMode = process.env.AI_API_MODE === 'responses' ? 'responses' : 'chat-completions';
+  const model = process.env.AI_MODEL ?? 'gpt-6-luna';
+  const apiMode = process.env.AI_API_MODE === 'chat-completions' ? 'chat-completions' : 'responses';
   const jevKey = process.env.JEV_API_KEY ?? '';
   const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://opencode.ai/zen';
   const jevModel = process.env.JEV_MODEL ?? 'jev-1.13-free';
