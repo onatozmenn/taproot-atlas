@@ -37,6 +37,9 @@ body { margin: 0; font-family: "Source Sans 3", "Helvetica Neue", Arial, sans-se
 .badge-modeled { background: #fff3cd; color: #7a5b00; border: 1px solid #e6c87a; }
 .map-note { font-size: 12px; color: var(--muted); }
 .map-svg { width: 100%; height: auto; margin-top: 6px; }
+.real-map { height: 320px; width: 100%; margin-top: 8px; border-radius: 8px; z-index: 0; }
+.map-flow-list { font-size: 13px; color: var(--muted); margin: 8px 0 0; padding-left: 18px; }
+.map-fallback { color: var(--muted); font-size: 14px; }
 .flow-line { stroke: var(--navy); }
 .node-watershed { fill: #d9e8f6; stroke: var(--navy); }
 .node-plant { fill: #fff; stroke: var(--navy); }
