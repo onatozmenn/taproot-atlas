@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
-  "include": ["src", "vite.config.ts", "vitest.config.ts", "../lib/**/*", "../types/**/*", "../prompts/**/*"]
+  "include": ["src", "api", "vite.config.ts", "vitest.config.ts", "../lib/**/*", "../types/**/*", "../prompts/**/*"]
 }

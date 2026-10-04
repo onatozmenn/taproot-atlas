@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { answerTapWater, SHOWCASE_CENTER } from '../dist/lib/pipeline.js';
+import { narrateGroundTruth } from '../dist/lib/narrator.js';
 import { readFile } from 'node:fs/promises';
 
 const echoSnapshot = JSON.parse(await readFile(new URL('../data/echo-nyc.json', import.meta.url), 'utf8'));
@@ -71,5 +72,43 @@ describe('answerTapWater', () => {
     );
     const all = [res.narrative.overview, res.narrative.metricsSummary, res.narrative.complianceNote].join(' ').toLowerCase();
     assert.ok(!all.includes('drinkable') && !all.includes('pure') && !all.includes('potable'));
+  });
+
+  it('JEV flag forces fallback even when the deterministic audit passes', async () => {
+    const res = await answerTapWater(
+      { question: 'x', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: false }) },
+    );
+    assert.equal(res.validationStatus.jev, 'flag');
+    assert.equal(res.validationStatus.passedLlmAudit, false);
+    assert.ok(res.narrative.overview.includes('Verified Water Distribution Overview'));
+  });
+
+  it('JEV pass keeps the narrative and is recorded', async () => {
+    const res = await answerTapWater(
+      { question: 'x', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: true }) },
+    );
+    assert.equal(res.validationStatus.jev, 'pass');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
+  });
+
+  it('absent JEV records skipped without blocking', async () => {
+    const res = await answerTapWater({ question: 'x', ...SHOWCASE_CENTER }, { fetchEcho });
+    assert.equal(res.validationStatus.jev, 'skipped');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
+  });
+
+  it('reports the actual narrator when the model path falls back to template', async () => {
+    const res = await answerTapWater(
+      { question: 'x', ...SHOWCASE_CENTER },
+      {
+        fetchEcho,
+        narratorKind: 'llm',
+        narrate: async (s) => ({ narrative: narrateGroundTruth(s), kind: 'template' }),
+      },
+    );
+    assert.equal(res.validationStatus.narrator, 'template');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
   });
 });

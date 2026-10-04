@@ -13,6 +13,7 @@ import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
 import { ingestNycMetrics } from './nyc.js';
 import { buildSchematicFlow, showcaseNodes, SCHEMATIC_DISCLAIMER } from './schematic.js';
 import { narrateGroundTruth, joinNarrative, type Narrative } from './narrator.js';
+import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 
@@ -24,11 +25,22 @@ export interface AskInput {
   lon?: number;
 }
 
+export interface NarrateResult {
+  narrative: Narrative;
+  kind: 'llm' | 'template';
+}
+
+export type NarrateInput = Narrative | NarrateResult | Promise<Narrative | NarrateResult>;
+
 export interface PipelineDeps {
   /** Live compliance fetch. Absent → bundled fixture (recordSource: snapshot_fixture). */
   fetchEcho?: (pwsid: string) => Promise<SdwisComplianceProfile>;
   recordSource?: 'snapshot_fixture' | 'live_fetch';
-  narrate?: (schematic: WaterOriginSchematic) => Narrative;
+  /** Sync template or async model narrator. Output is always audited. */
+  narrate?: (schematic: WaterOriginSchematic) => NarrateInput;
+  narratorKind?: 'llm' | 'template';
+  /** JEV second-layer check. A flag forces fallback; absence/errors never block. */
+  jevCheck?: (narrativeText: string, factsText: string) => Promise<{ passed: boolean } | null>;
   now?: () => string;
 }
 
@@ -63,6 +75,7 @@ export async function answerTapWater(
     fetchEcho = async (pwsid: string) => readSnapshotCompliance(pwsid, undefined, auditTimestamp),
     recordSource = deps.fetchEcho ? 'live_fetch' : 'snapshot_fixture',
     narrate = narrateGroundTruth,
+    narratorKind = deps.narrate ? 'llm' : 'template',
     now = () => new Date().toISOString(),
   } = deps;
   void input.question; // Reserved for future query parsing / eval logging.
@@ -92,10 +105,23 @@ export async function answerTapWater(
   }
 
   const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
-  const narrative = narrate(schematic);
-  const audit = auditLlmNarrative(joinNarrative(narrative), resolverOutput);
-  const validationStatus = { passedLlmAudit: audit.isValid, auditTimestamp, recordSource };
-  if (audit.isValid) {
+  const rawNarrated = await narrate(schematic);
+  const isWrapped = typeof rawNarrated === 'object' && rawNarrated !== null && 'narrative' in rawNarrated;
+  const narrative = isWrapped ? (rawNarrated as NarrateResult).narrative : (rawNarrated as Narrative);
+  const usedKind = isWrapped ? (rawNarrated as NarrateResult).kind : narratorKind;
+  const joined = joinNarrative(narrative);
+  const audit = auditLlmNarrative(joined, resolverOutput);
+  let jev: 'pass' | 'flag' | 'skipped' = 'skipped';
+  let valid = audit.isValid;
+  if (valid && deps.jevCheck) {
+    const verdict = await deps.jevCheck(joined, buildFactsMessage(schematic));
+    if (verdict) {
+      jev = verdict.passed ? 'pass' : 'flag';
+      if (!verdict.passed) valid = false;
+    }
+  }
+  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: usedKind, jev };
+  if (valid) {
     return { narrative, groundTruth: schematic, validationStatus };
   }
   const fallbackText = generateDeterministicSummary(schematic);

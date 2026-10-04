@@ -23,6 +23,8 @@ export interface TapAnswer {
   passedAudit: boolean;
   auditTimestamp: string;
   recordSource: 'snapshot_fixture' | 'live_fetch';
+  narrator: 'llm' | 'template';
+  jev: 'pass' | 'flag' | 'skipped';
 }
 
 function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
@@ -48,9 +50,21 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     passedAudit: res.validationStatus.passedLlmAudit,
     auditTimestamp: res.validationStatus.auditTimestamp,
     recordSource: res.validationStatus.recordSource,
+    narrator: res.validationStatus.narrator,
+    jev: res.validationStatus.jev,
   };
 }
 
 export async function askTapWater(question: string): Promise<TapAnswer> {
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    if (res.ok) return toTapAnswer((await res.json()) as ValidatedApiResponse);
+  } catch {
+    // Preview/dev without functions, or offline: fall back to the local pipeline.
+  }
   return toTapAnswer(await answerTapWater({ question }));
 }
