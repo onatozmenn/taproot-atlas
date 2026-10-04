@@ -18,6 +18,19 @@ export function extractNormalizedNumbers(text: string): string[] {
   return matches;
 }
 
+/** Digit runs glued to a following letter (e.g. "15ppb", "02T"). */
+export function extractGluedNumbers(text: string): string[] {
+  const out: string[] = [];
+  const re = /(?<![\d.])(\d+(?:\.\d+)?)(?=[A-Za-z])/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) out.push(m[1]);
+  return out;
+}
+
+export function normalizeNumericToken(token: string): string {
+  return String(Number(token));
+}
+
 export function buildResolverFacts(
   schematic: WaterOriginSchematic
 ): ResolverOutput['extractedFacts'] {
@@ -53,8 +66,13 @@ export function buildResolverFacts(
     new Set(rawSources.flatMap((text) => extractNormalizedNumbers(text)))
   );
 
+  const allowedGluedNumbers = Array.from(
+    new Set(rawSources.flatMap((text) => extractGluedNumbers(text)).map(normalizeNumericToken))
+  );
+
   return {
     allowedNumbers,
+    allowedGluedNumbers,
     allowedEntities: Array.from(new Set(allowedEntities)),
   };
 }
@@ -128,7 +146,8 @@ export function auditLlmNarrative(
 
   const coordinatePattern =
     /\b[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)\b/;
-  if (coordinatePattern.test(narrativeText)) {
+  const hemispherePattern = /\b\d{1,3}(?:\.\d+)?\s*[NSEW]\b/;
+  if (coordinatePattern.test(narrativeText) || hemispherePattern.test(narrativeText)) {
     violations.push(
       'Direct geographic coordinate pattern detected in narrative. Map geometries must remain Resolver-exclusive.'
     );
@@ -140,6 +159,17 @@ export function auditLlmNarrative(
     if (!allowedNumbersSet.has(num)) {
       violations.push(
         `Unauthorized numeric value: "${num}". Not present in ground-truth facts.`
+      );
+    }
+  }
+
+  const groundedNumeric = new Set(
+    [...allowedNumbersSet, ...resolverOutput.extractedFacts.allowedGluedNumbers].map(normalizeNumericToken)
+  );
+  for (const glued of extractGluedNumbers(narrativeText)) {
+    if (!groundedNumeric.has(normalizeNumericToken(glued))) {
+      violations.push(
+        `Unverified glued numeric value: "${glued}". Not present in ground-truth facts.`
       );
     }
   }

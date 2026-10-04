@@ -42,6 +42,19 @@ export function mockSchematic() {
           sourceVersionId: 'nyc-2025-v1',
         },
       },
+      {
+        parameter: 'Total Coliform',
+        reportedValue: '0 positive samples',
+        regulatoryThreshold: '5.0% positive TT',
+        complianceStatus: 'within_standard',
+        testDate: '2025-12-01',
+        provenance: {
+          sourceDocumentUrl: 'https://www.nyc.gov/site/dep/water/drinking-water.page',
+          reportPeriod: '2025 Annual',
+          captureTime: '2026-01-02T00:00:00Z',
+          sourceVersionId: 'nyc-2025-v1',
+        },
+      },
     ],
     disclaimer:
       'Reported lab results and regulatory records only; not a real-time safety guarantee.',
