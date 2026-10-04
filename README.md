@@ -29,7 +29,7 @@ snapshot-backed pipeline (no secrets, no live keys).
 
 ## Production (`POST /api/ask`)
 
-`web/api/ask.ts` runs the full pipeline server-side on Vercel. With AI env vars
+`api/ask.ts` runs the full pipeline server-side on Vercel. With AI env vars
 set, a model drafts the narrative (always re-audited; template fallback on any
 failure). Without a key it serves the audited template path. The browser never
 sees the key — only audited `ValidatedApiResponse` JSON leaves the function.

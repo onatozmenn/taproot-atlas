@@ -3,10 +3,10 @@
 // a model drafts the narrative (still audited; fallback on failure).
 // Without a key it serves the audited template path. Never leaks the key:
 // only the audited ValidatedApiResponse leaves this function.
-import { answerTapWater } from '../../lib/pipeline';
-import { narrateGroundTruth } from '../../lib/narrator';
-import { llmNarrate } from '../../lib/llm-narrator';
-import { jevCheckNarrative } from '../../lib/jev-audit';
+import { answerTapWater } from '../lib/pipeline.js';
+import { narrateGroundTruth } from '../lib/narrator.js';
+import { llmNarrate } from '../lib/llm-narrator.js';
+import { jevCheckNarrative } from '../lib/jev-audit.js';
 
 interface AskRequest {
   body?: { question?: unknown; lat?: unknown; lon?: unknown };
