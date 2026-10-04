@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { answerTapWater, SHOWCASE_CENTER } from '../dist/lib/pipeline.js';
+import { narrateGroundTruth } from '../dist/lib/narrator.js';
 import { readFile } from 'node:fs/promises';
 
 const echoSnapshot = JSON.parse(await readFile(new URL('../data/echo-nyc.json', import.meta.url), 'utf8'));
@@ -95,6 +96,19 @@ describe('answerTapWater', () => {
   it('absent JEV records skipped without blocking', async () => {
     const res = await answerTapWater({ question: 'x', ...SHOWCASE_CENTER }, { fetchEcho });
     assert.equal(res.validationStatus.jev, 'skipped');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
+  });
+
+  it('reports the actual narrator when the model path falls back to template', async () => {
+    const res = await answerTapWater(
+      { question: 'x', ...SHOWCASE_CENTER },
+      {
+        fetchEcho,
+        narratorKind: 'llm',
+        narrate: async (s) => ({ narrative: narrateGroundTruth(s), kind: 'template' }),
+      },
+    );
+    assert.equal(res.validationStatus.narrator, 'template');
     assert.equal(res.validationStatus.passedLlmAudit, true);
   });
 });

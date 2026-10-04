@@ -25,12 +25,19 @@ export interface AskInput {
   lon?: number;
 }
 
+export interface NarrateResult {
+  narrative: Narrative;
+  kind: 'llm' | 'template';
+}
+
+export type NarrateInput = Narrative | NarrateResult | Promise<Narrative | NarrateResult>;
+
 export interface PipelineDeps {
   /** Live compliance fetch. Absent → bundled fixture (recordSource: snapshot_fixture). */
   fetchEcho?: (pwsid: string) => Promise<SdwisComplianceProfile>;
   recordSource?: 'snapshot_fixture' | 'live_fetch';
   /** Sync template or async model narrator. Output is always audited. */
-  narrate?: (schematic: WaterOriginSchematic) => Narrative | Promise<Narrative>;
+  narrate?: (schematic: WaterOriginSchematic) => NarrateInput;
   narratorKind?: 'llm' | 'template';
   /** JEV second-layer check. A flag forces fallback; absence/errors never block. */
   jevCheck?: (narrativeText: string, factsText: string) => Promise<{ passed: boolean } | null>;
@@ -98,7 +105,10 @@ export async function answerTapWater(
   }
 
   const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
-  const narrative = await narrate(schematic);
+  const rawNarrated = await narrate(schematic);
+  const isWrapped = typeof rawNarrated === 'object' && rawNarrated !== null && 'narrative' in rawNarrated;
+  const narrative = isWrapped ? (rawNarrated as NarrateResult).narrative : (rawNarrated as Narrative);
+  const usedKind = isWrapped ? (rawNarrated as NarrateResult).kind : narratorKind;
   const joined = joinNarrative(narrative);
   const audit = auditLlmNarrative(joined, resolverOutput);
   let jev: 'pass' | 'flag' | 'skipped' = 'skipped';
@@ -110,7 +120,7 @@ export async function answerTapWater(
       if (!verdict.passed) valid = false;
     }
   }
-  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: narratorKind, jev };
+  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: usedKind, jev };
   if (valid) {
     return { narrative, groundTruth: schematic, validationStatus };
   }

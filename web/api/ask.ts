@@ -43,9 +43,10 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
         ...(apiKey
           ? {
               narratorKind: 'llm' as const,
-              narrate: async (schematic) =>
-                (await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode })) ??
-                narrateGroundTruth(schematic),
+              narrate: async (schematic) => {
+                const draft = await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode });
+                return draft ? { narrative: draft, kind: 'llm' as const } : { narrative: narrateGroundTruth(schematic), kind: 'template' as const };
+              },
             }
           : { narratorKind: 'template' as const }),
         ...(jevKey
