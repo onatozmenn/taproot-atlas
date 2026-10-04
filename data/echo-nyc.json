@@ -1,0 +1,9 @@
+{
+  "snapshotVersion": "echo-sdwis-2021-2026-v1",
+  "captureTime": "2026-01-02T00:00:00Z",
+  "provenanceNote": "Recorded fixture shaped like an EPA ECHO SDWIS response for the NYC showcase system. Replace with a live ECHO web-services fetch (same shape) when wiring production.",
+  "pwsid": "NY0023456",
+  "queryWindow": { "startDate": "2021-01-01", "endDate": "2026-01-01" },
+  "totalViolationsFound": 0,
+  "records": []
+}
