@@ -11,6 +11,8 @@ export interface LlmConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
+  /** 'chat-completions' (OpenAI) or 'responses' (Zen GPT endpoint). */
+  api?: 'chat-completions' | 'responses';
 }
 
 export interface LlmFetchInit {
@@ -72,6 +74,28 @@ function stripFences(text: string): string {
   return (m ? m[1] : text).trim();
 }
 
+function extractResponsesText(data: unknown): string | null {
+  const out = (data as { output?: unknown }).output;
+  if (!Array.isArray(out)) return null;
+  const texts: string[] = [];
+  for (const item of out) {
+    const content = (item as { content?: unknown }).content;
+    if (!Array.isArray(content)) continue;
+    for (const part of content) {
+      const p = part as { type?: string; text?: unknown };
+      if (p.type === 'output_text' && typeof p.text === 'string') texts.push(p.text);
+    }
+  }
+  const joined = texts.join('').trim();
+  return joined.length > 0 ? joined : null;
+}
+
+function extractChatText(data: unknown): string | null {
+  const d = data as { choices?: Array<{ message?: { content?: string } }> };
+  const content = d.choices?.[0]?.message?.content;
+  return content && content.length > 0 ? content : null;
+}
+
 export async function llmNarrate(
   schematic: WaterOriginSchematic,
   config: LlmConfig,
@@ -79,25 +103,38 @@ export async function llmNarrate(
   timeoutMs = 20000,
 ): Promise<Narrative | null> {
   if (!config.apiKey || !config.model) return null;
+  const api = config.api ?? 'chat-completions';
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetchFn(`${config.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+    const root = config.baseUrl.replace(/\/$/, '');
+    const url = api === 'responses' ? `${root}/responses` : `${root}/chat/completions`;
+    const body =
+      api === 'responses'
+        ? {
+            model: config.model,
+            input: [
+              { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
+              { role: 'user', content: buildFactsMessage(schematic) },
+            ],
+          }
+        : {
+            model: config.model,
+            temperature: 0,
+            messages: [
+              { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
+              { role: 'user', content: buildFactsMessage(schematic) },
+            ],
+          };
+    const res = await fetchFn(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${config.apiKey}` },
-      body: JSON.stringify({
-        model: config.model,
-        temperature: 0,
-        messages: [
-          { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
-          { role: 'user', content: buildFactsMessage(schematic) },
-        ],
-      }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const content = data.choices?.[0]?.message?.content;
+    const data: unknown = await res.json();
+    const content = api === 'responses' ? extractResponsesText(data) : extractChatText(data);
     if (!content) return null;
     const parsed: unknown = JSON.parse(stripFences(content));
     return isNarrative(parsed) ? parsed : null;

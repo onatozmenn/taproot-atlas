@@ -46,6 +46,36 @@ describe('llmNarrate', () => {
     assert.equal(await llmNarrate(schematic, config, wrongShape), null);
   });
 
+  it('speaks the Responses API (Zen) and extracts output_text', async () => {
+    let seenUrl = '';
+    let seenBody = {};
+    const fetchFn = async (url, init) => {
+      seenUrl = url;
+      seenBody = JSON.parse(init.body);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(goodBody) }] }],
+        }),
+      };
+    };
+    const out = await llmNarrate(
+      schematic,
+      { baseUrl: 'https://opencode.ai/zen/v1', apiKey: 'k', model: 'gpt-6-luna', api: 'responses' },
+      fetchFn,
+    );
+    assert.deepEqual(out, goodBody);
+    assert.equal(seenUrl, 'https://opencode.ai/zen/v1/responses');
+    assert.equal(seenBody.model, 'gpt-6-luna');
+  });
+
+  it('returns null on empty Responses output', async () => {
+    const empty = async () => ({ ok: true, status: 200, json: async () => ({ output: [] }) });
+    const cfg = { baseUrl: 'https://opencode.ai/zen/v1', apiKey: 'k', model: 'gpt-6-luna', api: 'responses' };
+    assert.equal(await llmNarrate(schematic, cfg, empty), null);
+  });
+
   it('never puts coordinates into the prompt', () => {
     const msg = buildFactsMessage(schematic);
     assert.ok(!msg.includes('-74') && !msg.includes('40.7'));

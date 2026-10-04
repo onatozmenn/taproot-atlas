@@ -38,12 +38,13 @@ Dashboard → Project → Settings → Environment Variables:
 
 | Variable | Value |
 | -------- | ----- |
-| `AI_BASE_URL` | OpenAI-compatible base URL (default `https://api.openai.com/v1`) |
-| `AI_MODEL` | Model id (default `gpt-luna-6`) |
-| `AI_API_KEY` | Paste the key here (never commit it; see `web/.env.example`) |
-| `JEV_BASE_URL` | JEV endpoint (default `https://api.typesafe.ai`) |
-| `JEV_MODEL` | JEV model (default `jev-latest`) |
-| `JEV_API_KEY` | TypeSafe key for the second audit layer (empty = deterministic audit only) |
+| `AI_BASE_URL` | Narrator root (default `https://opencode.ai/zen/v1`) |
+| `AI_API_MODE` | `responses` (Zen) or `chat-completions` (OpenAI) |
+| `AI_MODEL` | Model id (default `gpt-6-luna` on Zen) |
+| `AI_API_KEY` | Zen key (same key serves JEV; never commit it; see `web/.env.example`) |
+| `JEV_BASE_URL` | JEV root (default `https://opencode.ai/zen`, i.e. `/v1/systemone`) |
+| `JEV_MODEL` | JEV model (default `jev-1.13-free`, free tier) |
+| `JEV_API_KEY` | Zen key again (empty = deterministic audit only) |
 
 Local check without deploying: `npm --prefix web run test` covers the handler
 (`api-server.test.ts`), and the chat falls back to the local pipeline when

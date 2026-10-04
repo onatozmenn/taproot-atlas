@@ -29,11 +29,12 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
   const lon = typeof body.lon === 'number' ? body.lon : undefined;
 
   const apiKey = process.env.AI_API_KEY ?? '';
-  const baseUrl = process.env.AI_BASE_URL ?? 'https://api.openai.com/v1';
-  const model = process.env.AI_MODEL ?? 'gpt-luna-6';
+  const baseUrl = process.env.AI_BASE_URL ?? 'https://opencode.ai/zen/v1';
+  const model = process.env.AI_MODEL ?? 'gpt-6-luna';
+  const apiMode = process.env.AI_API_MODE === 'chat-completions' ? 'chat-completions' : 'responses';
   const jevKey = process.env.JEV_API_KEY ?? '';
-  const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://api.typesafe.ai';
-  const jevModel = process.env.JEV_MODEL ?? 'jev-latest';
+  const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://opencode.ai/zen';
+  const jevModel = process.env.JEV_MODEL ?? 'jev-1.13-free';
 
   try {
     const out = await answerTapWater(
@@ -43,7 +44,8 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
           ? {
               narratorKind: 'llm' as const,
               narrate: async (schematic) =>
-                (await llmNarrate(schematic, { baseUrl, apiKey, model })) ?? narrateGroundTruth(schematic),
+                (await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode })) ??
+                narrateGroundTruth(schematic),
             }
           : { narratorKind: 'template' as const }),
         ...(jevKey
