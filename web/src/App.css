@@ -51,5 +51,14 @@ body { margin: 0; font-family: "Source Sans 3", "Helvetica Neue", Arial, sans-se
 .composer input { flex: 1; border: 0; outline: 0; font-size: 16px; }
 .composer button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--bubble); font-size: 20px; cursor: pointer; }
 .composer button:disabled { opacity: 0.4; cursor: default; }
+.skip-link { position: absolute; left: -9999px; top: 0; background: var(--navy); color: #fff; padding: 8px 14px; z-index: 10; }
+.skip-link:focus { left: 8px; top: 8px; }
+.thread-actions { display: flex; justify-content: flex-end; margin: 6px 0; }
+.ghost-btn { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+.validation-line { font-size: 13px; color: var(--muted); }
+.error-box { border: 1px solid #b31942; border-radius: 10px; padding: 10px 14px; margin: 10px 0; background: #fff5f5; }
+.error-box button { border: 1px solid var(--navy); background: #fff; color: var(--navy); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .foot-note { text-align: center; color: var(--muted); font-size: 12px; }
 @media (max-width: 640px) { .tag, .fine { display: none; } .hero h1 { font-size: 24px; } }
