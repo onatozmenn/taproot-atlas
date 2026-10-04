@@ -76,6 +76,7 @@ export interface ResolverOutput {
   schematic: WaterOriginSchematic;
   extractedFacts: {
     allowedNumbers: string[];
+    allowedGluedNumbers: string[];
     allowedEntities: string[];
   };
 }

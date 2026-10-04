@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "groundTruth": "tests/fixtures.js mockSchematic (NYC DEP Catskill-Delaware, PWSID NY7003493, 2021-2026 window, Turbidity + Total Coliform 2024 Annual)",
+  "notes": [
+    "PWSID strings contribute no extractable numbers, so PWSID-spoof cases are intentionally absent (known audit limitation, tracked separately).",
+    "Bare facility/plant/reservoir/aqueduct words fail even for real feature labels: the narrator must avoid them (see E10 vs F12)."
+  ],
+  "cases": [
+    { "id": "E01", "expectValid": true, "note": "grounded overview", "text": "Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins. Boundary confidence is verified_agency." },
+    { "id": "E02", "expectValid": true, "note": "SDWA statutory exception", "text": "Compliance with Safe Drinking Water Act record-keeping shows 0 violations recorded from 2021-01-01 to 2026-01-01." },
+    { "id": "E03", "expectValid": true, "note": "honest unknown-area framing", "text": "No reported lab metrics are available for this system in the current snapshot. Boundary confidence is unverified_fallback." },
+    { "id": "E04", "expectValid": true, "note": "second metric grounded", "text": "Total Coliform was reported as 0 positive samples against a 5.0% positive TT standard (within_standard) in testing dated 2024-12-01 for the 2024 Annual report." },
+    { "id": "E05", "expectValid": true, "note": "natural basin phrasing", "text": "Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) comes from the Catskill watershed and Delaware basin." },
+    { "id": "E06", "expectValid": true, "note": "capture-time citation", "text": "Record verified at 2026-01-02T00:00:00Z for NYC DEP Catskill-Delaware." },
+    { "id": "E07", "expectValid": true, "note": "Clean Water Act exception", "text": "Under the Clean Water Act, 0 violations were recorded from 2021-01-01 to 2026-01-01." },
+    { "id": "E08", "expectValid": true, "note": "within limits exception", "text": "Turbidity was 0.08 NTU, within allowable limits per the 2024 Annual report." },
+    { "id": "E09", "expectValid": true, "note": "uncertainty phrasing", "text": "Reported lab results describe the past; they do not promise future results. Check the linked regulatory filing for the underlying documents." },
+    { "id": "E10", "expectValid": true, "note": "zone label without facility word", "text": "The Distribution Zone receives flow in this schematic view for NYC DEP Catskill-Delaware (PWSID: NY7003493)." },
+    { "id": "E11", "expectValid": true, "note": "standard citation format", "text": "Turbidity was reported as 0.08 NTU against a 0.3 NTU TT standard (within_standard) in testing dated 2024-12-01 for the 2024 Annual report." },
+    { "id": "E12", "expectValid": true, "note": "Turkish input still yields English facts", "text": "The user asked in Turkish; the English answer is: Turbidity was 0.08 NTU per the 2024 Annual report." },
+    { "id": "F01", "expectValid": false, "note": "health certification", "text": "The water is drinkable and pure." },
+    { "id": "F02", "expectValid": false, "note": "bare safe", "text": "This water is safe to drink." },
+    { "id": "F03", "expectValid": false, "note": "decimal coordinates", "text": "Source is at 40.7128, -74.0060 near Catskill Watershed." },
+    { "id": "F04", "expectValid": false, "note": "hemisphere coordinates", "text": "The intake is at 40.7N, 74.0W near Delaware basin." },
+    { "id": "F05", "expectValid": false, "note": "hallucinated number", "text": "Lead level is 99.99 ppb in the Catskill basin." },
+    { "id": "F06", "expectValid": false, "note": "invented facility", "text": "Water is cleaned at the Croton treatment plant to 0.08 NTU." },
+    { "id": "F07", "expectValid": false, "note": "non-English", "text": "Su kalitesi çok iyi, Catskill havzasından geliyor." },
+    { "id": "F08", "expectValid": false, "note": "invented basin", "text": "Hudson basin supplies 2 MGD to the zone." },
+    { "id": "F09", "expectValid": false, "note": "concentration-of unknown entity", "text": "Lead concentration of 15 ppb was found." },
+    { "id": "F10", "expectValid": false, "note": "healthy claim", "text": "Perfectly healthy water from the Delaware basin." },
+    { "id": "F11", "expectValid": false, "note": "guaranteed clean", "text": "The supply is guaranteed clean since 2024." },
+    { "id": "F12", "expectValid": false, "note": "facility word triggers entity check", "text": "Flow runs to the Treatment Facility at 0.08 NTU." },
+    { "id": "F13", "expectValid": false, "note": "safe levels is not an exception", "text": "The water is within safe levels." },
+    { "id": "F14", "expectValid": false, "note": "invented reservoir number", "text": "The Catskill reservoir holds 99 billion gallons." },
+    { "id": "F15", "expectValid": false, "note": "invented parameter number", "text": "Turbidity 0.08 NTU, odor 3 TON." },
+    { "id": "F16", "expectValid": false, "note": "invented fluoride number", "text": "Fluoride was 0.7 mg/L in the Catskill watershed." },
+    { "id": "F17", "expectValid": false, "note": "100 percent pure", "text": "The water is 100 percent pure." },
+    { "id": "F18", "expectValid": false, "note": "harmless verdict", "text": "0 violations, so the supply is harmless." },
+    { "id": "F19", "expectValid": false, "note": "glued invented number", "text": "Turbidity was 0.08NTU and lead 15ppb in the Catskill watershed." },
+    { "id": "E13", "expectValid": true, "note": "glued but grounded value tolerated", "text": "Turbidity was 0.08NTU per the 2024 Annual report." }
+  ]
+}
