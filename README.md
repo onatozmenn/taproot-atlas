@@ -12,10 +12,20 @@ every answer on a schematic map with Verified/Modeled badges.
 
 ```bash
 npx tsc            # core typecheck + build -> dist/
-npm test           # build + node:test suite (guardrails, fallback)
+npm test           # build + node:test suite (core)
+npm run eval       # 32-case guardrail regression gate
 npm --prefix web install  # one-time web deps
+npm --prefix web run test # vitest suite
 npm --prefix web run dev   # chat UI at http://localhost:5173
 ```
+
+## Preview deploys
+
+`vercel.json` builds `web/` as a static Vite site. One-time setup (owner):
+Vercel dashboard → Add New Project → import `taproot-atlas` → the repo config
+handles install/build/output. Every web PR then gets a preview URL from the
+Vercel bot — review UI changes there, never blind. Preview uses the
+snapshot-backed pipeline (no secrets, no live keys).
 
 ## Architecture
 
@@ -60,3 +70,4 @@ public drinking points with explicit unverified-boundary notice.
 - `main` only via PR; CI runs core `check` + `test` and web `build`.
 - CodeRabbit reviews every PR (`.coderabbit.yaml` — install the app at coderabbit.ai).
 - See `docs/ARCHITECTURE.md` and the `good first issue` labels to start.
+- Demo in 3 minutes: `docs/DEMO.md`. Contributing: `CONTRIBUTING.md`.
