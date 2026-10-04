@@ -41,6 +41,9 @@ Dashboard → Project → Settings → Environment Variables:
 | `AI_BASE_URL` | OpenAI-compatible base URL (default `https://api.openai.com/v1`) |
 | `AI_MODEL` | Model id (default `gpt-luna-6`) |
 | `AI_API_KEY` | Paste the key here (never commit it; see `web/.env.example`) |
+| `JEV_BASE_URL` | JEV endpoint (default `https://api.typesafe.ai`) |
+| `JEV_MODEL` | JEV model (default `jev-latest`) |
+| `JEV_API_KEY` | TypeSafe key for the second audit layer (empty = deterministic audit only) |
 
 Local check without deploying: `npm --prefix web run test` covers the handler
 (`api-server.test.ts`), and the chat falls back to the local pipeline when

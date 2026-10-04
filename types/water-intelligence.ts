@@ -96,5 +96,7 @@ export interface ValidatedApiResponse {
     recordSource: 'snapshot_fixture' | 'live_fetch';
     /** Which narrator produced the text: model draft or deterministic template. */
     narrator: 'llm' | 'template';
+    /** JEV second-layer verdict: pass, flag (forced fallback), or skipped. */
+    jev: 'pass' | 'flag' | 'skipped';
   };
 }

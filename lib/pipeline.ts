@@ -13,6 +13,7 @@ import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
 import { ingestNycMetrics } from './nyc.js';
 import { buildSchematicFlow, showcaseNodes, SCHEMATIC_DISCLAIMER } from './schematic.js';
 import { narrateGroundTruth, joinNarrative, type Narrative } from './narrator.js';
+import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 
@@ -31,6 +32,8 @@ export interface PipelineDeps {
   /** Sync template or async model narrator. Output is always audited. */
   narrate?: (schematic: WaterOriginSchematic) => Narrative | Promise<Narrative>;
   narratorKind?: 'llm' | 'template';
+  /** JEV second-layer check. A flag forces fallback; absence/errors never block. */
+  jevCheck?: (narrativeText: string, factsText: string) => Promise<{ passed: boolean } | null>;
   now?: () => string;
 }
 
@@ -96,9 +99,19 @@ export async function answerTapWater(
 
   const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
   const narrative = await narrate(schematic);
-  const audit = auditLlmNarrative(joinNarrative(narrative), resolverOutput);
-  const validationStatus = { passedLlmAudit: audit.isValid, auditTimestamp, recordSource, narrator: narratorKind };
-  if (audit.isValid) {
+  const joined = joinNarrative(narrative);
+  const audit = auditLlmNarrative(joined, resolverOutput);
+  let jev: 'pass' | 'flag' | 'skipped' = 'skipped';
+  let valid = audit.isValid;
+  if (valid && deps.jevCheck) {
+    const verdict = await deps.jevCheck(joined, buildFactsMessage(schematic));
+    if (verdict) {
+      jev = verdict.passed ? 'pass' : 'flag';
+      if (!verdict.passed) valid = false;
+    }
+  }
+  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: narratorKind, jev };
+  if (valid) {
     return { narrative, groundTruth: schematic, validationStatus };
   }
   const fallbackText = generateDeterministicSummary(schematic);

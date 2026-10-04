@@ -24,6 +24,7 @@ export interface TapAnswer {
   auditTimestamp: string;
   recordSource: 'snapshot_fixture' | 'live_fetch';
   narrator: 'llm' | 'template';
+  jev: 'pass' | 'flag' | 'skipped';
 }
 
 function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
@@ -50,6 +51,7 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     auditTimestamp: res.validationStatus.auditTimestamp,
     recordSource: res.validationStatus.recordSource,
     narrator: res.validationStatus.narrator,
+    jev: res.validationStatus.jev,
   };
 }
 

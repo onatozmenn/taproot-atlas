@@ -6,6 +6,7 @@
 import { answerTapWater } from '../../lib/pipeline';
 import { narrateGroundTruth } from '../../lib/narrator';
 import { llmNarrate } from '../../lib/llm-narrator';
+import { jevCheckNarrative } from '../../lib/jev-audit';
 
 interface AskRequest {
   body?: { question?: unknown; lat?: unknown; lon?: unknown };
@@ -30,17 +31,32 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
   const apiKey = process.env.AI_API_KEY ?? '';
   const baseUrl = process.env.AI_BASE_URL ?? 'https://api.openai.com/v1';
   const model = process.env.AI_MODEL ?? 'gpt-luna-6';
+  const jevKey = process.env.JEV_API_KEY ?? '';
+  const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://api.typesafe.ai';
+  const jevModel = process.env.JEV_MODEL ?? 'jev-latest';
 
   try {
     const out = await answerTapWater(
       { question, lat, lon },
-      apiKey
-        ? {
-            narratorKind: 'llm',
-            narrate: async (schematic) =>
-              (await llmNarrate(schematic, { baseUrl, apiKey, model })) ?? narrateGroundTruth(schematic),
-          }
-        : { narratorKind: 'template' },
+      {
+        ...(apiKey
+          ? {
+              narratorKind: 'llm' as const,
+              narrate: async (schematic) =>
+                (await llmNarrate(schematic, { baseUrl, apiKey, model })) ?? narrateGroundTruth(schematic),
+            }
+          : { narratorKind: 'template' as const }),
+        ...(jevKey
+          ? {
+              jevCheck: (narrativeText: string, factsText: string) =>
+                jevCheckNarrative(narrativeText, factsText, {
+                  baseUrl: jevBaseUrl,
+                  apiKey: jevKey,
+                  model: jevModel,
+                }),
+            }
+          : {}),
+      },
     );
     res.status(200).json(out);
   } catch (err) {

@@ -72,4 +72,29 @@ describe('answerTapWater', () => {
     const all = [res.narrative.overview, res.narrative.metricsSummary, res.narrative.complianceNote].join(' ').toLowerCase();
     assert.ok(!all.includes('drinkable') && !all.includes('pure') && !all.includes('potable'));
   });
+
+  it('JEV flag forces fallback even when the deterministic audit passes', async () => {
+    const res = await answerTapWater(
+      { question: 'x', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: false }) },
+    );
+    assert.equal(res.validationStatus.jev, 'flag');
+    assert.equal(res.validationStatus.passedLlmAudit, false);
+    assert.ok(res.narrative.overview.includes('Verified Water Distribution Overview'));
+  });
+
+  it('JEV pass keeps the narrative and is recorded', async () => {
+    const res = await answerTapWater(
+      { question: 'x', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: true }) },
+    );
+    assert.equal(res.validationStatus.jev, 'pass');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
+  });
+
+  it('absent JEV records skipped without blocking', async () => {
+    const res = await answerTapWater({ question: 'x', ...SHOWCASE_CENTER }, { fetchEcho });
+    assert.equal(res.validationStatus.jev, 'skipped');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
+  });
 });

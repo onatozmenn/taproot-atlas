@@ -38,6 +38,9 @@ export function ValidationLine({ answer }: { answer: TapAnswer }) {
       <p className="validation-line">
         {answer.passedAudit ? 'Verified summary' : 'Deterministic summary (audit fallback)'} ·{' '}
         {answer.narrator === 'llm' ? 'AI draft' : 'template'} · audited {answer.auditTimestamp}
+        {answer.jev !== 'skipped' && (
+          <> · JEV check {answer.jev === 'pass' ? 'passed' : 'flagged'}</>
+        )}
       </p>
       <p className="validation-line">
         {answer.recordSource === 'snapshot_fixture' ? (
