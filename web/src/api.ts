@@ -12,6 +12,7 @@ export interface TapAnswer {
   boundaryType: 'VERIFIED_AGENCY' | 'MODELED_EPA' | 'UNVERIFIED_FALLBACK';
   basins: string[];
   overview: string;
+  flow: Array<{ label: string; role: string; at: [number, number] }>;
   metrics: QualityMetricRecord[];
   windowStart: string;
   windowEnd: string;
@@ -32,6 +33,11 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     boundaryType: g.boundaryType.toUpperCase() as TapAnswer['boundaryType'],
     basins: g.primaryBasins,
     overview: res.narrative.overview,
+    flow: g.schematicFlow.features.map((f) => ({
+      label: f.properties.label,
+      role: f.properties.role,
+      at: (f.geometry.type === 'Point' ? f.geometry.coordinates : [0, 0]) as [number, number],
+    })),
     metrics: g.latestReportedMetrics,
     windowStart: g.regulatoryCompliance.queryWindow.startDate,
     windowEnd: g.regulatoryCompliance.queryWindow.endDate,

@@ -9,6 +9,10 @@ const base: TapAnswer = {
   boundaryType: 'MODELED_EPA',
   basins: ['Catskill', 'Delaware'],
   overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',
+  flow: [
+    { label: 'Catskill Watershed', role: 'watershed', at: [-74.3, 42.0] as [number, number] },
+    { label: 'Treatment', role: 'treatment_facility', at: [-73.9, 40.9] as [number, number] },
+  ],
   metrics: [
     {
       parameter: 'Turbidity',
@@ -42,7 +46,7 @@ describe('AnswerCard', () => {
     expect(screen.getByText(/2024 Annual/)).toBeInTheDocument();
     expect(screen.getByText('nyc-2024-v1')).toBeInTheDocument();
     expect(screen.getByText(/Verified summary/)).toBeInTheDocument();
-    expect(screen.getByText('Unverified boundary')).toBeInTheDocument();
+    expect(screen.getByText('Modeled boundary')).toBeInTheDocument();
     expect(screen.getByText(/Demonstration snapshot/)).toBeInTheDocument();
   });
 
