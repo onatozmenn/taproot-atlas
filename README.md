@@ -1,29 +1,62 @@
-# Water Intelligence
+# Taproot Atlas
 
-Source-to-Tap Water Intelligence Platform for the Xylem Global Student Innovation Challenge 2026 (Water Quality track, with Access fallback and Quantity context).
+Source-to-tap water intelligence for the Xylem Global Student Innovation Challenge
+(Water Quality track, Access fallback, Quantity context).
+
+Ask in everyday words where tap water comes from. A deterministic Resolver owns all
+facts (PWSID, basins, lab metrics, SDWIS window); a guarded LLM only narrates; a
+deterministic fallback renders when audit fails. The America.gov-style chat UI shows
+every answer on a schematic map with Verified/Modeled badges.
+
+## Quickstart
+
+```bash
+npx tsc            # core typecheck + build -> dist/
+npm test           # build + node:test suite (guardrails, fallback)
+npm --prefix web install  # one-time web deps
+npm --prefix web run dev   # chat UI at http://localhost:5173
+```
 
 ## Architecture
 
-1. **Deterministic Resolver** (single authority): resolves PWSID via point-in-polygon, classifies boundary confidence (`verified_agency` / `modeled_epa` / `unverified_fallback`), loads reported lab metrics and SDWIS compliance window, builds schematic GeoJSON (approximate, never an engineering alignment).
-2. **Guardrail audit** (`lib/guardrails.ts`): English-only, blocks health certification, coordinate leaks, numeric/entity hallucinations.
-3. **LLM narrator** (English only, `prompts/system.ts`): summarizes Resolver facts for citizens. Adds no numbers, coordinates, or verdicts.
-4. **Deterministic fallback** (`lib/fallback-template.ts`): full-provenance summary rendered directly from ground truth when audit fails.
-5. **Frontend** (planned): map with schematic flow + Verified/Modeled badges + report cards. Every metric shows test date, report period, capture time, and source link.
+1. **Deterministic Resolver** (single authority, `types/water-intelligence.ts` contract):
+   resolves PWSID via point-in-polygon, classifies boundary confidence
+   (`verified_agency` / `modeled_epa` / `unverified_fallback`), loads reported lab
+   metrics + SDWIS compliance window, builds schematic GeoJSON (approximate only).
+2. **Guardrail audit** (`lib/guardrails.ts`): English-only, blocks health
+   certification, coordinate leaks, numeric/entity hallucinations.
+3. **LLM narrator** (English only, `prompts/system.ts`): summarizes Resolver facts.
+   Adds no numbers, coordinates, or verdicts.
+4. **Deterministic fallback** (`lib/fallback-template.ts`): provenance-first summary
+   rendered directly from ground truth when audit fails.
+5. **Web** (`web/`, Vite + React + TS): America.gov-style chat + schematic SVG map +
+   report cards. Every metric shows test date, report period, capture time, source link.
 
 ## Data layers
 
-- Service boundary and origin: EPA Service Area Boundaries (PWSID) + NYC DEP watershed schematic. Labeled Verified vs Modeled.
-- Compliance: EPA SDWIS / ECHO with explicit 5-year query window.
-- Tap quality: NYC distribution monitoring + Annual Drinking Water Supply and Quality Report. Reported lab tests only. No real-time safety guarantee.
-- Public access fallback: OpenStreetMap `amenity=drinking_water` outside the showcase boundary.
+- Service boundary + origin: EPA Service Area Boundaries (PWSID) + NYC DEP watershed
+  schematic. Labeled Verified vs Modeled.
+- Compliance: EPA SDWIS / ECHO (`https://echo.epa.gov/`), explicit 5-year window.
+- Tap quality: NYC distribution monitoring + Annual Drinking Water Supply and Quality
+  Report (`https://www.nyc.gov/site/dep/water/drinking-water.page`). Reported lab
+  tests only. No real-time safety guarantee.
+- Public access fallback: OpenStreetMap `amenity=drinking_water` outside the showcase
+  boundary, always `unverified_fallback`.
 
 ## Health and honesty rules
 
-- Never output "safe", "drinkable", "pure", or equivalents as a verdict.
-- Frame findings as regulatory compliance with date, threshold, and source.
-- Schematic paths are approximations.
-- Zero violations is reported as "no records found in window", with ECHO link.
+- Never output "safe", "drinkable", "pure" as a verdict; frame compliance with date,
+  threshold, and source.
+- Schematic paths are approximations, never engineering alignments.
+- Zero violations = "no records found in window" + ECHO link.
 
 ## Showcase
 
-Primary showcase: New York City (PWSID example: NYC DEP system). Global fallback: nearby public drinking points with an explicit unverified-boundary notice.
+Primary: New York City (PWSID example: NYC DEP system). Global fallback: nearby
+public drinking points with explicit unverified-boundary notice.
+
+## Repo hygiene
+
+- `main` only via PR; CI runs core `check` + `test` and web `build`.
+- CodeRabbit reviews every PR (`.coderabbit.yaml` — install the app at coderabbit.ai).
+- See `docs/ARCHITECTURE.md` and the `good first issue` labels to start.

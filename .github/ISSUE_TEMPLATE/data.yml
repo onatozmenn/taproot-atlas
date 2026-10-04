@@ -1,0 +1,17 @@
+---
+name: Data
+about: New or refreshed EPA / NYC / OSM dataset
+title: "[data] "
+labels: [data]
+---
+
+## Dataset
+- Provider (EPA ECHO / NYC DEP / OSM):
+- URL:
+- Report period:
+- Capture time:
+- License:
+
+## Boundary confidence
+- [ ] verified_agency / modeled_epa / unverified_fallback assigned
+- [ ] Schematic disclaimer present in UI copy

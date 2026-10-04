@@ -1,0 +1,55 @@
+/* Taproot Atlas — America.gov-inspired chat shell. Light, single-column, calm gov palette. */
+:root {
+  --navy: #0a3161;
+  --ink: #1b1b1b;
+  --muted: #5b616b;
+  --bg: #ffffff;
+  --bubble: #f1f3f6;
+  --line: #dfe1e2;
+  --accent: #005ea8;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Source Sans 3", "Helvetica Neue", Arial, sans-serif; color: var(--ink); background: var(--bg); }
+.page { min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.wordmark { font-family: Georgia, "Times New Roman", serif; font-size: 24px; letter-spacing: -0.01em; }
+.tag { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+.menu-btn { background: var(--navy); color: #fff; border: 0; border-radius: 999px; padding: 12px 26px; font-size: 15px; cursor: pointer; }
+.chat { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 24px 20px 12px; overflow-y: auto; }
+.hero h1 { font-family: Georgia, serif; font-weight: 600; font-size: 30px; margin: 48px 0 8px; }
+.hero p { color: var(--ink); line-height: 1.6; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.fine { color: var(--muted); font-size: 14px; }
+.bubble-row { display: flex; justify-content: flex-end; margin: 14px 0; }
+.user-bubble { background: var(--bubble); border-radius: 20px; padding: 10px 18px; max-width: 70%; }
+.assistant-block { margin: 18px 0 28px; line-height: 1.65; }
+.answer h4 { margin: 18px 0 6px; }
+.metric { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 10px 0; }
+.metric-top { display: flex; justify-content: space-between; }
+.disclaimer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+.map-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 12px 0; background: #fafbfc; }
+.map-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.badge { font-size: 12px; border-radius: 999px; padding: 3px 10px; font-weight: 600; }
+.badge-verified { background: #e7f4e4; color: #1e6b34; border: 1px solid #b6dfb6; }
+.badge-modeled { background: #fff3cd; color: #7a5b00; border: 1px solid #e6c87a; }
+.map-note { font-size: 12px; color: var(--muted); }
+.map-svg { width: 100%; height: auto; margin-top: 6px; }
+.flow-line { stroke: var(--navy); }
+.node-watershed { fill: #d9e8f6; stroke: var(--navy); }
+.node-plant { fill: #fff; stroke: var(--navy); }
+.node-zone { fill: #e7f4e4; stroke: #1e6b34; }
+.node-label { font-size: 12px; fill: var(--ink); }
+.map-foot { font-size: 13px; color: var(--muted); }
+.feedback { display: flex; gap: 8px; margin-top: 8px; }
+.feedback button { border: 1px solid var(--line); background: var(--bubble); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+.typing { color: var(--muted); font-style: italic; margin: 10px 0; }
+.composer-wrap { position: sticky; bottom: 0; background: #fff; padding: 10px 0 6px; }
+.composer { display: flex; align-items: center; gap: 8px; max-width: 760px; margin: 0 auto; border: 2px solid var(--ink); border-radius: 999px; padding: 8px 8px 8px 22px; }
+.composer input { flex: 1; border: 0; outline: 0; font-size: 16px; }
+.composer button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--bubble); font-size: 20px; cursor: pointer; }
+.composer button:disabled { opacity: 0.4; cursor: default; }
+.foot-note { text-align: center; color: var(--muted); font-size: 12px; }
+@media (max-width: 640px) { .tag, .fine { display: none; } .hero h1 { font-size: 24px; } }

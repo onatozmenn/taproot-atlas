@@ -1,0 +1,17 @@
+---
+name: Bug
+about: Wrong boundary, metric, audit verdict, or UI state
+title: "[bug] "
+labels: [bug]
+---
+
+## Seen
+<!-- What happened, where (URL / PWSID / query)? -->
+
+## Expected
+<!-- Ground-truth behavior per resolver contract. -->
+
+## Evidence
+- PWSID / query:
+- Source + report period:
+- Screenshot / log:

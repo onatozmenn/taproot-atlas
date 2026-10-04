@@ -1,0 +1,24 @@
+# CodeRabbit review defaults for taproot-atlas.
+# Install the app: https://coderabbit.ai — then reviews run on every PR.
+version: 1
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+  review_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  commit_messages: true
+chat:
+  auto_reply: true
+  integrations:
+    - github
+knowledge_base:
+  code_guidelines: true
+  learnings: true
+  opt_out: false

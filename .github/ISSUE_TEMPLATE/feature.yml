@@ -1,0 +1,20 @@
+---
+name: Feature
+about: New resolver, guardrail, or UI capability
+title: "[feat] "
+labels: [enhancement]
+---
+
+## Problem
+<!-- Who needs it and why (citizen / jury / data provenance)? -->
+
+## Proposal
+<!-- Deterministic-first: what does the Resolver own vs the narrator? -->
+
+## Acceptance criteria
+- [ ]
+- [ ]
+
+## Data provenance
+- Source:
+- Report period:

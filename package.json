@@ -1,15 +1,20 @@
 {
-  "name": "water-intelligence",
+  "name": "taproot-atlas",
   "version": "0.1.0",
   "private": true,
-  "description": "Source-to-Tap Water Intelligence Platform (Xylem 2026, Water Quality). Deterministic resolver + guarded narrator.",
+  "description": "Source-to-tap water intelligence: guarded AI chat + schematic map over EPA/NYC open data (Xylem Innovation Challenge).",
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "node --test tests/"
+    "test": "npm run build && node --test tests/guardrails.test.js tests/fallback.test.js",
+    "test:web": "npm --prefix web run build"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "devDependencies": {
-    "typescript": "^5.6.0",
-    "@types/node": "^22.7.0"
+    "@types/node": "^22.7.0",
+    "typescript": "^5.6.0"
   }
 }
