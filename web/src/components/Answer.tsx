@@ -36,8 +36,8 @@ export function ValidationLine({ answer }: { answer: TapAnswer }) {
   return (
     <>
       <p className="validation-line">
-        {answer.passedAudit ? 'Verified summary' : 'Deterministic summary (audit fallback)'} · audited{' '}
-        {answer.auditTimestamp}
+        {answer.passedAudit ? 'Verified summary' : 'Deterministic summary (audit fallback)'} ·{' '}
+        {answer.narrator === 'llm' ? 'AI draft' : 'template'} · audited {answer.auditTimestamp}
       </p>
       <p className="validation-line">
         {answer.recordSource === 'snapshot_fixture' ? (

@@ -37,6 +37,7 @@ const base: TapAnswer = {
   passedAudit: true,
   auditTimestamp: '2026-01-02T00:00:01Z',
   recordSource: 'snapshot_fixture',
+  narrator: 'template',
 };
 
 describe('AnswerCard', () => {

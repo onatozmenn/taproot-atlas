@@ -27,6 +27,25 @@ handles install/build/output. Every web PR then gets a preview URL from the
 Vercel bot — review UI changes there, never blind. Preview uses the
 snapshot-backed pipeline (no secrets, no live keys).
 
+## Production (`POST /api/ask`)
+
+`web/api/ask.ts` runs the full pipeline server-side on Vercel. With AI env vars
+set, a model drafts the narrative (always re-audited; template fallback on any
+failure). Without a key it serves the audited template path. The browser never
+sees the key — only audited `ValidatedApiResponse` JSON leaves the function.
+
+Dashboard → Project → Settings → Environment Variables:
+
+| Variable | Value |
+| -------- | ----- |
+| `AI_BASE_URL` | OpenAI-compatible base URL (default `https://api.openai.com/v1`) |
+| `AI_MODEL` | Model id (default `gpt-luna-6`) |
+| `AI_API_KEY` | Paste the key here (never commit it; see `web/.env.example`) |
+
+Local check without deploying: `npm --prefix web run test` covers the handler
+(`api-server.test.ts`), and the chat falls back to the local pipeline when
+`/api/ask` is unreachable.
+
 ## Architecture
 
 1. **Deterministic Resolver** (single authority, `types/water-intelligence.ts` contract):

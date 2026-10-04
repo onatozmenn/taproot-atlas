@@ -28,7 +28,9 @@ export interface PipelineDeps {
   /** Live compliance fetch. Absent → bundled fixture (recordSource: snapshot_fixture). */
   fetchEcho?: (pwsid: string) => Promise<SdwisComplianceProfile>;
   recordSource?: 'snapshot_fixture' | 'live_fetch';
-  narrate?: (schematic: WaterOriginSchematic) => Narrative;
+  /** Sync template or async model narrator. Output is always audited. */
+  narrate?: (schematic: WaterOriginSchematic) => Narrative | Promise<Narrative>;
+  narratorKind?: 'llm' | 'template';
   now?: () => string;
 }
 
@@ -63,6 +65,7 @@ export async function answerTapWater(
     fetchEcho = async (pwsid: string) => readSnapshotCompliance(pwsid, undefined, auditTimestamp),
     recordSource = deps.fetchEcho ? 'live_fetch' : 'snapshot_fixture',
     narrate = narrateGroundTruth,
+    narratorKind = deps.narrate ? 'llm' : 'template',
     now = () => new Date().toISOString(),
   } = deps;
   void input.question; // Reserved for future query parsing / eval logging.
@@ -92,9 +95,9 @@ export async function answerTapWater(
   }
 
   const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
-  const narrative = narrate(schematic);
+  const narrative = await narrate(schematic);
   const audit = auditLlmNarrative(joinNarrative(narrative), resolverOutput);
-  const validationStatus = { passedLlmAudit: audit.isValid, auditTimestamp, recordSource };
+  const validationStatus = { passedLlmAudit: audit.isValid, auditTimestamp, recordSource, narrator: narratorKind };
   if (audit.isValid) {
     return { narrative, groundTruth: schematic, validationStatus };
   }
