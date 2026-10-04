@@ -5,43 +5,45 @@ import type { TapAnswer } from '../api';
 
 const base: TapAnswer = {
   systemName: 'NYC DEP Catskill-Delaware',
-  pwsid: 'NY0023456',
-  boundaryType: 'VERIFIED_AGENCY',
+  pwsid: 'NY7003493',
+  boundaryType: 'MODELED_EPA',
   basins: ['Catskill', 'Delaware'],
-  overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY0023456) is sourced from the Catskill and Delaware basins.',
+  overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',
   metrics: [
     {
       parameter: 'Turbidity',
       reportedValue: '0.08 NTU',
       regulatoryThreshold: '0.3 NTU TT',
       complianceStatus: 'within_standard',
-      testDate: '2025-12-01',
+      testDate: '2024-12-01',
       provenance: {
         sourceDocumentUrl: 'https://www.nyc.gov/site/dep/water/drinking-water.page',
-        reportPeriod: '2025 Annual',
+        reportPeriod: '2024 Annual',
         captureTime: '2026-01-02T00:00:00Z',
-        sourceVersionId: 'nyc-2025-v1',
+        sourceVersionId: 'nyc-2024-v1',
       },
     },
   ],
   windowStart: '2021-01-01',
   windowEnd: '2026-01-01',
   violations: 0,
-  echoUrl: 'https://echo.epa.gov/detailed-facility-report?fid=NY0023456',
+  echoUrl: 'https://echo.epa.gov/detailed-facility-report?fid=NY7003493',
   verifiedAt: '2026-01-02T00:00:00Z',
   disclaimer: 'Reported lab results only.',
   passedAudit: true,
   auditTimestamp: '2026-01-02T00:00:01Z',
+  recordSource: 'snapshot_fixture',
 };
 
 describe('AnswerCard', () => {
   it('renders metric provenance and the verified line', () => {
     render(<AnswerCard answer={base} />);
     expect(screen.getByText('Turbidity')).toBeInTheDocument();
-    expect(screen.getByText(/2025 Annual/)).toBeInTheDocument();
-    expect(screen.getByText('nyc-2025-v1')).toBeInTheDocument();
+    expect(screen.getByText(/2024 Annual/)).toBeInTheDocument();
+    expect(screen.getByText('nyc-2024-v1')).toBeInTheDocument();
     expect(screen.getByText(/Verified summary/)).toBeInTheDocument();
-    expect(screen.getByText('Verified boundary')).toBeInTheDocument();
+    expect(screen.getByText('Unverified boundary')).toBeInTheDocument();
+    expect(screen.getByText(/Demonstration snapshot/)).toBeInTheDocument();
   });
 
   it('renders the deterministic fallback line when audit fails', () => {

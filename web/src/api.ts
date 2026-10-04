@@ -21,6 +21,7 @@ export interface TapAnswer {
   disclaimer: string;
   passedAudit: boolean;
   auditTimestamp: string;
+  recordSource: 'snapshot_fixture' | 'live_fetch';
 }
 
 function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
@@ -40,6 +41,7 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     disclaimer: g.disclaimer,
     passedAudit: res.validationStatus.passedLlmAudit,
     auditTimestamp: res.validationStatus.auditTimestamp,
+    recordSource: res.validationStatus.recordSource,
   };
 }
 

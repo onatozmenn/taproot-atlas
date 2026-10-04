@@ -33,10 +33,24 @@ export function MetricCard({ metric }: { metric: QualityMetricRecord }) {
 
 export function ValidationLine({ answer }: { answer: TapAnswer }) {
   return (
-    <p className="validation-line">
-      {answer.passedAudit ? 'Verified summary' : 'Deterministic summary (audit fallback)'} · audited{' '}
-      {answer.auditTimestamp}
-    </p>
+    <>
+      <p className="validation-line">
+        {answer.passedAudit ? 'Verified summary' : 'Deterministic summary (audit fallback)'} · audited{' '}
+        {answer.auditTimestamp}
+      </p>
+      <p className="validation-line">
+        {answer.recordSource === 'snapshot_fixture' ? (
+          <>
+            Demonstration snapshot ·{' '}
+            <a href={answer.echoUrl} target="_blank" rel="noreferrer">
+              verify live at ECHO
+            </a>
+          </>
+        ) : (
+          <>Live ECHO record · captured {answer.verifiedAt}</>
+        )}
+      </p>
+    </>
   );
 }
 
