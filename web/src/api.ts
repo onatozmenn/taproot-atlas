@@ -1,61 +1,48 @@
-// Mock data-service: deterministic fixture until the Resolver API lands.
-// Every answer carries provenance; the UI never invents numbers.
-export interface Metric {
-  parameter: string;
-  reportedValue: string;
-  regulatoryThreshold: string;
-  complianceStatus: string;
-  testDate: string;
-  reportPeriod: string;
-  sourceUrl: string;
-  captureTime: string;
-  version: string;
-}
+// Live data-service: calls the deterministic core pipeline (snapshot-backed,
+// no network) and shapes ValidatedApiResponse for the chat UI.
+import { answerTapWater } from '../../lib/pipeline';
+import type {
+  QualityMetricRecord,
+  ValidatedApiResponse,
+} from '../../types/water-intelligence';
 
 export interface TapAnswer {
   systemName: string;
   pwsid: string;
   boundaryType: 'VERIFIED_AGENCY' | 'MODELED_EPA' | 'UNVERIFIED_FALLBACK';
   basins: string[];
-  metrics: Metric[];
+  overview: string;
+  metrics: QualityMetricRecord[];
   windowStart: string;
   windowEnd: string;
   violations: number;
   echoUrl: string;
   verifiedAt: string;
   disclaimer: string;
+  passedAudit: boolean;
+  auditTimestamp: string;
 }
 
-const FIXTURE: TapAnswer = {
-  systemName: 'NYC DEP Catskill-Delaware',
-  pwsid: 'NY0023456',
-  boundaryType: 'VERIFIED_AGENCY',
-  basins: ['Catskill', 'Delaware'],
-  metrics: [
-    {
-      parameter: 'Turbidity',
-      reportedValue: '0.08 NTU',
-      regulatoryThreshold: '0.3 NTU TT',
-      complianceStatus: 'within_standard',
-      testDate: '2025-12-01',
-      reportPeriod: '2025 Annual',
-      sourceUrl: 'https://www.nyc.gov/site/dep/water/drinking-water.page',
-      captureTime: '2026-01-02T00:00:00Z',
-      version: 'nyc-2025-v1',
-    },
-  ],
-  windowStart: '2021-01-01',
-  windowEnd: '2026-01-01',
-  violations: 0,
-  echoUrl: 'https://echo.epa.gov/detailed-facility-report?fid=NY0023456',
-  verifiedAt: '2026-01-02T00:00:00Z',
-  disclaimer:
-    'Reported lab results and regulatory records only; not a real-time safety guarantee. Map paths are schematic approximations.',
-};
+function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
+  const g = res.groundTruth;
+  return {
+    systemName: g.systemName,
+    pwsid: g.pwsid,
+    boundaryType: g.boundaryType.toUpperCase() as TapAnswer['boundaryType'],
+    basins: g.primaryBasins,
+    overview: res.narrative.overview,
+    metrics: g.latestReportedMetrics,
+    windowStart: g.regulatoryCompliance.queryWindow.startDate,
+    windowEnd: g.regulatoryCompliance.queryWindow.endDate,
+    violations: g.regulatoryCompliance.totalViolationsFound,
+    echoUrl: g.regulatoryCompliance.echoReportUrl,
+    verifiedAt: g.regulatoryCompliance.dataCaptureTime,
+    disclaimer: g.disclaimer,
+    passedAudit: res.validationStatus.passedLlmAudit,
+    auditTimestamp: res.validationStatus.auditTimestamp,
+  };
+}
 
 export async function askTapWater(question: string): Promise<TapAnswer> {
-  // Simulate resolver latency; question is logged for future eval set.
-  await new Promise((r) => setTimeout(r, 600));
-  void question;
-  return FIXTURE;
+  return toTapAnswer(await answerTapWater({ question }));
 }

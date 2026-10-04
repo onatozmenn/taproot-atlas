@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { askTapWater, type TapAnswer } from './api';
 import { AnswerCard } from './components/Answer';
+import { suggestFollowUps } from './suggest';
 
 interface Msg {
   id: number;
@@ -9,7 +10,7 @@ interface Msg {
   answer?: TapAnswer;
 }
 
-const SUGGESTIONS = [
+const STARTERS = [
   'Where does my tap water come from?',
   'Show the watershed map',
   'Any violations in the last 5 years?',
@@ -21,17 +22,23 @@ export default function App() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  const lastQuestion = useRef('');
 
   async function send(question: string) {
     const q = question.trim();
     if (!q || busy) return;
     setBusy(true);
+    setError(null);
+    lastQuestion.current = q;
     setMessages((m) => [...m, { id: nextId++, role: 'user', text: q }]);
     setInput('');
     try {
       const answer = await askTapWater(q);
       setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Lookup failed. Check your connection and retry.');
     } finally {
       setBusy(false);
       requestAnimationFrame(() => boxRef.current?.scrollTo({ top: 99999 }));
@@ -39,9 +46,23 @@ export default function App() {
   }
 
   const empty = messages.length === 0;
+  const lastAnswer = [...messages].reverse().find((m) => m.answer)?.answer;
+  const chips = lastAnswer
+    ? suggestFollowUps({
+        violations: lastAnswer.violations,
+        windowStart: lastAnswer.windowStart,
+        windowEnd: lastAnswer.windowEnd,
+        boundaryType: lastAnswer.boundaryType,
+        metrics: lastAnswer.metrics.map((m) => ({
+          parameter: m.parameter,
+          reportPeriod: m.provenance.reportPeriod,
+        })),
+      })
+    : STARTERS;
 
   return (
     <div className="page">
+      <a className="skip-link" href="#chat">Skip to conversation</a>
       <header className="topbar">
         <div className="brand">
           <svg width="26" height="18" viewBox="0 0 26 18" aria-hidden="true" className="flag">
@@ -57,7 +78,7 @@ export default function App() {
         <button className="menu-btn" type="button">Menu</button>
       </header>
 
-      <main className="chat" ref={boxRef}>
+      <main className="chat" ref={boxRef} id="chat" aria-live="polite">
         {empty ? (
           <div className="hero">
             <h1>Where does your tap water come from?</h1>
@@ -66,7 +87,7 @@ export default function App() {
               reported lab tests, and EPA compliance records — shown on a schematic map.
             </p>
             <div className="chips">
-              {SUGGESTIONS.map((s) => (
+              {STARTERS.map((s) => (
                 <button key={s} type="button" className="chip" onClick={() => void send(s)}>
                   {s}
                 </button>
@@ -77,24 +98,46 @@ export default function App() {
             </p>
           </div>
         ) : (
-          messages.map((m) =>
-            m.role === 'user' ? (
-              <div key={m.id} className="bubble-row user-row">
-                <div className="bubble user-bubble">{m.text}</div>
-              </div>
-            ) : (
-              <div key={m.id} className="assistant-block">
-                {m.answer && <AnswerCard answer={m.answer} />}
-                <div className="feedback">
-                  <button type="button" aria-label="Helpful">Helpful</button>
-                  <button type="button" aria-label="Not helpful">Not helpful</button>
-                  <button type="button" aria-label="Copy">Copy</button>
+          <>
+            <div className="thread-actions">
+              <button type="button" className="ghost-btn" onClick={() => { setMessages([]); setError(null); }}>
+                Start over
+              </button>
+            </div>
+            {messages.map((m) =>
+              m.role === 'user' ? (
+                <div key={m.id} className="bubble-row user-row">
+                  <div className="bubble user-bubble">{m.text}</div>
                 </div>
+              ) : (
+                <div key={m.id} className="assistant-block">
+                  {m.answer && <AnswerCard answer={m.answer} />}
+                  <div className="feedback">
+                    <button type="button" aria-label="Helpful">Helpful</button>
+                    <button type="button" aria-label="Not helpful">Not helpful</button>
+                    <button type="button" aria-label="Copy">Copy</button>
+                  </div>
+                </div>
+              ),
+            )}
+            {!empty && !busy && (
+              <div className="chips">
+                {chips.map((s) => (
+                  <button key={s} type="button" className="chip" onClick={() => void send(s)}>
+                    {s}
+                  </button>
+                ))}
               </div>
-            ),
-          )
+            )}
+          </>
         )}
         {busy && <div className="typing">Looking up EPA / NYC records…</div>}
+        {error && (
+          <div className="error-box" role="alert">
+            <p>{error}</p>
+            <button type="button" onClick={() => void send(lastQuestion.current)}>Retry</button>
+          </div>
+        )}
       </main>
 
       <footer className="composer-wrap">
