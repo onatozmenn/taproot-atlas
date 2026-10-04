@@ -29,7 +29,7 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
   const lon = typeof body.lon === 'number' ? body.lon : undefined;
 
   const apiKey = process.env.AI_API_KEY ?? '';
-  const baseUrl = process.env.AI_BASE_URL ?? 'https://opencode.ai/zen/v1';
+  const baseUrl = process.env.AI_BASE_URL ?? 'https://api.openai.com/v1';
   const model = process.env.AI_MODEL ?? 'gpt-6-luna';
   const apiMode = process.env.AI_API_MODE === 'chat-completions' ? 'chat-completions' : 'responses';
   const jevKey = process.env.JEV_API_KEY ?? '';

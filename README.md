@@ -38,13 +38,13 @@ Dashboard → Project → Settings → Environment Variables:
 
 | Variable | Value |
 | -------- | ----- |
-| `AI_BASE_URL` | Narrator root (default `https://opencode.ai/zen/v1`) |
-| `AI_API_MODE` | `responses` (Zen) or `chat-completions` (OpenAI) |
-| `AI_MODEL` | Model id (default `gpt-6-luna` on Zen) |
-| `AI_API_KEY` | Zen key (same key serves JEV; never commit it; see `web/.env.example`) |
+| `AI_BASE_URL` | Narrator root (default `https://api.openai.com/v1`; Zen: `https://opencode.ai/zen/v1`) |
+| `AI_API_MODE` | `responses` (GPT-6 Luna on either provider) or `chat-completions` |
+| `AI_MODEL` | Model id (default `gpt-6-luna`) |
+| `AI_API_KEY` | Narrator key (empty = audited template; never commit it) |
 | `JEV_BASE_URL` | JEV root (default `https://opencode.ai/zen`, i.e. `/v1/systemone`) |
 | `JEV_MODEL` | JEV model (default `jev-1.13-free`, free tier) |
-| `JEV_API_KEY` | Zen key again (empty = deterministic audit only) |
+| `JEV_API_KEY` | Zen key for JEV (empty = deterministic audit only) |
 
 Local check without deploying: `npm --prefix web run test` covers the handler
 (`api-server.test.ts`), and the chat falls back to the local pipeline when
