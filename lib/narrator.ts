@@ -25,13 +25,21 @@ function metricSentence(m: QualityMetricRecord): string {
 export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
   const basins = schematic.primaryBasins;
   const basinPhrase =
-    basins.length > 0
-      ? `the ${basins.join(' and ')} basins`
-      : 'basins outside the current showcase snapshot';
+    basins.length === 1
+      ? `the ${basins[0]} basin`
+      : basins.length > 1
+        ? `the ${basins.join(' and ')} basins`
+        : 'basins outside the current showcase snapshot';
+  const boundaryPhrase =
+    schematic.boundaryType === 'verified_agency'
+      ? 'The service area shown is agency-published'
+      : schematic.boundaryType === 'modeled_epa'
+        ? 'The service area shown is modeled from EPA geography'
+        : 'Exact service-area boundaries are not shown here';
   const overview =
     `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}) ` +
     `is sourced from ${basinPhrase}. ` +
-    `Boundary confidence is ${schematic.boundaryType}; paths on the map are schematic approximations.`;
+    `${boundaryPhrase}; paths on the map are schematic approximations.`;
 
   const metricsSummary =
     schematic.latestReportedMetrics.length > 0

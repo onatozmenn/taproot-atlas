@@ -10,9 +10,18 @@ export function generateDeterministicSummary(
   schematic: WaterOriginSchematic
 ): string {
   const isUnknown = schematic.pwsid === 'UNKNOWN' || schematic.primaryBasins.length === 0;
-  const basins = schematic.primaryBasins.length > 0
-    ? schematic.primaryBasins.join(' and ')
-    : 'areas outside the current showcase snapshot';
+  const basins =
+    schematic.primaryBasins.length === 1
+      ? `${schematic.primaryBasins[0]} basin`
+      : schematic.primaryBasins.length > 1
+        ? `${schematic.primaryBasins.join(' and ')} basins`
+        : 'areas outside the current showcase snapshot';
+  const boundarySentence =
+    schematic.boundaryType === 'verified_agency'
+      ? 'The service area shown is agency-published.'
+      : schematic.boundaryType === 'modeled_epa'
+        ? 'The service area shown is modeled from EPA geography.'
+        : 'Exact service-area boundaries are not shown here.';
   const violationsCount = schematic.regulatoryCompliance.totalViolationsFound;
   const windowStart = schematic.regulatoryCompliance.queryWindow.startDate;
   const windowEnd = schematic.regulatoryCompliance.queryWindow.endDate;
@@ -53,7 +62,7 @@ export function generateDeterministicSummary(
 ${heading}
 Water for public water system **${schematic.systemName} (PWSID: ${schematic.pwsid})** is primarily sourced from the **${basins}**.
 
-*Spatial Accuracy Notice:* Service area boundary type is marked as **${schematic.boundaryType.toUpperCase()}**. Flow paths and boundaries displayed on the map represent **schematic approximations** and do not depict operational engineering alignments.
+*Spatial Accuracy Notice:* ${boundarySentence} Flow paths and boundaries displayed on the map represent **schematic approximations** and do not depict operational engineering alignments.
 
 ### Reported Water Quality Metrics & Audit Provenance
 ${metricsList}
