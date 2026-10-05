@@ -266,10 +266,10 @@ export default function App() {
       <a className="skip-link" href="#chat">Skip to conversation</a>
 
       <header className="topbar">
-        <div className="brand">
+        <a className="brand" href="/" aria-label="Taproot Atlas — reload">
           <Logo size={26} />
           <span className="wordmark">Taproot Atlas</span>
-        </div>
+        </a>
         {!empty && (
           <button
             className="restart-btn"
