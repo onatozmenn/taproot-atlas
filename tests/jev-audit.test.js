@@ -19,7 +19,8 @@ describe('jevCheckNarrative', () => {
       'ok',
       'facts',
       config,
-      async () => answers({ has_ungrounded_numbers: 0.02, health_certification: 0.01, reveals_coordinates: 0.0 }),
+      async () =>
+        answers({ has_ungrounded_numbers: 0.02, health_certification: 0.01, reveals_coordinates: 0.0, off_topic: 0.0 }),
     );
     assert.equal(v?.passed, true);
     assert.equal(v?.model, 'jev-1.13.0');
@@ -30,7 +31,29 @@ describe('jevCheckNarrative', () => {
       'bad',
       'facts',
       config,
-      async () => answers({ has_ungrounded_numbers: 0.1, health_certification: 0.87, reveals_coordinates: 0.0 }),
+      async () =>
+        answers({
+          has_ungrounded_numbers: 0.1,
+          health_certification: 0.87,
+          reveals_coordinates: 0.0,
+          off_topic: 0.0,
+        }),
+    );
+    assert.equal(v?.passed, false);
+  });
+
+  it('flags off-topic answers', async () => {
+    const v = await jevCheckNarrative(
+      'bad',
+      'facts',
+      config,
+      async () =>
+        answers({
+          has_ungrounded_numbers: 0.0,
+          health_certification: 0.0,
+          reveals_coordinates: 0.0,
+          off_topic: 0.91,
+        }),
     );
     assert.equal(v?.passed, false);
   });

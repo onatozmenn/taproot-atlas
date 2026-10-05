@@ -74,23 +74,61 @@ describe('answerTapWater', () => {
     assert.ok(!all.includes('drinkable') && !all.includes('pure') && !all.includes('potable'));
   });
 
-  it('JEV flag forces fallback even when the deterministic audit passes', async () => {
+  it('JEV flag forces fallback for model output', async () => {
     const res = await answerTapWater(
       { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
-      { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: false }) },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        narrate: async (s) => ({ narrative: narrateGroundTruth(s), kind: 'llm' }),
+        jevCheck: async () => ({ passed: false }),
+      },
     );
     assert.equal(res.validationStatus.jev, 'flag');
     assert.equal(res.validationStatus.passedLlmAudit, false);
     assert.ok(res.narrative.overview.includes('Verified Water Distribution Overview'));
   });
 
-  it('JEV pass keeps the narrative and is recorded', async () => {
+  it('JEV pass keeps the model narrative and is recorded', async () => {
     const res = await answerTapWater(
       { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
-      { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: true }) },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        narrate: async (s) => ({ narrative: narrateGroundTruth(s), kind: 'llm' }),
+        jevCheck: async () => ({ passed: true }),
+      },
     );
     assert.equal(res.validationStatus.jev, 'pass');
     assert.equal(res.validationStatus.passedLlmAudit, true);
+  });
+
+  it('model output without a JEV gate falls back (fail closed)', async () => {
+    const res = await answerTapWater(
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        narrate: async (s) => ({ narrative: narrateGroundTruth(s), kind: 'llm' }),
+      },
+    );
+    assert.equal(res.validationStatus.jev, 'skipped');
+    assert.equal(res.validationStatus.passedLlmAudit, false);
+    assert.ok(res.narrative.overview.includes('Verified Water Distribution Overview'));
+  });
+
+  it('model output on an off-topic question falls back to the redirect', async () => {
+    const res = await answerTapWater(
+      { question: 'What do you think about hitler', ...SHOWCASE_CENTER },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        narrate: async (s) => ({ narrative: narrateGroundTruth(s), kind: 'llm' }),
+        jevCheck: async () => ({ passed: false }),
+      },
+    );
+    assert.equal(res.scope, 'redirect');
+    assert.ok(res.narrative.overview.includes('tap-water records'));
   });
 
   it('absent JEV records skipped without blocking', async () => {

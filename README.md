@@ -41,7 +41,7 @@ Dashboard → Project → Settings → Environment Variables:
 | `AI_BASE_URL` | Narrator root (default `https://api.openai.com/v1`; Zen: `https://opencode.ai/zen/v1`) |
 | `AI_API_MODE` | `responses` or `chat-completions` (OpenAI-compatible) |
 | `AI_MODEL` | Model id (default `gpt-4o-mini`) |
-| `AI_API_KEY` | Narrator key (empty = audited template; never commit it) |
+| `AI_API_KEY` | Narrator key (empty = audited template; never commit it) — model output additionally requires `JEV_API_KEY`, otherwise every draft falls back to template |
 | `JEV_BASE_URL` | JEV root (default `https://opencode.ai/zen`, i.e. `/v1/systemone`) |
 | `JEV_MODEL` | JEV model (default `jev-1.13-free`, free tier) |
 | `JEV_API_KEY` | Zen key for JEV (empty = deterministic audit only) |
@@ -53,11 +53,14 @@ Local check without deploying: `npm --prefix web run test` covers the handler
 ## Architecture
 
 1. **Deterministic Resolver** (single authority, `types/water-intelligence.ts` contract):
-   resolves PWSID via point-in-polygon, classifies boundary confidence
+   resolves PWSID via point-in-polygon or the curated city directory, classifies boundary confidence
    (`verified_agency` / `modeled_epa` / `unverified_fallback`), loads reported lab
    metrics + SDWIS compliance window, builds schematic GeoJSON (approximate only).
-2. **Guardrail audit** (`lib/guardrails.ts`): English-only, blocks health
-   certification, coordinate leaks, numeric/entity hallucinations.
+2. **JEV gate** (`lib/jev-audit.ts`): the model draft is judged on grounding,
+   health-certification, coordinate leaks, and off-topic answers. Pass exits;
+   flag or no verdict falls back. Deterministic template output skips the
+   judge (nothing to judge). Regex guardrails (`lib/guardrails.ts`) are
+   advisory telemetry only — logged, never blocking.
 3. **LLM narrator** (English only, `prompts/system.ts`): summarizes Resolver facts.
    Adds no numbers, coordinates, or verdicts.
 4. **Deterministic fallback** (`lib/fallback-template.ts`): provenance-first summary

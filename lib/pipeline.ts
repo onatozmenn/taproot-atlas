@@ -153,44 +153,87 @@ export async function answerTapWater(
     };
   }
 
-  // Scope gate: off-topic questions get a short redirect, never the report.
-  // A directory-city mention always counts as a water question.
+  // Routing hint, not a gate: a directory-city mention counts as water, and
+  // the template path plus fallback selection use it below. Model output is
+  // judged by JEV alone.
   const scope = dirHit ? 'water' : classifyScope(question);
+
+  const rawNarrated = await narrate(schematic);
+  const isWrapped = typeof rawNarrated === 'object' && rawNarrated !== null && 'narrative' in rawNarrated;
+  const narrative = isWrapped ? (rawNarrated as NarrateResult).narrative : (rawNarrated as Narrative);
+  const usedKind = isWrapped ? (rawNarrated as NarrateResult).kind : narratorKind;
+  const joined = joinNarrative(narrative);
+
+  // Template path: deterministic text built from Resolver facts (or the
+  // scope redirect) — nothing to judge, JEV stays skipped.
+  if (usedKind === 'template') {
+    if (scope !== 'water') {
+      const redirect = scope === 'greeting' ? greetingNarrative() : offTopicNarrative();
+      return {
+        narrative: { ...redirect, stewardshipNote: schematic.disclaimer },
+        groundTruth: schematic,
+        scope: 'redirect',
+        validationStatus: {
+          passedLlmAudit: true,
+          auditTimestamp,
+          recordSource,
+          narrator: 'template',
+          jev: 'skipped',
+        },
+      };
+    }
+    return {
+      narrative,
+      groundTruth: schematic,
+      scope: 'water' as const,
+      validationStatus: {
+        passedLlmAudit: true,
+        auditTimestamp,
+        recordSource,
+        narrator: 'template' as const,
+        jev: 'skipped' as const,
+      },
+    };
+  }
+
+  // Model path: the JEV verdict is the sole gate. The deterministic audit
+  // below is advisory telemetry only — logged, never blocking.
+  const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
+  const advisory = auditLlmNarrative(joined, resolverOutput);
+  if (!advisory.isValid) {
+    console.error(`[pipeline] advisory guardrail notes: ${advisory.violations.join(' | ')}`);
+  }
+  let jev: 'pass' | 'flag' | 'skipped' = 'skipped';
+  let valid: boolean;
+  if (deps.jevCheck) {
+    const verdict = await deps.jevCheck(joined, buildFactsMessage(schematic));
+    if (verdict) {
+      jev = verdict.passed ? 'pass' : 'flag';
+      valid = verdict.passed;
+    } else {
+      // JEV outage or unparsable verdict: fail closed, no model text exits.
+      console.error('[pipeline] JEV gave no verdict for model output; using template fallback');
+      valid = false;
+    }
+  } else {
+    // A model narrator without a judge: fail closed.
+    console.error('[pipeline] model narrator without a JEV gate; using template fallback');
+    valid = false;
+  }
+  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: usedKind, jev };
+  if (valid) {
+    return { narrative, groundTruth: schematic, scope: 'water' as const, validationStatus };
+  }
+  // Fallback selection follows the routing hint: off-topic questions get the
+  // redirect, everything else the deterministic water summary.
   if (scope !== 'water') {
     const redirect = scope === 'greeting' ? greetingNarrative() : offTopicNarrative();
     return {
       narrative: { ...redirect, stewardshipNote: schematic.disclaimer },
       groundTruth: schematic,
       scope: 'redirect',
-      validationStatus: {
-        passedLlmAudit: true,
-        auditTimestamp,
-        recordSource,
-        narrator: 'template',
-        jev: 'skipped',
-      },
+      validationStatus: { ...validationStatus, passedLlmAudit: false },
     };
-  }
-
-  const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
-  const rawNarrated = await narrate(schematic);
-  const isWrapped = typeof rawNarrated === 'object' && rawNarrated !== null && 'narrative' in rawNarrated;
-  const narrative = isWrapped ? (rawNarrated as NarrateResult).narrative : (rawNarrated as Narrative);
-  const usedKind = isWrapped ? (rawNarrated as NarrateResult).kind : narratorKind;
-  const joined = joinNarrative(narrative);
-  const audit = auditLlmNarrative(joined, resolverOutput);
-  let jev: 'pass' | 'flag' | 'skipped' = 'skipped';
-  let valid = audit.isValid;
-  if (valid && deps.jevCheck) {
-    const verdict = await deps.jevCheck(joined, buildFactsMessage(schematic));
-    if (verdict) {
-      jev = verdict.passed ? 'pass' : 'flag';
-      if (!verdict.passed) valid = false;
-    }
-  }
-  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: usedKind, jev };
-  if (valid) {
-    return { narrative, groundTruth: schematic, scope: 'water' as const, validationStatus };
   }
   const fallbackText = generateDeterministicSummary(schematic);
   // Populate all narrative fields so the UI never renders empty sections.

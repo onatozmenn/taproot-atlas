@@ -3,11 +3,12 @@
 ```
 user question (America.gov-style chat, web/)
   -> Resolver (single authority; owns PWSID, basins, metrics, SDWIS window, GeoJSON)
-  -> extractedFacts { allowedNumbers, allowedEntities }
-  -> LLM narrator (prompts/system.ts; English only; summarizes facts)
-  -> auditLlmNarrative (lib/guardrails.ts)
-      pass -> narrative + groundTruth + validationStatus.passedLlmAudit=true
-      fail -> generateDeterministicSummary (lib/fallback-template.ts), passedLlmAudit=false
+  -> narrator: deterministic template, or LLM draft (prompts/system.ts)
+  -> JEV verdict (lib/jev-audit.ts; grounding, health-cert, coords, off-topic)
+       template path -> accepted directly (nothing to judge)
+       llm + pass  -> narrative + groundTruth + validationStatus.passedLlmAudit=true
+       llm + flag/absent -> deterministic fallback (water summary or scope
+         redirect), passedLlmAudit=false. No model text exits without a verdict.
   -> web renders AnswerCard + SchematicMap + provenance links
 ```
 
@@ -16,8 +17,12 @@ user question (America.gov-style chat, web/)
 - Resolver facts are the ONLY source of numbers, basin names, parameters.
 - Narrator adds no coordinates; map geometries stay Resolver-exclusive.
 - Every metric carries testDate + reportPeriod + captureTime + sourceVersionId + sourceDocumentUrl.
-- Boundary confidence is always shown: verified_agency / modeled_epa / unverified_fallback.
-- English-only output (audit enforced); input may be any language.
+- Boundary confidence is always resolved: verified_agency / modeled_epa / unverified_fallback
+  (shown via map + compliance, not as a user-facing badge).
+- English-only output; input may be any language.
+- Deterministic guardrails (lib/guardrails.ts) are advisory telemetry only:
+  violations are logged server-side, never blocking. The JEV verdict is the
+  sole gate for model output.
 
 ## Data contracts
 

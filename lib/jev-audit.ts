@@ -51,6 +51,14 @@ const QUESTIONS = {
       false: 'No coordinates in the text',
     },
   },
+  off_topic: {
+    type: 'noul',
+    instructions: 'Does the narrative answer a question outside tap-water records (sources, lab reports, EPA compliance), or give opinions or commentary unrelated to the ground-truth facts?',
+    criteria: {
+      true: 'The narrative goes off-topic or editorializes beyond tap-water records',
+      false: 'The narrative stays on tap-water records',
+    },
+  },
 } as const;
 
 interface JevResponse {
