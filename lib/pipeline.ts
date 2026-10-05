@@ -8,7 +8,7 @@ import type {
   WaterOriginSchematic,
 } from '../types/water-intelligence.js';
 import { resolveSystem } from './geo.js';
-import { readSnapshotCompliance, echoReportUrl, ECHO_QUERY_WINDOW, pendingCompliance } from './echo.js';
+import { readSnapshotCompliance, pendingCompliance } from './echo.js';
 import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
 import { ingestNycMetrics } from './nyc.js';
 import { buildSchematicFlow, showcaseNodes, SCHEMATIC_DISCLAIMER } from './schematic.js';
@@ -68,14 +68,8 @@ function unknownSchematic(now: string): WaterOriginSchematic {
     boundaryType: 'unverified_fallback',
     primaryBasins: [],
     schematicFlow: buildSchematicFlow([]),
-    regulatoryCompliance: {
-      pwsid: 'UNKNOWN',
-      queryWindow: { ...ECHO_QUERY_WINDOW },
-      totalViolationsFound: 0,
-      records: [],
-      echoReportUrl: echoReportUrl('UNKNOWN'),
-      dataCaptureTime: now,
-    },
+    // Pending, not zero: there are no records here to count.
+    regulatoryCompliance: pendingCompliance('UNKNOWN', now),
     latestReportedMetrics: [],
     disclaimer: `${PUBLIC_HEALTH_NOTICE} Nearby public drinking-water points can be looked up via OpenStreetMap; boundaries there are unverified. ${SCHEMATIC_DISCLAIMER}`,
   };

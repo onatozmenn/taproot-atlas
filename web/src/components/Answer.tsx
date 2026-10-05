@@ -95,7 +95,7 @@ export function SourcePanel({ answer }: { answer: TapAnswer }) {
         className="source-pill toggle"
         aria-expanded={open}
         aria-controls={`compliance-${answer.pwsid}`}
-        title={`${answer.systemName} · ${answer.pwsid} — compliance proofs`}
+        title={`${answer.systemName} · ${answer.pwsid}: compliance proofs`}
         onClick={() => setOpen((o) => !o)}
       >
         <Logo size={15} />

@@ -157,6 +157,17 @@ describe('answerTapWater', () => {
     );
     assert.equal(res.scope, 'water');
     assert.ok(res.narrative.overview.includes('NY7003493'));
+    assert.ok(res.narrative.overview.includes('2024 Annual'));
+    assert.ok(!res.narrative.overview.includes('—'));
+  });
+
+  it('unknown areas get pending compliance, never a zero-violations claim', async () => {
+    const res = await answerTapWater(
+      { question: 'Ankara water?', lat: 39.9, lon: 32.8 },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.groundTruth.regulatoryCompliance.snapshotPending, true);
+    assert.ok(res.narrative.complianceNote.includes('not yet curated'));
   });
 
   it('smalltalk gets a greeting redirect, never the report', async () => {

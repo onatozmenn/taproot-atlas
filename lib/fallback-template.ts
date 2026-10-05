@@ -58,9 +58,16 @@ export function generateDeterministicSummary(
         `- **Record Verified At:** ${schematic.regulatoryCompliance.dataCaptureTime}`,
       ].join('\n');
 
+  const detailSentence =
+    schematic.latestReportedMetrics.length > 0
+      ? `The ${schematic.latestReportedMetrics[0].provenance.reportPeriod} report's lab metrics ` +
+        `and the ${windowStart} to ${windowEnd} compliance record are detailed below.`
+      : 'Lab metrics and compliance records for this system are not yet curated, ' +
+        'so verify live records at the linked ECHO profile.';
+
   return `
 ${heading}
-Water for public water system **${schematic.systemName} (PWSID: ${schematic.pwsid})** is primarily sourced from the **${basins}**.
+Water for public water system **${schematic.systemName} (PWSID: ${schematic.pwsid})** is primarily sourced from the **${basins}**. ${detailSentence}
 
 *Spatial Accuracy Notice:* ${boundarySentence} Flow paths and boundaries displayed on the map represent **schematic approximations** and do not depict operational engineering alignments.
 

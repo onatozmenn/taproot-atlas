@@ -306,7 +306,7 @@ export default function App() {
       <a className="skip-link" href="#chat">Skip to conversation</a>
 
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Taproot Atlas — reload">
+        <a className="brand" href="/" aria-label="Taproot Atlas, reload homepage">
           <Logo size={26} />
           <span className="wordmark">Taproot Atlas</span>
         </a>
@@ -330,7 +330,7 @@ export default function App() {
       <main className="chat" ref={boxRef} id="chat" aria-live="polite">
         {empty ? (
           <div className="hero">
-            <h1>Hello — where does your tap water come from?</h1>
+            <h1>Hello, where does your tap water come from?</h1>
             <p className="lede">Whatever you need to know about your water, start here.</p>
             <div className="hero-composer">
               <Composer
@@ -419,7 +419,7 @@ export default function App() {
             label="Ask a follow-up"
           />
           <p className="foot-note">
-            Demonstration snapshot · EPA / NYC open data · Reports only — never a safety verdict. Verify at the
+            Demonstration snapshot · EPA / NYC open data · Reports only. Never a safety verdict. Verify at the
             official source.
           </p>
         </footer>

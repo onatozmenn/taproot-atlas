@@ -1,8 +1,8 @@
 // lib/narrator.ts — ground-truth narrator (supports #6, prompt v2 in prompts/system.ts).
 // Offline template stand-in for the LLM narrator: it ONLY rephrases Resolver facts
-// (same numbers, basins, parameters, feature labels) so its output passes audit.
+// (same numbers, basins, parameters, feature labels) in plain user-facing words.
 // Production swaps this function for an LLM call with WATER_INTELLIGENCE_SYSTEM_PROMPT;
-// the audit + fallback contract is unchanged.
+// the JEV gate + fallback contract is unchanged.
 import type {
   QualityMetricRecord,
   WaterOriginSchematic,
@@ -36,9 +36,17 @@ export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
       : schematic.boundaryType === 'modeled_epa'
         ? 'The service area shown is modeled from EPA geography'
         : 'Exact service-area boundaries are not shown here';
+  const { startDate: windowStart, endDate: windowEnd } = schematic.regulatoryCompliance.queryWindow;
+  const detailPhrase =
+    schematic.latestReportedMetrics.length > 0
+      ? `The ${schematic.latestReportedMetrics[0].provenance.reportPeriod} report's lab metrics ` +
+        `and the ${windowStart} to ${windowEnd} compliance record are detailed below.`
+      : 'Lab metrics and compliance records for this system are not yet curated, ' +
+        'so verify live records at the linked ECHO profile.';
   const overview =
     `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}) ` +
     `is sourced from ${basinPhrase}. ` +
+    `${detailPhrase} ` +
     `${boundaryPhrase}; paths on the map are schematic approximations.`;
 
   const metricsSummary =
