@@ -62,6 +62,15 @@ export interface NearbyDrinkingPoint {
   osmUrl: string;
 }
 
+/** Reported treatment profile (descriptive facts only, never a grade). */
+export interface TreatmentProfile {
+  pwsid: string;
+  processes: string[];
+  /** e.g. "Unfiltered surface water, disinfected". Null when too thin. */
+  rigor: string | null;
+  dataCaptureTime: string;
+}
+
 export interface WaterOriginSchematic {
   pwsid: string;
   systemName: string;
@@ -86,6 +95,8 @@ export interface WaterOriginSchematic {
   nearbyDrinkingPoints?: NearbyDrinkingPoint[];
   /** EPA source-water kind, when the system comes from the directory. */
   sourceKind?: 'groundwater' | 'surface' | 'unknown';
+  /** Reported treatment profile (fixture or live, best effort). */
+  treatment?: TreatmentProfile;
   disclaimer: string;
 }
 

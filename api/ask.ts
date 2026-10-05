@@ -8,6 +8,7 @@ import { narrateGroundTruth } from '../lib/narrator.js';
 import { llmNarrate } from '../lib/llm-narrator.js';
 import { jevCheckNarrative } from '../lib/jev-audit.js';
 import { fetchLiveCompliance } from '../lib/echo-live.js';
+import { fetchTreatment, readTreatmentFixture } from '../lib/treatment.js';
 
 interface AskRequest {
   body?: { question?: unknown; lat?: unknown; lon?: unknown };
@@ -79,6 +80,17 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
               recordSource: 'live_fetch' as const,
             }
           : { recordSource: 'snapshot_fixture' as const }),
+        ...(liveEcho
+          ? {
+              fetchTreatmentProfile: async (pwsid: string) => {
+                try {
+                  return await fetchTreatment(pwsid, { timeoutMs: 8000 });
+                } catch {
+                  return readTreatmentFixture(pwsid);
+                }
+              },
+            }
+          : {}),
         ...(apiKey
           ? {
               narratorKind: 'llm' as const,

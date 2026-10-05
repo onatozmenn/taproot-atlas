@@ -6,10 +6,11 @@ import type {
   ResolverOutput,
   ValidatedApiResponse,
   WaterOriginSchematic,
+  SdwisComplianceProfile,
+  TreatmentProfile,
 } from '../types/water-intelligence.js';
 import { resolveSystem } from './geo.js';
 import { readSnapshotCompliance, pendingCompliance } from './echo.js';
-import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
 import { loadCityMetrics } from './city-metrics.js';
 import { buildSchematicFlow, showcaseNodes, SCHEMATIC_DISCLAIMER } from './schematic.js';
 import { narrateGroundTruth, joinNarrative, type Narrative } from './narrator.js';
@@ -19,6 +20,7 @@ import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
 import { findSystemByText, getDirectorySystem } from './systems.js';
 import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
+import { fetchTreatment, describeTreatment, readTreatmentFixture } from './treatment.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -50,6 +52,11 @@ export interface PipelineDeps {
    * (fail-soft, 8s); inject a stub in tests. Never blocks the answer.
    */
   findNearby?: (lat: number, lon: number) => Promise<DrinkingPoint[]>;
+  /**
+   * Treatment-profile lookup. Defaults to curated fixtures only (no network);
+   * live callers wrap fetchTreatment with fixture fallback. Fail-soft.
+   */
+  fetchTreatmentProfile?: (pwsid: string) => Promise<TreatmentProfile | null>;
   now?: () => string;
 }
 
@@ -93,6 +100,7 @@ export async function answerTapWater(
     narrate = narrateGroundTruth,
     narratorKind = deps.narrate ? 'llm' : 'template',
     findNearby = (aLat: number, aLon: number) => findDrinkingPoints(aLat, aLon, { timeoutMs: 8000 }),
+    fetchTreatmentProfile = async (pwsid: string) => readTreatmentFixture(pwsid),
   } = deps;
   const question = (input.question ?? '').slice(0, 2000);  const rawLat = input.lat ?? SHOWCASE_CENTER.lat;
   const rawLon = input.lon ?? SHOWCASE_CENTER.lon;
@@ -145,6 +153,7 @@ export async function answerTapWater(
       systemName: resolved.pwsid !== 'UNKNOWN' ? resolved.systemName : (dirSystem?.systemName ?? 'NYC DEP Catskill-Delaware'),
       boundaryType: 'modeled_epa',
       primaryBasins: basins,
+      sourceKind: 'surface',
       schematicFlow: buildSchematicFlow(showcaseNodes(basins)),
       regulatoryCompliance: compliance,
       latestReportedMetrics: metrics,
@@ -199,6 +208,21 @@ export async function answerTapWater(
       latestReportedMetrics: loadCityMetrics(dir.pwsid),
       disclaimer: `${PUBLIC_HEALTH_NOTICE} ${SCHEMATIC_DISCLAIMER}`,
     };
+    }
+  }
+
+  // Best-effort treatment profile (fixture or live delegate). Never blocks.
+  if (effectivePwsid !== 'UNKNOWN') {
+    try {
+      const profile = await fetchTreatmentProfile(effectivePwsid);
+      if (profile) {
+        schematic.treatment = {
+          ...profile,
+          rigor: describeTreatment(profile.processes, schematic.sourceKind),
+        };
+      }
+    } catch {
+      // Omit the section; honesty over completeness.
     }
   }
 

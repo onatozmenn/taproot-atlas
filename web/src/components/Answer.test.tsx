@@ -12,6 +12,8 @@ const base: TapAnswer = {
   scope: 'water',
   compliancePending: false,
   nearbyPoints: [],
+  treatment: null,
+  recordTier: 'none-found',
   basins: ['Catskill', 'Delaware'],
   overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',
   details: '',
@@ -97,6 +99,24 @@ describe('AnswerCard', () => {
     const { container } = render(<AnswerCard answer={withPoints} />);
     expect(container.textContent).toContain('Park fountain');
     expect(container.textContent).toContain('Unverified community data');
+  });
+
+  it('shows the treatment rigor and record tier when present', () => {
+    const treated = {
+      ...base,
+      treatment: { rigor: 'Unfiltered surface water, disinfected', processes: ['GASEOUS CHLORINATION, PRE'] },
+      recordTier: 'none-found' as const,
+    };
+    const { container } = render(<AnswerCard answer={treated} />);
+    expect(container.textContent).toContain('Unfiltered surface water, disinfected');
+    expect(container.textContent).toContain('Gaseous Chlorination, Pre');
+    expect(container.textContent).toContain('No violations found');
+  });
+
+  it('hides the treatment section without a profile or curated record', () => {
+    const bare = { ...base, treatment: null, recordTier: 'unknown-pending' as const };
+    const { container } = render(<AnswerCard answer={bare} />);
+    expect(container.textContent).not.toContain('Treatment and compliance record');
   });
 
   it('toggles the compliance proofs open and closed', () => {

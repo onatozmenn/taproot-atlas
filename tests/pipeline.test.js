@@ -294,6 +294,19 @@ describe('answerTapWater', () => {
     assert.ok(res.narrative.metricsSummary.includes('Turbidity'));
   });
 
+  it('attaches the treatment profile with a rigor label', async () => {
+    const res = await answerTapWater(
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.ok(res.groundTruth.treatment);
+    assert.equal(
+      res.groundTruth.treatment.rigor,
+      'Unfiltered surface water, disinfected',
+    );
+    assert.ok(res.groundTruth.treatment.processes.includes('FLUORIDATION'));
+  });
+
   it('explicit coordinates in a Verified ring keep the verified verdict', async () => {
     const res = await answerTapWater(
       { question: 'tell me about the water here', lat: 34.05, lon: -118.25 },

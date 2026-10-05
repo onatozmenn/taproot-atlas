@@ -10,6 +10,7 @@ All datasets are versioned snapshots under `data/`. Re-ingests ship a new
 | `echo-nyc.json` | **Demonstration fixture** in ECHO SDWIS record shape for NY7003493 (NOT a captured EPA response) | 2021-01-01 → 2026-01-01 | 2026-01-02 | Fixture; verify live records at the `sourceQueryUrl` inside the file |
 | `nyc-2024.json` | NYC DEP Annual Drinking Water Supply and Quality Report, curated extract (2024 report) | 2024 Annual | 2026-01-02 | NYC public data; source doc linked per metric |
 | `chi-2025.json` | City of Chicago 2025 Water Quality Report, curated extract (coliform + turbidity; lead omitted — ambiguous table extraction) | 2025 Annual | 2026-10-06 | Chicago public data; testDate uses report-year-end granularity, documented in-file |
+| `treatment-nyc.json` | Reported SDWIS TREATMENT processes for NY7003493 via Envirofacts efservice (verified 2026-10-06) | n/a (treatment snapshot) | 2026-10-06 | EPA public data; plain-English process phrases only |
 | `us-systems.json` | Top-100 US community water systems by population served, from EPA SDWIS (Envirofacts efservice WATER_SYSTEM: active CWS serving >100k, largest per city). Map centers geocoded via OSM Nominatim. Rebuild: `python scripts/pull-us-systems.py` | 2021-01-01 → 2026-01-01 (compliance window) | capture per pull | EPA SDWIS (PWSID/city/pop) + OSM (centers); only the 4 curated entries ship verified basins and utility links (see `verificationSources` in-file) |
 
 ## Boundary confidence

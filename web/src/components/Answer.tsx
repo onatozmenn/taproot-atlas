@@ -78,6 +78,43 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
           <MetricsTable metrics={answer.metrics} />
         </>
       )}
+      {(answer.treatment || answer.recordTier !== 'unknown-pending') && (
+        <>
+          <h4>Treatment and compliance record</h4>
+          {answer.treatment?.rigor ? (
+            <p className="rigor-line">{answer.treatment.rigor}.</p>
+          ) : (
+            <p className="rigor-line">No treatment profile available.</p>
+          )}
+          {answer.treatment && answer.treatment.processes.length > 0 && (
+            <div className="process-chips" aria-label="Reported treatment processes">
+              {answer.treatment.processes.map((proc) => (
+                <span key={proc} className="process-chip">
+                  {proc.toLowerCase().replace(/(^|\s|-)(\S)/g, (m) => m.toUpperCase())}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="tier-line">
+            {answer.recordTier === 'unknown-pending' &&
+              'Compliance records are not yet curated for this window.'}
+            {answer.recordTier === 'none-found' &&
+              `No violations found in the ${answer.windowStart} to ${answer.windowEnd} window.`}
+            {answer.recordTier === 'monitoring-only' &&
+              `Only monitoring and reporting violations on record in the ${answer.windowStart} to ${answer.windowEnd} window.`}
+            {answer.recordTier === 'health-based' && (
+              <>
+                Health-based violations on record in the {answer.windowStart} to {answer.windowEnd}{' '}
+                window. Check the{' '}
+                <a href={answer.echoUrl} target="_blank" rel="noreferrer">
+                  linked ECHO profile<span className="ext" aria-hidden="true">↗</span>
+                </a>
+                .
+              </>
+            )}
+          </p>
+        </>
+      )}
       {answer.nearbyPoints.length > 0 && (
         <>
           <h4>Nearby public drinking-water points</h4>

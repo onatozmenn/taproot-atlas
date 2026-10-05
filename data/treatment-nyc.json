@@ -1,0 +1,15 @@
+{
+  "snapshotVersion": "treatment-nyc-2026-10-v1",
+  "captureTime": "2026-10-06T00:00:00Z",
+  "provenanceNote": "Reported treatment processes for NY7003493 from EPA SDWIS TREATMENT table via Envirofacts efservice (verified 2026-10-06). Deduplicated process phrases; codes not interpreted beyond their plain-English comments.",
+  "source": "https://data.epa.gov/efservice",
+  "pwsid": "NY7003493",
+  "processes": [
+    "GASEOUS CHLORINATION, PRE",
+    "GASEOUS CHLORINATION, POST",
+    "HYPOCHLORINATION, POST",
+    "FLUORIDATION",
+    "INHIBITOR, ORTHOPHOSPHATE",
+    "PH ADJUSTMENT, POST"
+  ]
+}
