@@ -53,7 +53,6 @@ describe('AnswerCard', () => {
     expect(screen.getByText(/2024 Annual/)).toBeInTheDocument();
     expect(screen.getByText('Within standard')).toBeInTheDocument();
     expect(screen.getByText('Verify')).toBeInTheDocument();
-    expect(screen.getByText(/Catskill Watershed/)).toBeInTheDocument();
   });
 
   it('exposes the ECHO compliance proofs behind the source toggle', () => {

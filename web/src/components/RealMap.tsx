@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowRight01Icon, FactoryIcon, Home01Icon, WavesIcon } from '@hugeicons/core-free-icons';
 import type { TapAnswer } from '../api';
 import { mapView, flowBounds } from '../geo-view';
 
@@ -16,12 +14,6 @@ import { mapView, flowBounds } from '../geo-view';
  */
 
 let protomapsProtocolRegistered = false;
-
-const ROLE_ICON = {
-  watershed: { icon: WavesIcon, cls: 'flow-blue', label: 'Watershed' },
-  treatment_facility: { icon: FactoryIcon, cls: 'flow-amber', label: 'Treatment' },
-  distribution_zone: { icon: Home01Icon, cls: 'flow-green', label: 'Tap zone' },
-} as const;
 
 export function RealMap({ answer }: { answer: TapAnswer }) {
   const divRef = useRef<HTMLDivElement>(null);
@@ -230,35 +222,6 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
           role="application"
           aria-label={`Map of ${answer.basins.join(' and ') || 'unverified area'} water flow`}
         />
-      )}
-      {answer.flow.length > 0 ? (
-        <ol className="flow-strip" aria-label="Schematic water flow">
-          {answer.flow.map((f, i) => {
-            const meta =
-              ROLE_ICON[f.role as keyof typeof ROLE_ICON] ??
-              ({ icon: WavesIcon, cls: 'flow-blue', label: f.role.replace(/_/g, ' ') } as const);
-            return (
-              <React.Fragment key={f.label}>
-                {i > 0 && (
-                  <li className="flow-sep" aria-hidden="true">
-                    <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
-                  </li>
-                )}
-                <li className="flow-node" title={`${f.label} (${f.role.replace(/_/g, ' ')})`}>
-                  <span className={`flow-dot ${meta.cls}`}>
-                    <HugeiconsIcon icon={meta.icon} size={18} />
-                  </span>
-                  <span className="flow-text">
-                    <strong>{f.label}</strong>
-                    <span className="flow-role">{meta.label}</span>
-                  </span>
-                </li>
-              </React.Fragment>
-            );
-          })}
-        </ol>
-      ) : (
-        <p className="map-fallback">Outside showcase snapshot — unverified area</p>
       )}
     </div>
   );
