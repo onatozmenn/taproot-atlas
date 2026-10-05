@@ -1076,6 +1076,7 @@
       "city": "Haworth",
       "state": "NJ",
       "aliases": [
+        "hackensack",
         "haworth"
       ],
       "center": [
@@ -1083,9 +1084,19 @@
         40.9609
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Hackensack River",
+          "at": [
+            -74.0,
+            40.95
+          ]
+        }
+      ],
       "populationServed": 792713,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.veolianorthamerica.com/media/press-releases/veolia-celebrates-centennial-oradell-dam",
+      "reportUrl": "https://www.veolianorthamerica.com/media/press-releases/veolia-celebrates-centennial-oradell-dam"
     },
     {
       "pwsid": "OH3102612",
@@ -1100,9 +1111,26 @@
         39.1013
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Ohio River",
+          "at": [
+            -84.5,
+            39.1
+          ]
+        },
+        {
+          "name": "Great Miami Aquifer",
+          "at": [
+            -84.4,
+            39.35
+          ]
+        }
+      ],
       "populationServed": 750200,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.cincinnati-oh.gov/water/water-quality-and-treatment/water-sources-resource-protection/",
+      "reportUrl": "https://www.cincinnati-oh.gov/water/water-quality-and-treatment/water-sources-resource-protection/"
     },
     {
       "pwsid": "TX0710002",
@@ -1117,9 +1145,26 @@
         31.7601
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Rio Grande",
+          "at": [
+            -106.45,
+            31.8
+          ]
+        },
+        {
+          "name": "Hueco Bolson",
+          "at": [
+            -106.2,
+            31.9
+          ]
+        }
+      ],
       "populationServed": 747168,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.epwater.org/our-water/water-resources",
+      "reportUrl": "https://www.epwater.org/our-water/water-resources"
     },
     {
       "pwsid": "GA0890001",
@@ -1151,9 +1196,19 @@
         27.945
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Hillsborough River",
+          "at": [
+            -82.45,
+            28.05
+          ]
+        }
+      ],
       "populationServed": 733886,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.tampa.gov/water",
+      "reportUrl": "https://www.tampa.gov/water"
     },
     {
       "pwsid": "GA0670003",
@@ -1161,6 +1216,7 @@
       "city": "Marietta",
       "state": "GA",
       "aliases": [
+        "cobb",
         "marietta"
       ],
       "center": [
@@ -1168,9 +1224,26 @@
         33.9528
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Chattahoochee River",
+          "at": [
+            -84.55,
+            33.9
+          ]
+        },
+        {
+          "name": "Lake Allatoona",
+          "at": [
+            -84.7,
+            34.15
+          ]
+        }
+      ],
       "populationServed": 695000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.cobbcounty.gov/water",
+      "reportUrl": "https://www.cobbcounty.gov/water"
     },
     {
       "pwsid": "PA5020039",
@@ -1178,16 +1251,27 @@
       "city": "Elrama",
       "state": "PA",
       "aliases": [
-        "elrama"
+        "elrama",
+        "pittsburgh"
       ],
       "center": [
         -79.925,
         40.252
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Allegheny River",
+          "at": [
+            -79.95,
+            40.45
+          ]
+        }
+      ],
       "populationServed": 686000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.pgh2o.com/your-water/water-quality-treatment",
+      "reportUrl": "https://www.pgh2o.com/your-water/water-quality-treatment"
     },
     {
       "pwsid": "MA3035000",
@@ -1202,9 +1286,26 @@
         42.3588
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Quabbin Reservoir",
+          "at": [
+            -72.3,
+            42.3
+          ]
+        },
+        {
+          "name": "Wachusett Reservoir",
+          "at": [
+            -71.7,
+            42.4
+          ]
+        }
+      ],
       "populationServed": 675647,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.bwsc.org/environment-education/water-sewer-and-stormwater/water-system",
+      "reportUrl": "https://www.bwsc.org/environment-education/water-sewer-and-stormwater/water-system"
     },
     {
       "pwsid": "FL4504393",
@@ -1212,6 +1313,7 @@
       "city": "West Palm Beach",
       "state": "FL",
       "aliases": [
+        "west palm",
         "west palm beach"
       ],
       "center": [
@@ -1219,9 +1321,19 @@
         26.7154
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Grassy Waters Preserve",
+          "at": [
+            -80.15,
+            26.75
+          ]
+        }
+      ],
       "populationServed": 671114,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.wpb.org/Departments/Public-Utilities/Our-Watershed",
+      "reportUrl": "https://www.wpb.org/Departments/Public-Utilities/Our-Watershed"
     },
     {
       "pwsid": "KY0340250",

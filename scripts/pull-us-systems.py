@@ -249,6 +249,60 @@ CURATED = {
         "reportUrl": "https://www.aquawater.com/all-about-water-wastewater/water-quality",
         "metricsCurated": False,
     },
+    "OH3102612": {
+        "basins": [{"name": "Ohio River", "at": [-84.5, 39.1]}, {"name": "Great Miami Aquifer", "at": [-84.4, 39.35]}],
+        "utilityUrl": "https://www.cincinnati-oh.gov/water/water-quality-and-treatment/water-sources-resource-protection/",
+        "reportUrl": "https://www.cincinnati-oh.gov/water/water-quality-and-treatment/water-sources-resource-protection/",
+        "metricsCurated": False,
+    },
+    "TX0710002": {
+        "aliases": ["el paso"],
+        "basins": [{"name": "Rio Grande", "at": [-106.45, 31.8]}, {"name": "Hueco Bolson", "at": [-106.2, 31.9]}],
+        "utilityUrl": "https://www.epwater.org/our-water/water-resources",
+        "reportUrl": "https://www.epwater.org/our-water/water-resources",
+        "metricsCurated": False,
+    },
+    "FL6290327": {
+        "basins": [{"name": "Hillsborough River", "at": [-82.45, 28.05]}],
+        "utilityUrl": "https://www.tampa.gov/water",
+        "reportUrl": "https://www.tampa.gov/water",
+        "metricsCurated": False,
+    },
+    "GA0670003": {
+        "aliases": ["marietta", "cobb"],
+        "basins": [{"name": "Chattahoochee River", "at": [-84.55, 33.9]}, {"name": "Lake Allatoona", "at": [-84.7, 34.15]}],
+        "utilityUrl": "https://www.cobbcounty.gov/water",
+        "reportUrl": "https://www.cobbcounty.gov/water",
+        "metricsCurated": False,
+    },
+    "PA5020039": {
+        "aliases": ["elrama", "pittsburgh"],
+        "basins": [{"name": "Allegheny River", "at": [-79.95, 40.45]}],
+        "utilityUrl": "https://www.pgh2o.com/your-water/water-quality-treatment",
+        "reportUrl": "https://www.pgh2o.com/your-water/water-quality-treatment",
+        "metricsCurated": False,
+    },
+    "NJ0238001": {
+        "aliases": ["haworth", "hackensack"],
+        "basins": [{"name": "Hackensack River", "at": [-74.0, 40.95]}],
+        "utilityUrl": "https://www.veolianorthamerica.com/media/press-releases/veolia-celebrates-centennial-oradell-dam",
+        "reportUrl": "https://www.veolianorthamerica.com/media/press-releases/veolia-celebrates-centennial-oradell-dam",
+        "metricsCurated": False,
+    },
+    "MA3035000": {
+        "aliases": ["boston"],
+        "basins": [{"name": "Quabbin Reservoir", "at": [-72.3, 42.3]}, {"name": "Wachusett Reservoir", "at": [-71.7, 42.4]}],
+        "utilityUrl": "https://www.bwsc.org/environment-education/water-sewer-and-stormwater/water-system",
+        "reportUrl": "https://www.bwsc.org/environment-education/water-sewer-and-stormwater/water-system",
+        "metricsCurated": False,
+    },
+    "FL4504393": {
+        "aliases": ["west palm beach", "west palm"],
+        "basins": [{"name": "Grassy Waters Preserve", "at": [-80.15, 26.75]}],
+        "utilityUrl": "https://www.wpb.org/Departments/Public-Utilities/Our-Watershed",
+        "reportUrl": "https://www.wpb.org/Departments/Public-Utilities/Our-Watershed",
+        "metricsCurated": False,
+    },
 }
 
 UA = {"User-Agent": "taproot-atlas/0.1.0 (water-intelligence; contact: showcase-only demo)"}
