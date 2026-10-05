@@ -91,7 +91,10 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
           style: style as never,
           center: [center[1], center[0]],
           zoom,
-          scrollZoom: false,
+          // Direct interaction: wheel zoom on hover, pinch zoom on touch.
+          scrollZoom: true,
+          touchZoomRotate: true,
+          doubleClickZoom: true,
           attributionControl: { compact: true },
         });
 
