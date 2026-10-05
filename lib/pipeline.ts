@@ -8,7 +8,7 @@ import type {
   WaterOriginSchematic,
 } from '../types/water-intelligence.js';
 import { resolveSystem } from './geo.js';
-import { readSnapshotCompliance, echoReportUrl, ECHO_QUERY_WINDOW } from './echo.js';
+import { readSnapshotCompliance, echoReportUrl, ECHO_QUERY_WINDOW, pendingCompliance } from './echo.js';
 import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
 import { ingestNycMetrics } from './nyc.js';
 import { buildSchematicFlow, showcaseNodes, SCHEMATIC_DISCLAIMER } from './schematic.js';
@@ -17,6 +17,7 @@ import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
+import { findSystemByText } from './systems.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -99,28 +100,62 @@ export async function answerTapWater(
   const lon = isValidCoord(rawLat, rawLon) ? rawLon : SHOWCASE_CENTER.lon;
 
   const resolved = resolveSystem(lat, lon);
+  // Directory match upgrades off-topic-looking questions ("houston?") to water.
+  const dirHit = findSystemByText(question);
+  // A named city wins over the coordinate polygon: the web chat sends no
+  // location, so coords are usually just the NYC default. An explicit city
+  // mention is the stronger signal of user intent.
+  const dirSystem =
+    dirHit && (resolved.pwsid === 'UNKNOWN' || dirHit.pwsid !== resolved.pwsid) ? dirHit : null;
+  // Effective system: named directory city first, else polygon, else unknown.
+  const effectivePwsid = dirSystem ? dirSystem.pwsid : resolved.pwsid;
   let schematic: WaterOriginSchematic;
-  if (resolved.pwsid === 'UNKNOWN') {
+  if (effectivePwsid === 'UNKNOWN') {
     schematic = unknownSchematic(auditTimestamp);
-  } else {
+  } else if (effectivePwsid === 'NY7003493') {
+    const basins = resolved.pwsid !== 'UNKNOWN' ? resolved.primaryBasins : (dirSystem?.basins.map((b) => b.name) ?? []);
     const [compliance, metrics] = await Promise.all([
-      fetchEcho(resolved.pwsid),
-      Promise.resolve(ingestNycMetrics(resolved.pwsid)),
+      fetchEcho(effectivePwsid),
+      Promise.resolve(ingestNycMetrics(effectivePwsid)),
     ]);
     schematic = {
-      pwsid: resolved.pwsid,
-      systemName: resolved.systemName,
-      boundaryType: resolved.boundaryType,
-      primaryBasins: resolved.primaryBasins,
-      schematicFlow: buildSchematicFlow(showcaseNodes(resolved.primaryBasins)),
+      pwsid: effectivePwsid,
+      systemName: resolved.pwsid !== 'UNKNOWN' ? resolved.systemName : (dirSystem?.systemName ?? 'NYC DEP Catskill-Delaware'),
+      boundaryType: 'modeled_epa',
+      primaryBasins: basins,
+      schematicFlow: buildSchematicFlow(showcaseNodes(basins)),
       regulatoryCompliance: compliance,
       latestReportedMetrics: metrics,
+      disclaimer: `${PUBLIC_HEALTH_NOTICE} ${SCHEMATIC_DISCLAIMER}`,
+    };
+  } else {
+    // Curated directory city without a vendored polygon: honest unverified
+    // boundary, curated basins, pending compliance, no lab metrics yet.
+    const dir = dirSystem!;
+    const [clon, clat] = dir.center;
+    schematic = {
+      pwsid: dir.pwsid,
+      systemName: dir.systemName,
+      boundaryType: dir.boundaryType,
+      primaryBasins: dir.basins.map((b) => b.name),
+      schematicFlow: buildSchematicFlow([
+        ...dir.basins.map((b) => ({
+          label: `${b.name} Watershed`,
+          role: 'watershed' as const,
+          at: b.at,
+        })),
+        { label: 'Treatment Facility', role: 'treatment_facility' as const, at: [clon + 0.07, clat + 0.12] },
+        { label: 'Distribution Zone', role: 'distribution_zone' as const, at: [clon, clat] },
+      ]),
+      regulatoryCompliance: pendingCompliance(dir.pwsid, auditTimestamp),
+      latestReportedMetrics: [],
       disclaimer: `${PUBLIC_HEALTH_NOTICE} ${SCHEMATIC_DISCLAIMER}`,
     };
   }
 
   // Scope gate: off-topic questions get a short redirect, never the report.
-  const scope = classifyScope(question);
+  // A directory-city mention always counts as a water question.
+  const scope = dirHit ? 'water' : classifyScope(question);
   if (scope !== 'water') {
     const redirect = scope === 'greeting' ? greetingNarrative() : offTopicNarrative();
     return {

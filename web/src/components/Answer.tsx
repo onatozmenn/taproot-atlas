@@ -56,18 +56,33 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
         </>
       )}
       <h4>Regulatory compliance (EPA SDWIS)</h4>
-      <ul>
-        <li>
-          Monitored period: {answer.windowStart} to {answer.windowEnd}
-        </li>
-        <li>Violations recorded: {answer.violations} in window</li>
-        <li>
-          <a href={answer.echoUrl} target="_blank" rel="noreferrer">
-            Access EPA ECHO system profile
-          </a>
-        </li>
-        <li>Record verified at: {answer.verifiedAt}</li>
-      </ul>
+      {answer.compliancePending ? (
+        <ul>
+          <li>
+            Monitored period: {answer.windowStart} to {answer.windowEnd}
+          </li>
+          <li>Records for this system are not yet curated in the snapshot.</li>
+          <li>
+            <a href={answer.echoUrl} target="_blank" rel="noreferrer">
+              Verify live records at EPA ECHO
+            </a>
+          </li>
+          <li>Record checked at: {answer.verifiedAt}</li>
+        </ul>
+      ) : (
+        <ul>
+          <li>
+            Monitored period: {answer.windowStart} to {answer.windowEnd}
+          </li>
+          <li>Violations recorded: {answer.violations} in window</li>
+          <li>
+            <a href={answer.echoUrl} target="_blank" rel="noreferrer">
+              Access EPA ECHO system profile
+            </a>
+          </li>
+          <li>Record verified at: {answer.verifiedAt}</li>
+        </ul>
+      )}
     </div>
   );
 }

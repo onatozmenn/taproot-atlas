@@ -80,6 +80,27 @@ export function readSnapshotCompliance(
   return toProfile(pwsid, echoFixture as unknown as EchoSnapshotShape, window, now);
 }
 
+/**
+ * Honest empty state for curated directory systems with no snapshot yet.
+ * totalViolationsFound stays 0 with snapshotPending: true — consumers must
+ * never present it as "0 violations found"; the live ECHO profile owns
+ * compliance until a snapshot is curated.
+ */
+export function pendingCompliance(
+  pwsid: string,
+  now: string = new Date().toISOString(),
+): SdwisComplianceProfile {
+  return {
+    pwsid,
+    queryWindow: { ...ECHO_QUERY_WINDOW },
+    totalViolationsFound: 0,
+    records: [],
+    echoReportUrl: echoReportUrl(pwsid),
+    dataCaptureTime: now,
+    snapshotPending: true,
+  };
+}
+
 export interface EchoClientOptions {
   /** Live ECHO endpoint returning the EchoSnapshotShape contract (documented in docs/DATA.md). */
   sourceUrl: string;

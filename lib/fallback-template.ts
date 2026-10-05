@@ -35,6 +35,20 @@ export function generateDeterministicSummary(
     ? '### Unverified Area Overview'
     : '### Verified Water Distribution Overview';
 
+  const complianceBlock = schematic.regulatoryCompliance.snapshotPending
+    ? [
+        `- **Monitored Period:** ${windowStart} to ${windowEnd}`,
+        `- **Snapshot Status:** Compliance records for this system are not yet curated in the snapshot.`,
+        `- **Enforcement History:** [Access EPA ECHO System Profile](${schematic.regulatoryCompliance.echoReportUrl})`,
+        `- **Record Verified At:** ${schematic.regulatoryCompliance.dataCaptureTime}`,
+      ].join('\n')
+    : [
+        `- **Monitored Period:** ${windowStart} to ${windowEnd}`,
+        `- **Violations Recorded:** ${violationsCount} violation(s) found in statutory audit window.`,
+        `- **Enforcement History:** [Access EPA ECHO System Profile](${schematic.regulatoryCompliance.echoReportUrl})`,
+        `- **Record Verified At:** ${schematic.regulatoryCompliance.dataCaptureTime}`,
+      ].join('\n');
+
   return `
 ${heading}
 Water for public water system **${schematic.systemName} (PWSID: ${schematic.pwsid})** is primarily sourced from the **${basins}**.
@@ -45,10 +59,7 @@ Water for public water system **${schematic.systemName} (PWSID: ${schematic.pwsi
 ${metricsList}
 
 ### Regulatory Compliance Record (EPA SDWIS)
-- **Monitored Period:** ${windowStart} to ${windowEnd}
-- **Violations Recorded:** ${violationsCount} violation(s) found in statutory audit window.
-- **Enforcement History:** [Access EPA ECHO System Profile](${schematic.regulatoryCompliance.echoReportUrl})
-- **Record Verified At:** ${schematic.regulatoryCompliance.dataCaptureTime}
+${complianceBlock}
 
 ---
 *Mandatory Public Health Notice:* ${schematic.disclaimer}

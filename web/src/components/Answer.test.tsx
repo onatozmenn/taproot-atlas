@@ -10,6 +10,7 @@ const base: TapAnswer = {
   pwsid: 'NY7003493',
   boundaryType: 'MODELED_EPA',
   scope: 'water',
+  compliancePending: false,
   basins: ['Catskill', 'Delaware'],
   overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',
   details: '',
@@ -71,6 +72,15 @@ describe('AnswerCard', () => {
     const { container } = render(<AnswerCard answer={base} />);
     const text = container.textContent?.toLowerCase() ?? '';
     for (const word of ['drinkable', 'pure', 'potable']) expect(text).not.toContain(word);
+  });
+
+  it('shows the pending state instead of a zero-violations claim', () => {
+    const pending = { ...base, compliancePending: true };
+    const { container } = render(<AnswerCard answer={pending} />);
+    const text = container.textContent ?? '';
+    expect(text).toContain('not yet curated in the snapshot');
+    expect(text).toContain('Verify live records at EPA ECHO');
+    expect(text).not.toContain('Violations recorded');
   });
 
   it('renders redirects as slim text with no map or metric cards', () => {

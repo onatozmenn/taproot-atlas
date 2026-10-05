@@ -12,6 +12,8 @@ export interface TapAnswer {
   boundaryType: 'VERIFIED_AGENCY' | 'MODELED_EPA' | 'UNVERIFIED_FALLBACK';
   /** water = full report; redirect = slim off-topic deflection, no map/cards. */
   scope: 'water' | 'redirect';
+  /** True when compliance has no curated snapshot yet (verify live at ECHO). */
+  compliancePending: boolean;
   basins: string[];
   overview: string;
   /** Redirect call-to-action lines (metricsSummary + complianceNote); empty for water scope. */
@@ -38,6 +40,7 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     pwsid: g.pwsid,
     boundaryType: g.boundaryType.toUpperCase() as TapAnswer['boundaryType'],
     scope: res.scope ?? 'water',
+    compliancePending: res.groundTruth.regulatoryCompliance.snapshotPending === true,
     basins: g.primaryBasins,
     overview: res.narrative.overview,
     details: [res.narrative.metricsSummary, res.narrative.complianceNote]

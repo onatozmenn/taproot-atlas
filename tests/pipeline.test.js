@@ -143,4 +143,44 @@ describe('answerTapWater', () => {
     assert.ok(all.includes('tap-water records'));
     assert.ok(!all.includes('NY7003493'));
   });
+
+  it('directory cities resolve by name with pending compliance', async () => {
+    const la = await answerTapWater(
+      { question: 'los angeles water?', lat: 39.9, lon: 32.8 },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(la.scope, 'water');
+    assert.equal(la.groundTruth.pwsid, 'CA1910067');
+    assert.equal(la.groundTruth.boundaryType, 'unverified_fallback');
+    assert.equal(la.groundTruth.regulatoryCompliance.snapshotPending, true);
+    assert.deepEqual(la.groundTruth.latestReportedMetrics, []);
+    assert.ok(!la.narrative.complianceNote.includes('0 violations'));
+    assert.ok(la.narrative.complianceNote.includes('not yet curated'));
+
+    const chi = await answerTapWater(
+      { question: 'Where does Chicago tap water come from?' },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(chi.groundTruth.pwsid, 'IL0316000');
+    assert.ok(chi.groundTruth.primaryBasins.includes('Lake Michigan'));
+  });
+
+  it('a bare city name counts as a water question', async () => {
+    const res = await answerTapWater(
+      { question: 'houston?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'water');
+    assert.equal(res.groundTruth.pwsid, 'TX1010013');
+  });
+
+  it('nyc by name resolves to the curated snapshot from anywhere', async () => {
+    const res = await answerTapWater(
+      { question: 'new york water?', lat: 39.9, lon: 32.8 },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'water');
+    assert.equal(res.groundTruth.pwsid, 'NY7003493');
+    assert.ok(res.groundTruth.latestReportedMetrics.length >= 1);
+  });
 });

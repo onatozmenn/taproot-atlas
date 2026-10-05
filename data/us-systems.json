@@ -1,0 +1,75 @@
+{
+  "snapshotVersion": "us-systems-2026-10-v1",
+  "captureTime": "2026-10-05T00:00:00Z",
+  "provenanceNote": "Curated directory of major US public water systems. Every PWSID and basin list is verified against an official source (state SDWIS, utility CCR page, or utility supply page linked per entry). Only NYC ships lab metrics and a compliance snapshot; other entries carry basins + utility links with unverified boundaries until agency polygons and curated snapshots land. Schematic points are representative and approximate, never engineering alignments.",
+  "verificationSources": [
+    "https://sdwis.waterboards.ca.gov/PDWW/JSP/WaterSystemDetail.jsp?tinwsys_is_number=2544&tinwsys_st_code=CA",
+    "https://chicagoccr.org/docs/2025_WaterQualityReport.pdf",
+    "https://www.ladwp.com/who-we-are/water-system/sources-supply",
+    "https://www.houstonpublicworks.org/drinking-water-quality-report"
+  ],
+  "systems": [
+    {
+      "pwsid": "NY7003493",
+      "systemName": "NYC DEP Catskill-Delaware",
+      "city": "New York",
+      "state": "NY",
+      "aliases": ["new york", "new york city", "nyc"],
+      "center": [-73.97, 40.78],
+      "boundaryType": "modeled_epa",
+      "basins": [
+        { "name": "Catskill", "at": [-74.3, 42.0] },
+        { "name": "Delaware", "at": [-75.2, 41.7] }
+      ],
+      "utilityUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page",
+      "reportUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page",
+      "metricsCurated": true
+    },
+    {
+      "pwsid": "CA1910067",
+      "systemName": "Los Angeles Dept. of Water and Power",
+      "city": "Los Angeles",
+      "state": "CA",
+      "aliases": ["los angeles", "ladwp", "l.a."],
+      "center": [-118.25, 34.05],
+      "boundaryType": "unverified_fallback",
+      "basins": [
+        { "name": "Owens Valley", "at": [-118.3, 37.0] },
+        { "name": "Mono Basin", "at": [-119.0, 38.0] },
+        { "name": "Colorado River", "at": [-114.7, 36.0] }
+      ],
+      "utilityUrl": "https://www.ladwp.com/who-we-are/water-system/sources-supply",
+      "reportUrl": "https://www.ladwp.com/who-we-are/water-system/las-drinking-water-quality-report",
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "IL0316000",
+      "systemName": "City of Chicago Dept. of Water Management",
+      "city": "Chicago",
+      "state": "IL",
+      "aliases": ["chicago"],
+      "center": [-87.63, 41.88],
+      "boundaryType": "unverified_fallback",
+      "basins": [{ "name": "Lake Michigan", "at": [-87.2, 42.8] }],
+      "utilityUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
+      "reportUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "TX1010013",
+      "systemName": "City of Houston Public Works",
+      "city": "Houston",
+      "state": "TX",
+      "aliases": ["houston"],
+      "center": [-95.37, 29.76],
+      "boundaryType": "unverified_fallback",
+      "basins": [
+        { "name": "Trinity River", "at": [-94.8, 30.6] },
+        { "name": "Lake Livingston", "at": [-95.1, 30.7] }
+      ],
+      "utilityUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report",
+      "reportUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report",
+      "metricsCurated": false
+    }
+  ]
+}

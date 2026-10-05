@@ -40,10 +40,12 @@ export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
 
   const violations = schematic.regulatoryCompliance.totalViolationsFound;
   const { startDate, endDate } = schematic.regulatoryCompliance.queryWindow;
-  const complianceNote =
-    `Compliance with Safe Drinking Water Act record-keeping shows ${violations} ` +
-    `violations recorded from ${startDate} to ${endDate}. ` +
-    `Record verified at ${schematic.regulatoryCompliance.dataCaptureTime}.`;
+  const complianceNote = schematic.regulatoryCompliance.snapshotPending
+    ? `Compliance records for ${schematic.systemName} (PWSID: ${schematic.pwsid}) are not yet curated in the snapshot. ` +
+      `Verify live records at the linked ECHO system profile for the ${startDate} to ${endDate} window.`
+    : `Compliance with Safe Drinking Water Act record-keeping shows ${violations} ` +
+      `violations recorded from ${startDate} to ${endDate}. ` +
+      `Record verified at ${schematic.regulatoryCompliance.dataCaptureTime}.`;
 
   const stewardshipNote =
     'Reported lab results and regulatory records describe the past; they do not promise future results. ' +

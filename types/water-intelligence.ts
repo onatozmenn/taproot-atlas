@@ -47,6 +47,12 @@ export interface SdwisComplianceProfile {
   records: SdwisViolationRecord[];
   echoReportUrl: string;
   dataCaptureTime: string;
+  /**
+   * True when no curated snapshot exists for this system yet. Consumers must
+   * NOT present totalViolationsFound as a finding — point at the live ECHO
+   * profile instead.
+   */
+  snapshotPending?: boolean;
 }
 
 export interface WaterOriginSchematic {
