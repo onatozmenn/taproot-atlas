@@ -182,6 +182,73 @@ CURATED = {
         "reportUrl": "https://www.sjwater.com/customer-care/help-information/water-supply-faqs/",
         "metricsCurated": False,
     },
+    "VA6059501": {
+        "aliases": ["herndon", "fairfax water"],
+        "basins": [{"name": "Potomac River", "at": [-77.25, 39.0]}, {"name": "Occoquan Reservoir", "at": [-77.3, 38.65]}],
+        "utilityUrl": "https://www.fairfaxwater.org/about-us",
+        "reportUrl": "https://www.fairfaxwater.org/about-us",
+        "metricsCurated": False,
+    },
+    "NY5110526": {
+        "aliases": ["hauppauge", "suffolk"],
+        "basins": [{"name": "Long Island Aquifers", "at": [-72.9, 40.85]}],
+        "utilityUrl": "https://www.scwa.com/sourcetotap/",
+        "reportUrl": "https://www.scwa.com/sourcetotap/",
+        "metricsCurated": False,
+    },
+    "GA1350004": {
+        "aliases": ["lawrenceville", "gwinnett"],
+        "basins": [{"name": "Lake Lanier", "at": [-84.0, 34.1]}],
+        "utilityUrl": "https://www.gwinnettcounty.com/government/departments/water/what-we-do/drinking-water/quality",
+        "reportUrl": "https://www.gwinnettcounty.com/government/departments/water/what-we-do/drinking-water/quality",
+        "metricsCurated": False,
+    },
+    "TX2200012": {
+        "basins": [
+            {"name": "Eagle Mountain Lake", "at": [-97.5, 32.95]},
+            {"name": "Richland Chambers Reservoir", "at": [-96.1, 31.95]},
+            {"name": "Cedar Creek Reservoir", "at": [-96.25, 32.2]},
+        ],
+        "utilityUrl": "https://www.fortworthtexas.gov/departments/water",
+        "reportUrl": "https://www.fortworthtexas.gov/departments/water",
+        "metricsCurated": False,
+    },
+    "IN5249004": {
+        "basins": [
+            {"name": "White River", "at": [-86.1, 39.9]},
+            {"name": "Geist Reservoir", "at": [-85.95, 39.95]},
+            {"name": "Eagle Creek Reservoir", "at": [-86.3, 39.85]},
+        ],
+        "utilityUrl": "https://info.citizensenergygroup.com/water",
+        "reportUrl": "https://info.citizensenergygroup.com/water",
+        "metricsCurated": False,
+    },
+    "CA3810011": {
+        "basins": [{"name": "Hetch Hetchy Reservoir", "at": [-119.8, 37.95]}],
+        "utilityUrl": "https://www.burlingame.org/1007/Water-Quality",
+        "reportUrl": "https://www.burlingame.org/1007/Water-Quality",
+        "metricsCurated": False,
+    },
+    "FL2161328": {
+        "aliases": ["jacksonville", "jea"],
+        "basins": [{"name": "Floridan Aquifer", "at": [-81.6, 30.3]}],
+        "utilityUrl": "https://www.jea.com/about/water_supply/",
+        "reportUrl": "https://www.jea.com/about/water_supply/",
+        "metricsCurated": False,
+    },
+    "KY0560258": {
+        "basins": [{"name": "Ohio River", "at": [-85.75, 38.27]}],
+        "utilityUrl": "https://louisvillewater.com/your-water/water-quality/riverbank-filtration/",
+        "reportUrl": "https://louisvillewater.com/your-water/water-quality/riverbank-filtration/",
+        "metricsCurated": False,
+    },
+    "PA1460073": {
+        "aliases": ["bryn mawr"],
+        "basins": [{"name": "Crum Creek", "at": [-75.35, 39.9]}, {"name": "Pickering Creek", "at": [-75.55, 40.1]}],
+        "utilityUrl": "https://www.aquawater.com/all-about-water-wastewater/water-quality",
+        "reportUrl": "https://www.aquawater.com/all-about-water-wastewater/water-quality",
+        "metricsCurated": False,
+    },
 }
 
 UA = {"User-Agent": "taproot-atlas/0.1.0 (water-intelligence; contact: showcase-only demo)"}

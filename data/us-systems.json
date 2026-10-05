@@ -668,6 +668,7 @@
       "city": "Herndon",
       "state": "VA",
       "aliases": [
+        "fairfax water",
         "herndon"
       ],
       "center": [
@@ -675,9 +676,26 @@
         38.9695
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Potomac River",
+          "at": [
+            -77.25,
+            39.0
+          ]
+        },
+        {
+          "name": "Occoquan Reservoir",
+          "at": [
+            -77.3,
+            38.65
+          ]
+        }
+      ],
       "populationServed": 1121613,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.fairfaxwater.org/about-us",
+      "reportUrl": "https://www.fairfaxwater.org/about-us"
     },
     {
       "pwsid": "TX2270001",
@@ -736,16 +754,27 @@
       "city": "Hauppauge",
       "state": "NY",
       "aliases": [
-        "hauppauge"
+        "hauppauge",
+        "suffolk"
       ],
       "center": [
         -73.2062,
         40.8237
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Long Island Aquifers",
+          "at": [
+            -72.9,
+            40.85
+          ]
+        }
+      ],
       "populationServed": 1100000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.scwa.com/sourcetotap/",
+      "reportUrl": "https://www.scwa.com/sourcetotap/"
     },
     {
       "pwsid": "GA1210001",
@@ -821,6 +850,7 @@
       "city": "Lawrenceville",
       "state": "GA",
       "aliases": [
+        "gwinnett",
         "lawrenceville"
       ],
       "center": [
@@ -828,9 +858,19 @@
         33.9566
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Lake Lanier",
+          "at": [
+            -84.0,
+            34.1
+          ]
+        }
+      ],
       "populationServed": 975000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.gwinnettcounty.com/government/departments/water/what-we-do/drinking-water/quality",
+      "reportUrl": "https://www.gwinnettcounty.com/government/departments/water/what-we-do/drinking-water/quality"
     },
     {
       "pwsid": "TX2200012",
@@ -845,9 +885,33 @@
         32.7532
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Eagle Mountain Lake",
+          "at": [
+            -97.5,
+            32.95
+          ]
+        },
+        {
+          "name": "Richland Chambers Reservoir",
+          "at": [
+            -96.1,
+            31.95
+          ]
+        },
+        {
+          "name": "Cedar Creek Reservoir",
+          "at": [
+            -96.25,
+            32.2
+          ]
+        }
+      ],
       "populationServed": 955900,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.fortworthtexas.gov/departments/water",
+      "reportUrl": "https://www.fortworthtexas.gov/departments/water"
     },
     {
       "pwsid": "IN5249004",
@@ -862,9 +926,33 @@
         39.7683
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "White River",
+          "at": [
+            -86.1,
+            39.9
+          ]
+        },
+        {
+          "name": "Geist Reservoir",
+          "at": [
+            -85.95,
+            39.95
+          ]
+        },
+        {
+          "name": "Eagle Creek Reservoir",
+          "at": [
+            -86.3,
+            39.85
+          ]
+        }
+      ],
       "populationServed": 880345,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://info.citizensenergygroup.com/water",
+      "reportUrl": "https://info.citizensenergygroup.com/water"
     },
     {
       "pwsid": "CA3810011",
@@ -879,9 +967,19 @@
         37.5781
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Hetch Hetchy Reservoir",
+          "at": [
+            -119.8,
+            37.95
+          ]
+        }
+      ],
       "populationServed": 848019,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.burlingame.org/1007/Water-Quality",
+      "reportUrl": "https://www.burlingame.org/1007/Water-Quality"
     },
     {
       "pwsid": "FL2161328",
@@ -889,16 +987,27 @@
       "city": "Jacksonville",
       "state": "FL",
       "aliases": [
-        "jacksonville"
+        "jacksonville",
+        "jea"
       ],
       "center": [
         -81.6579,
         30.3262
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Floridan Aquifer",
+          "at": [
+            -81.6,
+            30.3
+          ]
+        }
+      ],
       "populationServed": 826664,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.jea.com/about/water_supply/",
+      "reportUrl": "https://www.jea.com/about/water_supply/"
     },
     {
       "pwsid": "PA1460073",
@@ -913,9 +1022,26 @@
         40.0238
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Crum Creek",
+          "at": [
+            -75.35,
+            39.9
+          ]
+        },
+        {
+          "name": "Pickering Creek",
+          "at": [
+            -75.55,
+            40.1
+          ]
+        }
+      ],
       "populationServed": 822600,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.aquawater.com/all-about-water-wastewater/water-quality",
+      "reportUrl": "https://www.aquawater.com/all-about-water-wastewater/water-quality"
     },
     {
       "pwsid": "KY0560258",
@@ -930,9 +1056,19 @@
         38.2542
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Ohio River",
+          "at": [
+            -85.75,
+            38.27
+          ]
+        }
+      ],
       "populationServed": 806997,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://louisvillewater.com/your-water/water-quality/riverbank-filtration/",
+      "reportUrl": "https://louisvillewater.com/your-water/water-quality/riverbank-filtration/"
     },
     {
       "pwsid": "NJ0238001",

@@ -18,17 +18,17 @@ describe('systems directory', () => {
   });
 
   it('marks tier B entries (PWSID + city, no curated basins)', () => {
-    const herndon = getDirectorySystem('VA6059501');
-    assert.ok(herndon);
-    assert.equal(herndon.city, 'Herndon');
-    assert.deepEqual(herndon.basins, []);
-    assert.equal(herndon.metricsCurated, false);
+    const chesterfield = getDirectorySystem('MO6010716');
+    assert.ok(chesterfield);
+    assert.equal(chesterfield.city, 'Chesterfield');
+    assert.deepEqual(chesterfield.basins, []);
+    assert.equal(chesterfield.metricsCurated, false);
   });
 
-  it('curates basins for 22 tier A metros from official utility sources', () => {
+  it('curates basins for 31 tier A metros from official utility sources', () => {
     const systems = listDirectorySystems();
     const tierA = systems.filter((s) => s.basins.length > 0);
-    assert.equal(tierA.length, 22);
+    assert.equal(tierA.length, 31);
     const philly = getDirectorySystem('PA1510001');
     assert.deepEqual(
       philly?.basins.map((b) => b.name),
@@ -40,6 +40,11 @@ describe('systems directory', () => {
     assert.deepEqual(
       miami?.basins.map((b) => b.name),
       ['Biscayne Aquifer'],
+    );
+    const jacksonville = getDirectorySystem('FL2161328');
+    assert.deepEqual(
+      jacksonville?.basins.map((b) => b.name),
+      ['Floridan Aquifer'],
     );
     // Utility-name aliases resolve too.
     assert.equal(findSystemByText('philly water?')?.pwsid, 'PA1510001');

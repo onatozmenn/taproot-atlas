@@ -19,12 +19,15 @@ All datasets are versioned snapshots under `data/`. Re-ingests ship a new
   `verified_agency` is reachable by coordinate; name-only matches stay
   `unverified_fallback` (location unproven).
 - Directory cities split into two tiers:
-  - **Tier A (22 systems)** — verified basins + utility links from official
+  - **Tier A (31 systems)** — verified basins + utility links from official
     utility pages (NYC, LA, Chicago, Houston, San Antonio, Boston/MWRA, Miami,
     WSSC, Baltimore, Philadelphia, Las Vegas, EBMUD, San Diego, Dallas,
     Cleveland, Columbus, Denver, Charlotte, Seattle, Austin, Atlanta,
-    San Jose); NYC additionally ships lab metrics + compliance snapshot.
-  - **Tier B (78 systems)** — verified PWSID + city + map center only; no
+    San Jose, Fairfax/Herndon, Suffolk/Hauppauge, Gwinnett/Lawrenceville,
+    Fort Worth, Indianapolis, Burlingame, Jacksonville, Louisville,
+    Aqua PA/Bryn Mawr); NYC additionally ships lab metrics + compliance
+    snapshot.
+  - **Tier B (69 systems)** — verified PWSID + city + map center only; no
     basins, no metrics, `snapshotPending` compliance. Narratives say so
     plainly instead of claiming coverage.
   Both tiers resolve by city-name match (a name mention beats the default

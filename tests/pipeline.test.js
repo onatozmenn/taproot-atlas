@@ -255,11 +255,11 @@ describe('answerTapWater', () => {
 
   it('tier B cities resolve with honest uncurated narratives', async () => {
     const res = await answerTapWater(
-      { question: 'herndon?', ...SHOWCASE_CENTER },
+      { question: 'chesterfield?', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture' },
     );
     assert.equal(res.scope, 'water');
-    assert.equal(res.groundTruth.pwsid, 'VA6059501');
+    assert.equal(res.groundTruth.pwsid, 'MO6010716');
     assert.deepEqual(res.groundTruth.primaryBasins, []);
     assert.equal(res.groundTruth.regulatoryCompliance.snapshotPending, true);
     assert.ok(res.narrative.overview.includes('not yet curated'));
