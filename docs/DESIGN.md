@@ -179,10 +179,18 @@ Thread + working + done states of the campsite conversation:
 - Map: **Protomaps vector basemap via MapLibre GL** (`maplibre-gl` +
   `pmtiles` + `@protomaps/basemaps`, `light` flavor, `en` labels) replaces
   Leaflet raster. Source order: `VITE_PROTOMAPS_TILES_URL` (self-hosted
-  `.pmtiles`) → `VITE_PROTOMAPS_API_KEY` (hosted TileJSON) → OSM raster
-  fallback (no key, previews keep working). Schematic overlay (navy dashed
-  connector, points, labels, popups) is GeoJSON in the same MapLibre
-  instance. Footer attribution switches Protomaps/OSM vs OSM-only.
+  `.pmtiles`) → `VITE_PROTOMAPS_API_KEY` (hosted TileJSON
+  `api.protomaps.com/tiles/v4.json?key=`, verified against
+  https://protomaps.com/api) → OSM raster fallback (no key, previews keep
+  working). Framing uses `flowBounds()` fitBounds (padding 48, maxZoom 10).
+  Schematic overlay (navy dashed connector, points, labels, popups) is GeoJSON
+  in the same MapLibre instance. Footer attribution switches Protomaps/OSM
+  vs OSM-only.
+- Key setup: free account at protomaps.com/account; per-key CORS allowlist
+  must include the Vercel production + preview domains (localhost exempt).
+  Verified dead-ends: `build.protomaps.com` serves 206 ranges but no CORS
+  headers (browser hotlinking blocked), and the 138GB planet is not vendored;
+  self-host extracts need CORS-enabled storage (see `VITE_PROTOMAPS_TILES_URL`).
 
 ## 4. Verify (America.gov parity checklist)
 

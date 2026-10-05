@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { TapAnswer } from '../api';
-import { mapView } from '../geo-view';
+import { mapView, flowBounds } from '../geo-view';
 
 /**
  * Protomaps vector basemap (MapLibre GL) with the Resolver schematic drawn
@@ -171,7 +171,19 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
         });
 
         m.on('load', () => {
-          if (!cancelled) addOverlay();
+          if (cancelled) return;
+          addOverlay();
+          // Frame the whole schematic with breathing room instead of a
+          // fixed zoom — wide spreads (e.g. LA basins) zoom out, local
+          // zones stay close.
+          const bounds = flowBounds(answer.flow);
+          if (bounds) {
+            try {
+              m.fitBounds(bounds, { padding: 48, maxZoom: 10 });
+            } catch {
+              // Keep the initial view; framing is cosmetic.
+            }
+          }
         });
         if (!vector) setBasemap('osm');
         map = m;
