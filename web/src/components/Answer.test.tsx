@@ -46,19 +46,25 @@ const base: TapAnswer = {
 };
 
 describe('AnswerCard', () => {
-  it('renders metric provenance and the verified line', () => {
+  it('renders metric provenance with official record links', () => {
     render(<AnswerCard answer={base} />);
     expect(screen.getByText('Turbidity')).toBeInTheDocument();
     expect(screen.getByText(/2024 Annual/)).toBeInTheDocument();
     expect(screen.getByText('nyc-2024-v1')).toBeInTheDocument();
-    expect(screen.getByText(/Verified summary/)).toBeInTheDocument();
     expect(screen.getByText('Modeled boundary')).toBeInTheDocument();
-    expect(screen.getByText(/Demonstration snapshot/)).toBeInTheDocument();
+    expect(screen.getByText('Access EPA ECHO system profile')).toBeInTheDocument();
   });
 
-  it('renders the deterministic fallback line when audit fails', () => {
-    render(<AnswerCard answer={{ ...base, passedAudit: false }} />);
-    expect(screen.getByText(/Deterministic summary \(audit fallback\)/)).toBeInTheDocument();
+  it('hides internal audit and pipeline metadata from users', () => {
+    const { container, queryByText } = render(<AnswerCard answer={base} />);
+    expect(queryByText(/Verified summary/)).not.toBeInTheDocument();
+    expect(queryByText(/Deterministic summary/)).not.toBeInTheDocument();
+    expect(queryByText(/Demonstration snapshot/)).not.toBeInTheDocument();
+    expect(queryByText(/JEV check/)).not.toBeInTheDocument();
+    expect(queryByText(/audited /)).not.toBeInTheDocument();
+    const text = container.textContent ?? '';
+    expect(text).not.toContain('template');
+    expect(text).not.toContain('snapshot_fixture');
   });
 
   it('never prints a safety verdict', () => {

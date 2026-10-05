@@ -166,7 +166,6 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
 .skip-link { position: absolute; left: -9999px; top: 0; background: var(--navy); color: #fff; padding: 8px 14px; z-index: 10; }
 .skip-link:focus { left: 8px; top: 8px; }
 .ghost-btn { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
-.validation-line { font-size: 13px; color: var(--muted); }
 .error-box { border: 1px solid var(--danger); border-radius: 10px; padding: 10px 14px; margin: 10px 0; background: #fff5f5; }
 .error-box button { border: 1px solid var(--navy); background: #fff; color: var(--navy); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
 button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

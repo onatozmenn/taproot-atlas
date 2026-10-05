@@ -137,8 +137,9 @@ framing, never `safe/drinkable/pure` (`lib/guardrails.ts`).
   menu + feedback/copy + mic (Web Speech API, progressive enhancement).
 - `web/src/App.css` — tokens + pill search w/ shadow + cards + focus +
   reduced-motion + responsive.
-- `web/src/components/Answer.tsx` — answer card keeps `ValidationLine`,
-  markdown overview, `RealMap`, metric cards, compliance block.
+- `web/src/components/Answer.tsx` — answer card with markdown overview,
+  Protomaps/MapLibre schematic, metric cards, and the EPA compliance block
+  (internal audit lines are never rendered; provenance lives on the links).
 - `web/src/suggest.ts` — chips stay fact-only (unchanged contract).
 
 ## 5. Screenshot audit (2026-10-05, user-provided SS ×3) — applied pixel notes
@@ -169,7 +170,7 @@ Thread + working + done states of the campsite conversation:
   disabled. Ready: navy fill, white arrow. Working: navy fill, white
   **stop square** (ours is a live abort, not decorative).
 - No .gov banner strip and no `Start over` row in-thread on this screen;
-  honesty content moved to the composer footnote + `ValidationLine`.
+  honesty content lives in the composer footnote and the official record links.
 - Font decision: **Newsreader** (Google Fonts, `display=swap`, Georgia
   fallback) for brand + hero display only; body/answers stay system sans to
   match the SS body rendering and keep offline readability.

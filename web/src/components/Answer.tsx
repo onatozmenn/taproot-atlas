@@ -33,32 +33,6 @@ export function MetricCard({ metric }: { metric: QualityMetricRecord }) {
   );
 }
 
-export function ValidationLine({ answer }: { answer: TapAnswer }) {
-  return (
-    <>
-      <p className="validation-line">
-        {answer.passedAudit ? 'Verified summary' : 'Deterministic summary (audit fallback)'} ·{' '}
-        {answer.narrator === 'llm' ? 'AI draft' : 'template'} · audited {answer.auditTimestamp}
-        {answer.jev !== 'skipped' && (
-          <> · JEV check {answer.jev === 'pass' ? 'passed' : 'flagged'}</>
-        )}
-      </p>
-      <p className="validation-line">
-        {answer.recordSource === 'snapshot_fixture' ? (
-          <>
-            Demonstration snapshot ·{' '}
-            <a href={answer.echoUrl} target="_blank" rel="noreferrer">
-              verify live at ECHO
-            </a>
-          </>
-        ) : (
-          <>Live ECHO record · captured {answer.verifiedAt}</>
-        )}
-      </p>
-    </>
-  );
-}
-
 export function AnswerCard({ answer }: { answer: TapAnswer }) {
   if (answer.scope === 'redirect') {
     // Slim America.gov-style deflection: text only, no map or metric cards.
@@ -71,7 +45,6 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
   }
   return (
     <div className="answer">
-      <ValidationLine answer={answer} />
       <div className="markdown">{renderMarkdown(answer.overview)}</div>
       <RealMap answer={answer} />
       {answer.metrics.length > 0 && (

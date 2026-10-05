@@ -16,7 +16,7 @@ snapshot-backed, so the demo works offline-proof on stage.
 ## Q3 — click the “What did the 2024 Annual report test for Turbidity?” chip (60s)
 - Shows: MetricCard with value, threshold, test date, report period, version, source link.
 - Say: “Every number traces to a dated filing. Ask in Turkish — the answer stays English and grounded.”
-- Point at: the “Verified summary · audited …” line under the answer.
+- Point at: the metric cards with test date, report period, version, and source link.
 
 ## Track mapping (one-pager for the jury)
 
