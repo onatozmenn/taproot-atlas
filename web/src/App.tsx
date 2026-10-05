@@ -1,4 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  ArrowUp01Icon,
+  Attachment01Icon,
+  Copy01Icon,
+  Mic01Icon,
+  Refresh01Icon,
+  StopIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+  Tick02Icon,
+} from '@hugeicons/core-free-icons';
 import { askTapWater, type TapAnswer } from './api';
 import { AnswerCard } from './components/Answer';
 import { Logo } from './components/Logo';
@@ -13,65 +25,6 @@ interface Msg {
 let nextId = 1;
 
 /* ---- inline stroke icons (no emoji) ---- */
-function IconClip() {
-  return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m21 12.5-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8L13 5a3.7 3.7 0 0 1 5.2 5.2l-8.2 8.2a1.85 1.85 0 0 1-2.6-2.6L14.5 8.7" />
-    </svg>
-  );
-}
-function IconMic() {
-  return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-    </svg>
-  );
-}
-function IconArrow() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 19V5M5 12l7-7 7 7" />
-    </svg>
-  );
-}
-function IconStop() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <rect x="2.5" y="2.5" width="11" height="11" rx="2" />
-    </svg>
-  );
-}
-function IconThumbUp() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3Zm2-1 3.5-7a2 2 0 0 1 3.6 1.7L14.5 9H19a2 2 0 0 1 2 2.4l-1.5 7A2 2 0 0 1 17.5 20H9" />
-    </svg>
-  );
-}
-function IconThumbDown() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M17 13V4h3a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-3Zm-2 1-3.5 7a2 2 0 0 1-3.6-1.7l1.6-4.3H5a2 2 0 0 1-2-2.4l1.5-7A2 2 0 0 1 6.5 4H15" />
-    </svg>
-  );
-}
-function IconCopy() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="9" y="9" width="12" height="12" rx="2" />
-      <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-    </svg>
-  );
-}
-function IconCheck() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m4 12.5 5 5L20 6.5" />
-    </svg>
-  );
-}
-
 /**
  * America.gov-style thinking indicator: "Thinking..." and
  * "Working through your request..." alternate while one word at a time
@@ -174,7 +127,7 @@ function Composer(p: ComposerProps) {
         title="Attach a text file (.txt, .md, .csv, .json)"
         onClick={() => fileRef.current?.click()}
       >
-        <IconClip />
+        <HugeiconsIcon icon={Attachment01Icon} size={21} />
       </button>
       <button
         type="button"
@@ -183,11 +136,11 @@ function Composer(p: ComposerProps) {
         title="Ask by voice"
         onClick={p.onVoice}
       >
-        <IconMic />
+        <HugeiconsIcon icon={Mic01Icon} size={21} />
       </button>
       {p.busy ? (
         <button type="button" className="send-btn working" aria-label="Stop" title="Stop" onClick={p.onStop}>
-          <IconStop />
+          <HugeiconsIcon icon={StopIcon} size={15} />
         </button>
       ) : (
         <button
@@ -197,7 +150,7 @@ function Composer(p: ComposerProps) {
           aria-label="Send"
           title="Send"
         >
-          <IconArrow />
+          <HugeiconsIcon icon={ArrowUp01Icon} size={20} />
         </button>
       )}
     </form>
@@ -319,15 +272,17 @@ export default function App() {
         </div>
         {!empty && (
           <button
-            className="ghost-btn"
+            className="restart-btn"
             type="button"
+            aria-label="Start over"
+            title="Start over"
             onClick={() => {
               stop();
               setMessages([]);
               setError(null);
             }}
           >
-            Start over
+            <HugeiconsIcon icon={Refresh01Icon} size={28} strokeWidth={2.2} />
           </button>
         )}
       </header>
@@ -378,7 +333,7 @@ export default function App() {
                         className={feedback[m.id] === 'helpful' ? 'active' : ''}
                         onClick={() => setFeedback((f) => ({ ...f, [m.id]: 'helpful' }))}
                       >
-                        <IconThumbUp />
+                        <HugeiconsIcon icon={ThumbsUpIcon} size={17} />
                       </button>
                       <button
                         type="button"
@@ -387,7 +342,7 @@ export default function App() {
                         className={feedback[m.id] === 'not-helpful' ? 'active' : ''}
                         onClick={() => setFeedback((f) => ({ ...f, [m.id]: 'not-helpful' }))}
                       >
-                        <IconThumbDown />
+                        <HugeiconsIcon icon={ThumbsDownIcon} size={17} />
                       </button>
                     </span>
                     <button
@@ -397,7 +352,7 @@ export default function App() {
                       title={copied === m.id ? 'Copied' : 'Copy answer'}
                       onClick={() => m.answer && void copyAnswer(m.id, m.answer.overview)}
                     >
-                      {copied === m.id ? <IconCheck /> : <IconCopy />}
+                      {copied === m.id ? <HugeiconsIcon icon={Tick02Icon} size={17} /> : <HugeiconsIcon icon={Copy01Icon} size={17} />}
                     </button>
                   </div>
                 </div>

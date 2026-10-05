@@ -1,8 +1,33 @@
 import React from 'react';
 
-/** Taproot Atlas mark: watershed droplet — no flag, no eagle.
- * Navy→teal droplet, two basin flow lines converging to a tap node. */
+const FLAG_BLUE = '#0a3161';
+
+/** Points of a 5-point star centered at (cx, cy). */
+function starPoints(cx: number, cy: number, outer: number, inner: number): string {
+  const pts: string[] = [];
+  for (let k = 0; k < 10; k++) {
+    const r = k % 2 === 0 ? outer : inner;
+    const a = ((k * 36 - 90) * Math.PI) / 180;
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+  }
+  return pts.join(' ');
+}
+
+/**
+ * Taproot Atlas mark: Old Glory Blue droplet filled with as many white
+ * stars as fit (US-flag blue + white stars, no flag itself).
+ */
 export function Logo({ size = 30 }: { size?: number }) {
+  const stars: Array<{ x: number; y: number }> = [];
+  const gap = 4.1;
+  let row = 0;
+  for (let y = 4.5; y <= 28; y += gap) {
+    const offset = row % 2 === 0 ? 0 : gap / 2;
+    for (let x = 8 + offset; x <= 24.5; x += gap) {
+      stars.push({ x, y });
+    }
+    row++;
+  }
   return (
     <svg
       width={size}
@@ -13,25 +38,19 @@ export function Logo({ size = 30 }: { size?: number }) {
       className="logo-mark"
     >
       <defs>
-        <linearGradient id="ta-drop" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#0a3161" />
-          <stop offset="100%" stopColor="#0e8a7b" />
-        </linearGradient>
+        <clipPath id="ta-drop-clip">
+          <path d="M16 2.5C16 2.5 6.5 14.2 6.5 20a9.5 9.5 0 0 0 19 0C25.5 14.2 16 2.5 16 2.5Z" />
+        </clipPath>
       </defs>
       <path
         d="M16 2.5C16 2.5 6.5 14.2 6.5 20a9.5 9.5 0 0 0 19 0C25.5 14.2 16 2.5 16 2.5Z"
-        fill="url(#ta-drop)"
+        fill={FLAG_BLUE}
       />
-      <path
-        d="M11 19.5c1.8-2.6 3.4-4.9 5-7.2M21 19.5c-1.8-2.6-3.4-4.9-5-7.2M12.5 22.5h7"
-        stroke="#fff"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        fill="none"
-        opacity="0.9"
-      />
-      <circle cx="16" cy="22.5" r="2.1" fill="#fff" />
-      <circle cx="16" cy="22.5" r="0.9" fill="#0a3161" />
+      <g clipPath="url(#ta-drop-clip)">
+        {stars.map((s, i) => (
+          <polygon key={i} points={starPoints(s.x, s.y, 1.45, 0.58)} fill="#ffffff" opacity="0.95" />
+        ))}
+      </g>
     </svg>
   );
 }

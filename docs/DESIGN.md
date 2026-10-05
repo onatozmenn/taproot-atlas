@@ -131,8 +131,10 @@ framing, never `safe/drinkable/pure` (`lib/guardrails.ts`).
 ## 3. Implementation map (files)
 
 - `web/index.html` — title/meta + font stack (system, no webfont dep).
-- `web/src/components/Logo.tsx` — droplet mark (navy→teal gradient, basin
-  flow lines, tap node). Only brand asset; flag removed everywhere.
+- `web/src/components/Logo.tsx` — droplet mark (Old Glory Blue `#0a3161`
+  field packed with white stars, no flag) + `HugeiconsIcon` set
+  (`@hugeicons/react` + `@hugeicons/core-free-icons`) for every UI icon:
+  attach, mic, send/stop, thumbs, copy, restart. Only brand asset.
 - `web/src/App.tsx` — banner + header + hero + sticky composer + thread +
   menu + feedback/copy + mic (Web Speech API, progressive enhancement).
 - `web/src/App.css` — tokens + pill search w/ shadow + cards + focus +
