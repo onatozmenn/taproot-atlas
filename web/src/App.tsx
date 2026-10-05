@@ -12,7 +12,7 @@ import {
   Tick02Icon,
 } from '@hugeicons/core-free-icons';
 import { askTapWater, type TapAnswer } from './api';
-import { AnswerCard } from './components/Answer';
+import { AnswerCard, SourcePanel } from './components/Answer';
 import { Logo } from './components/Logo';
 
 interface Msg {
@@ -359,12 +359,7 @@ export default function App() {
                 <div key={m.id} className="assistant-block">
                   {m.answer && <AnswerCard answer={m.answer} />}
                   <div className="attrib" aria-label="Answer actions">
-                    {m.answer && m.answer.scope !== 'redirect' && (
-                      <span className="source-pill" title={`${m.answer.systemName} · ${m.answer.pwsid}`}>
-                        <Logo size={15} />
-                        {m.answer.pwsid === 'UNKNOWN' ? 'Unverified area' : `${m.answer.systemName} · ${m.answer.pwsid}`}
-                      </span>
-                    )}
+                    {m.answer && m.answer.scope !== 'redirect' && <SourcePanel answer={m.answer} />}
                     <span className="icon-pill" role="group" aria-label="Rate this answer">
                       <button
                         type="button"

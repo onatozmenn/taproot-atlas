@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { AnswerCard } from './Answer';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { AnswerCard, SourcePanel } from './Answer';
 import type { TapAnswer } from '../api';
 
 afterEach(() => cleanup());
@@ -54,7 +54,12 @@ describe('AnswerCard', () => {
     expect(screen.getByText('Within standard')).toBeInTheDocument();
     expect(screen.getByText('Verify')).toBeInTheDocument();
     expect(screen.getByText(/Catskill Watershed/)).toBeInTheDocument();
+  });
+
+  it('exposes the ECHO compliance proofs behind the source toggle', () => {
+    render(<SourcePanel answer={base} />);
     expect(screen.getByText('Access EPA ECHO system profile')).toBeInTheDocument();
+    expect(screen.getByText(/Violations recorded/)).toBeInTheDocument();
   });
 
   it('hides internal audit and pipeline metadata from users', () => {
@@ -77,11 +82,21 @@ describe('AnswerCard', () => {
 
   it('shows the pending state instead of a zero-violations claim', () => {
     const pending = { ...base, compliancePending: true };
-    const { container } = render(<AnswerCard answer={pending} />);
+    const { container } = render(<SourcePanel answer={pending} />);
     const text = container.textContent ?? '';
     expect(text).toContain('not yet curated in the snapshot');
     expect(text).toContain('Verify live records at EPA ECHO');
     expect(text).not.toContain('Violations recorded');
+  });
+
+  it('toggles the compliance proofs open and closed', () => {
+    const { getByRole } = render(<SourcePanel answer={base} />);
+    const toggle = getByRole('button', { name: /NY7003493/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('renders redirects as slim text with no map or metric cards', () => {

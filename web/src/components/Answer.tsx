@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ChevronDownIcon } from '@hugeicons/core-free-icons';
 import type { TapAnswer } from '../api';
 import type { QualityMetricRecord } from '../../../types/water-intelligence';
 import { RealMap } from './RealMap';
+import { Logo } from './Logo';
 import { renderMarkdown } from '../md';
 
 const STATUS_LABEL: Record<QualityMetricRecord['complianceStatus'], { text: string; cls: string }> = {
@@ -75,34 +78,67 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
           <MetricsTable metrics={answer.metrics} />
         </>
       )}
-      <h4>Regulatory compliance (EPA SDWIS)</h4>
-      {answer.compliancePending ? (
-        <ul>
-          <li>
-            Monitored period: {answer.windowStart} to {answer.windowEnd}
-          </li>
-          <li>Records for this system are not yet curated in the snapshot.</li>
-          <li>
-            <a href={answer.echoUrl} target="_blank" rel="noreferrer">
-              Verify live records at EPA ECHO
-            </a>
-          </li>
-          <li>Record checked at: {answer.verifiedAt}</li>
-        </ul>
-      ) : (
-        <ul>
-          <li>
-            Monitored period: {answer.windowStart} to {answer.windowEnd}
-          </li>
-          <li>Violations recorded: {answer.violations} in window</li>
-          <li>
-            <a href={answer.echoUrl} target="_blank" rel="noreferrer">
-              Access EPA ECHO system profile
-            </a>
-          </li>
-          <li>Record verified at: {answer.verifiedAt}</li>
-        </ul>
-      )}
+    </div>
+  );
+}
+
+/**
+ * Source pill that expands into the EPA compliance proofs with an animated
+ * disclosure. Collapsed by default to save vertical space.
+ */
+export function SourcePanel({ answer }: { answer: TapAnswer }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="source-wrap">
+      <button
+        type="button"
+        className="source-pill toggle"
+        aria-expanded={open}
+        aria-controls={`compliance-${answer.pwsid}`}
+        title={`${answer.systemName} · ${answer.pwsid} — compliance proofs`}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Logo size={15} />
+        <span className="source-text">
+          {answer.pwsid === 'UNKNOWN' ? 'Unverified area' : `${answer.systemName} · ${answer.pwsid}`}
+        </span>
+        <HugeiconsIcon icon={ChevronDownIcon} size={16} />
+      </button>
+      <div
+        id={`compliance-${answer.pwsid}`}
+        className={`disclosure${open ? ' open' : ''}`}
+      >
+        <div className="disclosure-inner">
+          <h4>Regulatory compliance (EPA SDWIS)</h4>
+          {answer.compliancePending ? (
+            <ul>
+              <li>
+                Monitored period: {answer.windowStart} to {answer.windowEnd}
+              </li>
+              <li>Records for this system are not yet curated in the snapshot.</li>
+              <li>
+                <a href={answer.echoUrl} target="_blank" rel="noreferrer">
+                  Verify live records at EPA ECHO
+                </a>
+              </li>
+              <li>Record checked at: {answer.verifiedAt}</li>
+            </ul>
+          ) : (
+            <ul>
+              <li>
+                Monitored period: {answer.windowStart} to {answer.windowEnd}
+              </li>
+              <li>Violations recorded: {answer.violations} in window</li>
+              <li>
+                <a href={answer.echoUrl} target="_blank" rel="noreferrer">
+                  Access EPA ECHO system profile
+                </a>
+              </li>
+              <li>Record verified at: {answer.verifiedAt}</li>
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
