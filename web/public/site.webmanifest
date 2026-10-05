@@ -1,0 +1,13 @@
+{
+  "name": "Taproot Atlas — Where does my tap water come from?",
+  "short_name": "Taproot Atlas",
+  "description": "Ask in everyday words where tap water comes from. Answers cite the public water system, source basins, reported lab tests, and EPA compliance records.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0a3161",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

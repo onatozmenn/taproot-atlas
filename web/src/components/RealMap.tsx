@@ -18,7 +18,6 @@ let protomapsProtocolRegistered = false;
 export function RealMap({ answer }: { answer: TapAnswer }) {
   const divRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
-  const [basemap, setBasemap] = useState<'protomaps' | 'osm'>('protomaps');
 
   useEffect(() => {
     let map: { remove: () => void } | null = null;
@@ -170,11 +169,10 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
           // Protomaps source unreachable (bad key, offline): degrade to OSM
           // raster once instead of leaving an empty canvas.
           const sourceId = (e as { sourceId?: string }).sourceId;
-          if (vector && !fellBack && sourceId === 'protomaps') {
+          if (vector && !fellBack) {
             fellBack = true;
             m.setStyle(rasterStyle as never);
             m.once('styledata', addOverlay);
-            setBasemap('osm');
           }
         });
 
@@ -193,12 +191,10 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
             }
           }
         });
-        if (!vector) setBasemap('osm');
         map = m;
       } catch {
         if (!cancelled) {
           setFailed(true);
-          setBasemap('osm');
         }
       }
     })();
@@ -235,19 +231,6 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
           <li>Outside showcase snapshot — unverified area</li>
         )}
       </ul>
-      <div className="map-foot">
-        <span>
-          {basemap === 'protomaps' ? (
-            <>
-              Basemap © <a href="https://protomaps.com">Protomaps</a> ©{' '}
-              <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (context only).
-            </>
-          ) : (
-            <>Tiles © OpenStreetMap contributors (context only).</>
-          )}{' '}
-          Flow data: {answer.pwsid} snapshot. Schematic overlay, not an engineering alignment.
-        </span>
-      </div>
     </div>
   );
 }
