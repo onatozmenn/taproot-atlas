@@ -171,6 +171,13 @@ Thread + working + done states of the campsite conversation:
 - Font decision: **Newsreader** (Google Fonts, `display=swap`, Georgia
   fallback) for brand + hero display only; body/answers stay system sans to
   match the SS body rendering and keep offline readability.
+- Map: **Protomaps vector basemap via MapLibre GL** (`maplibre-gl` +
+  `pmtiles` + `@protomaps/basemaps`, `light` flavor, `en` labels) replaces
+  Leaflet raster. Source order: `VITE_PROTOMAPS_TILES_URL` (self-hosted
+  `.pmtiles`) → `VITE_PROTOMAPS_API_KEY` (hosted TileJSON) → OSM raster
+  fallback (no key, previews keep working). Schematic overlay (navy dashed
+  connector, points, labels, popups) is GeoJSON in the same MapLibre
+  instance. Footer attribution switches Protomaps/OSM vs OSM-only.
 
 ## 4. Verify (America.gov parity checklist)
 

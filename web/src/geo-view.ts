@@ -1,4 +1,4 @@
-// Pure view helpers for the real map (tested; Leaflet stays in the component).
+// Pure view helpers for the schematic map (tested; MapLibre stays in the component).
 export interface FlowNode {
   label: string;
   role: string;
@@ -6,7 +6,7 @@ export interface FlowNode {
   at: [number, number];
 }
 
-/** GeoJSON [lon, lat] → Leaflet [lat, lon]. Drops non-finite points. */
+/** GeoJSON [lon, lat] → map [lat, lon] (kept for tests and list views). Drops non-finite points. */
 export function toLatLngs(nodes: FlowNode[]): Array<[number, number]> {
   return nodes
     .filter((n) => Number.isFinite(n.at[0]) && Number.isFinite(n.at[1]))
