@@ -102,7 +102,7 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
   max-width: 75%; font-size: 16.5px; line-height: 1.5;
 }
 .assistant-block { margin: 10px 0 8px; }
-.answer { font-size: 17px; line-height: 1.7; color: var(--ink); }
+.answer { font-family: var(--font-display); font-size: 18px; line-height: 1.7; color: var(--ink); }
 .answer h4 { font-size: 19px; font-weight: 700; margin: 20px 0 8px; font-family: var(--font-body); }
 .markdown p { margin: 10px 0; }
 .markdown ul { margin: 12px 0; padding: 0; list-style: none; }
