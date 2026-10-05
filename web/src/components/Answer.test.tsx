@@ -51,7 +51,8 @@ describe('AnswerCard', () => {
     render(<AnswerCard answer={base} />);
     expect(screen.getByText('Turbidity')).toBeInTheDocument();
     expect(screen.getByText(/2024 Annual/)).toBeInTheDocument();
-    expect(screen.getByText('nyc-2024-v1')).toBeInTheDocument();
+    expect(screen.getByText('Within standard')).toBeInTheDocument();
+    expect(screen.getByText('Verify')).toBeInTheDocument();
     expect(screen.getByText(/Catskill Watershed/)).toBeInTheDocument();
     expect(screen.getByText('Access EPA ECHO system profile')).toBeInTheDocument();
   });

@@ -4,31 +4,53 @@ import type { QualityMetricRecord } from '../../../types/water-intelligence';
 import { RealMap } from './RealMap';
 import { renderMarkdown } from '../md';
 
-export function MetricCard({ metric }: { metric: QualityMetricRecord }) {
-  const value = (v: string | undefined) => (v && v.length > 0 ? v : 'not reported');
+const STATUS_LABEL: Record<QualityMetricRecord['complianceStatus'], { text: string; cls: string }> = {
+  within_standard: { text: 'Within standard', cls: 'status-ok' },
+  exceeds_standard: { text: 'Exceeds standard', cls: 'status-bad' },
+  monitoring_violation: { text: 'Monitoring violation', cls: 'status-warn' },
+};
+
+function MetricsTable({ metrics }: { metrics: QualityMetricRecord[] }) {
   return (
-    <div className="metric">
-      <div className="metric-top">
-        <strong>{value(metric.parameter)}</strong>
-        <span>{value(metric.reportedValue)}</span>
-      </div>
-      <ul>
-        <li>
-          Regulatory standard: {value(metric.regulatoryThreshold)} ({value(metric.complianceStatus)})
-        </li>
-        <li>
-          Test / reporting period: {value(metric.testDate)} ({value(metric.provenance.reportPeriod)})
-        </li>
-        <li>
-          Ingested: {value(metric.provenance.captureTime)} · Version:{' '}
-          <code>{value(metric.provenance.sourceVersionId)}</code>
-        </li>
-        <li>
-          <a href={metric.provenance.sourceDocumentUrl} target="_blank" rel="noreferrer">
-            Verify regulatory filing
-          </a>
-        </li>
-      </ul>
+    <div className="table-wrap">
+      <table className="metrics-table">
+        <thead>
+          <tr>
+            <th scope="col">Parameter</th>
+            <th scope="col">Reported</th>
+            <th scope="col">Standard</th>
+            <th scope="col">Status</th>
+            <th scope="col">Tested</th>
+            <th scope="col">Filing</th>
+          </tr>
+        </thead>
+        <tbody>
+          {metrics.map((m) => {
+            const status = STATUS_LABEL[m.complianceStatus];
+            return (
+              <tr key={m.parameter}>
+                <td>
+                  <strong>{m.parameter}</strong>
+                </td>
+                <td>{m.reportedValue}</td>
+                <td>{m.regulatoryThreshold}</td>
+                <td>
+                  <span className={`status-pill ${status.cls}`}>{status.text}</span>
+                </td>
+                <td>
+                  {m.testDate}
+                  <span className="cell-sub">{m.provenance.reportPeriod}</span>
+                </td>
+                <td>
+                  <a href={m.provenance.sourceDocumentUrl} target="_blank" rel="noreferrer">
+                    Verify<span className="ext" aria-hidden="true">↗</span>
+                  </a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -50,9 +72,7 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
       {answer.metrics.length > 0 && (
         <>
           <h4>Reported quality metrics</h4>
-          {answer.metrics.map((m) => (
-            <MetricCard key={m.parameter} metric={m} />
-          ))}
+          <MetricsTable metrics={answer.metrics} />
         </>
       )}
       <h4>Regulatory compliance (EPA SDWIS)</h4>

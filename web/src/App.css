@@ -112,8 +112,54 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
 .markdown a, .answer a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
 .markdown a:hover, .answer a:hover { color: #0842a0; }
 .ext { text-decoration: none; display: inline-block; margin-left: 1px; font-size: 0.85em; }
-.metric { border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: 12px 0; background: #fff; }
-.metric-top { display: flex; justify-content: space-between; gap: 8px; }
+/* shadcn-style data table */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 12px 0 4px;
+  background: #fff;
+}
+.metrics-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+}
+.metrics-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fafbfc;
+  white-space: nowrap;
+}
+.metrics-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  white-space: nowrap;
+}
+.metrics-table tbody tr:last-child td { border-bottom: 0; }
+.metrics-table tbody tr:hover { background: #f8fafc; }
+.cell-sub { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.status-pill {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 12px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.status-ok { background: #e7f4e4; color: #1e6b34; border-color: #b6dfb6; }
+.status-bad { background: #fde8e8; color: #9b1c1c; border-color: #f3b8b8; }
+.status-warn { background: #fff3cd; color: #7a5b00; border-color: #e6c87a; }
 .map-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 14px 0; background: #fafbfc; }
 .real-map { height: 320px; width: 100%; margin-top: 8px; border-radius: 8px; z-index: 0; }
 .map-flow-list { font-size: 13px; color: var(--muted); margin: 8px 0 0; padding-left: 18px; }
