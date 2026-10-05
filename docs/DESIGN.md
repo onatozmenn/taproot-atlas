@@ -79,9 +79,11 @@
 - Thread action: `Start over` ghost pill, top-right of thread.
 - Out-of-scope: polite decline (`I can only help with government services…`).
 
-### 1.7 Menu overlay
-- `Menu` opens a small dropdown/panel: agency/topic links + `Start over`.
+### 1.7 Menu overlay (reference only — omitted in our build)
+- America.gov: `Menu` opens a small dropdown/panel: agency/topic links + `Start over`.
 - Esc closes, focus returns to Menu. `aria-expanded` on the button.
+- Our build ships **no menu** per product request: header keeps brand left
+  and a subtle `Start over` ghost button right (visible only in a thread).
 
 ### 1.8 Footer
 - Composer stays sticky-bottom (white, blur-safe), footnote 12px muted:
@@ -181,12 +183,11 @@ Thread + working + done states of the campsite conversation:
 
 ## 4. Verify (America.gov parity checklist)
 
-- [ ] Header: logo left, Menu pill right, 64–72px, hairline.
+- [ ] Header: logo left, subtle Start over right (in thread only), 68–76px, no menu.
 - [ ] Hero centered, H1 clamp(40–56px), sub muted, spacing per §1.3.
 - [ ] Search pill w/ shadow, mic + navy send inside, focus ring.
 - [ ] Try chips ×3, wrap on mobile.
 - [ ] Privacy microcopy under composer.
 - [ ] Thread: right gray user bubble, full-width assistant, source + next-step
       anatomy, typing pulse, Start over, feedback/copy.
-- [ ] Menu opens/closes, Esc works, focus returns.
 - [ ] `npm --prefix web run test` + `build` green.

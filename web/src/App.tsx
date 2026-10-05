@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { askTapWater, type TapAnswer } from './api';
 import { AnswerCard } from './components/Answer';
 import { Logo } from './components/Logo';
@@ -169,7 +169,6 @@ export default function App() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'not-helpful' | null>>({});
   const [copied, setCopied] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
@@ -177,17 +176,6 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestion = useRef('');
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMenuOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [menuOpen]);
 
   async function send(question: string) {
     const q = question.trim().slice(0, 2000);
@@ -303,39 +291,20 @@ export default function App() {
           <Logo size={26} />
           <span className="wordmark">Taproot Atlas</span>
         </div>
-        <button
-          className="menu-btn"
-          type="button"
-          aria-expanded={menuOpen}
-          aria-controls="site-menu"
-          onClick={() => setMenuOpen((o) => !o)}
-        >
-          Menu
-        </button>
-      </header>
-      {menuOpen && (
-        <nav className="menu-panel" id="site-menu" aria-label="Site menu">
-          <a href="https://echo.epa.gov/" target="_blank" rel="noreferrer">EPA ECHO</a>
-          <a href="https://www.nyc.gov/site/dep/water/drinking-water.page" target="_blank" rel="noreferrer">
-            NYC DEP drinking water
-          </a>
-          <a href="https://www.epa.gov/ground-water-and-drinking-water" target="_blank" rel="noreferrer">
-            EPA drinking water
-          </a>
+        {!empty && (
           <button
-            type="button"
             className="ghost-btn"
+            type="button"
             onClick={() => {
               stop();
               setMessages([]);
               setError(null);
-              setMenuOpen(false);
             }}
           >
             Start over
           </button>
-        </nav>
-      )}
+        )}
+      </header>
 
       <main className="chat" ref={boxRef} id="chat" aria-live="polite">
         {empty ? (
