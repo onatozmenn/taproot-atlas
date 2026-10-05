@@ -7,8 +7,6 @@ import {
   Mic01Icon,
   Refresh01Icon,
   StopIcon,
-  ThumbsDownIcon,
-  ThumbsUpIcon,
   Tick02Icon,
   Location01Icon,
 } from '@hugeicons/core-free-icons';
@@ -215,7 +213,6 @@ export default function App() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'not-helpful' | null>>({});
   const [copied, setCopied] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
@@ -407,26 +404,6 @@ export default function App() {
                   {m.answer && <AnswerCard answer={m.answer} />}
                   <div className="attrib" aria-label="Answer actions">
                     {m.answer && m.answer.scope !== 'redirect' && <SourcePanel answer={m.answer} />}
-                    <span className="icon-pill" role="group" aria-label="Rate this answer">
-                      <button
-                        type="button"
-                        aria-label="Helpful"
-                        aria-pressed={feedback[m.id] === 'helpful'}
-                        className={feedback[m.id] === 'helpful' ? 'active' : ''}
-                        onClick={() => setFeedback((f) => ({ ...f, [m.id]: 'helpful' }))}
-                      >
-                        <HugeiconsIcon icon={ThumbsUpIcon} size={17} />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Not helpful"
-                        aria-pressed={feedback[m.id] === 'not-helpful'}
-                        className={feedback[m.id] === 'not-helpful' ? 'active' : ''}
-                        onClick={() => setFeedback((f) => ({ ...f, [m.id]: 'not-helpful' }))}
-                      >
-                        <HugeiconsIcon icon={ThumbsDownIcon} size={17} />
-                      </button>
-                    </span>
                     <button
                       type="button"
                       className="icon-pill solo"
