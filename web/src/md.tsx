@@ -44,8 +44,11 @@ function inline(s: string): string {
   let h = s;
   // `code` first
   h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // links (http/https only)
-  h = h.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+  // links (http/https only) with external marker like America.gov ↗
+  h = h.replace(
+    /\[([^\]]+)\]\((https?:[^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noreferrer">$1<span class="ext" aria-hidden="true">↗</span></a>',
+  );
   // bold
   h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   // italic *...*

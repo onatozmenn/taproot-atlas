@@ -56,7 +56,10 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
   };
 }
 
-export async function askTapWater(question: string, opts: { lat?: number; lon?: number } = {}): Promise<TapAnswer> {
+export async function askTapWater(
+  question: string,
+  opts: { lat?: number; lon?: number; signal?: AbortSignal } = {},
+): Promise<TapAnswer> {
   const q = question.slice(0, 2000);
   const hasCoords =
     typeof opts.lat === 'number' &&
@@ -66,6 +69,8 @@ export async function askTapWater(question: string, opts: { lat?: number; lon?: 
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
+    const onExternalAbort = () => controller.abort();
+    opts.signal?.addEventListener('abort', onExternalAbort);
     try {
       const res = await fetch('/api/ask', {
         method: 'POST',
@@ -76,9 +81,12 @@ export async function askTapWater(question: string, opts: { lat?: number; lon?: 
       if (res.ok) return toTapAnswer((await res.json()) as ValidatedApiResponse);
     } finally {
       clearTimeout(timer);
+      opts.signal?.removeEventListener('abort', onExternalAbort);
     }
   } catch {
-    // Preview/dev without functions, or offline: fall back to the local pipeline.
+    // Preview/dev without functions, offline, or aborted: fall back to local pipeline.
+    opts.signal?.throwIfAborted();
   }
+  opts.signal?.throwIfAborted();
   return toTapAnswer(await answerTapWater({ question: q, ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}) }));
 }

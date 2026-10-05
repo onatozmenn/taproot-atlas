@@ -139,6 +139,39 @@ framing, never `safe/drinkable/pure` (`lib/guardrails.ts`).
   markdown overview, `RealMap`, metric cards, compliance block.
 - `web/src/suggest.ts` — chips stay fact-only (unchanged contract).
 
+## 5. Screenshot audit (2026-10-05, user-provided SS ×3) — applied pixel notes
+
+Thread + working + done states of the campsite conversation:
+
+- Header: flag glyph + `America.gov` in a transitional serif (matches
+  Newsreader) ~25px weight ~500, no tag pill, no hairline; `Menu` navy pill
+  (`#0a2f5c` family, 14×30px, 16.5px/600). → Ours: droplet + `Taproot Atlas`
+  in Newsreader, same Menu geometry.
+- User turn: right-aligned single bubble, `#eef2f6` fill, radius ~22,
+  13×22px padding, 16.5px. One bubble per turn, no avatar.
+- Working: agency mark (~19px) + `Working` (ink, 600) + `through your
+  request…` (muted `#94a3b8`). → Ours: droplet + same split phrasing.
+- Answer: 17px/1.7 ink; H `Reserve a federal campsite` 19px/700 sans;
+  links link-blue + underline + `↗`; phone links with tel icon;
+  bullets custom `▪`; streaming tail fades to gray (we render complete
+  answers; no fake streaming).
+- Attribution row: `[mark + agency pill]` + `[thumbs-up | thumbs-down pill]`
+  + `[copy pill]`, all `#f1f5f9` radius 999. → Ours: same row with
+  `systemName · PWSID` source pill; icon-only rate/copy buttons (aria
+  labels kept, so existing tests hold).
+- Follow-ups: **vertical stack**, left-aligned large outline pills
+  (`#e2e8f0` border, radius 20, 17×26px, 16.5px slate text).
+- Composer (all states): 2px near-black (`#101828`) pill, min-height 76,
+  30px left padding, `Ask anything…` `#94a3b8` placeholder; right cluster
+  clip + mic (ink) + 48px send circle. Idle: `#f1f5f9` fill, faint arrow,
+  disabled. Ready: navy fill, white arrow. Working: navy fill, white
+  **stop square** (ours is a live abort, not decorative).
+- No .gov banner strip and no `Start over` row in-thread on this screen;
+  honesty content moved to the composer footnote + `ValidationLine`.
+- Font decision: **Newsreader** (Google Fonts, `display=swap`, Georgia
+  fallback) for brand + hero display only; body/answers stay system sans to
+  match the SS body rendering and keep offline readability.
+
 ## 4. Verify (America.gov parity checklist)
 
 - [ ] Header: logo left, Menu pill right, 64–72px, hairline.
