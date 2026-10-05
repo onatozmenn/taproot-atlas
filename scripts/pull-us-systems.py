@@ -47,8 +47,8 @@ CURATED = {
     "IL0316000": {
         "basins": [{"name": "Lake Michigan", "at": [-87.2, 42.8]}],
         "utilityUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
-        "reportUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
-        "metricsCurated": False,
+        "reportUrl": "https://chicagoccr.org/docs/2025_WaterQualityReport.pdf",
+        "metricsCurated": True,
     },
     "TX1010013": {
         "basins": [{"name": "Trinity River", "at": [-94.8, 30.6]}, {"name": "Lake Livingston", "at": [-95.1, 30.7]}],

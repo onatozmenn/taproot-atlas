@@ -147,9 +147,9 @@
         }
       ],
       "populationServed": 2721308,
-      "metricsCurated": false,
+      "metricsCurated": true,
       "utilityUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
-      "reportUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html"
+      "reportUrl": "https://chicagoccr.org/docs/2025_WaterQualityReport.pdf"
     },
     {
       "pwsid": "TX0150018",

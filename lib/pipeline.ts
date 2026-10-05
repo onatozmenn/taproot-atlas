@@ -10,7 +10,7 @@ import type {
 import { resolveSystem } from './geo.js';
 import { readSnapshotCompliance, pendingCompliance } from './echo.js';
 import type { SdwisComplianceProfile } from '../types/water-intelligence.js';
-import { ingestNycMetrics } from './nyc.js';
+import { loadCityMetrics } from './city-metrics.js';
 import { buildSchematicFlow, showcaseNodes, SCHEMATIC_DISCLAIMER } from './schematic.js';
 import { narrateGroundTruth, joinNarrative, type Narrative } from './narrator.js';
 import { buildFactsMessage } from './llm-narrator.js';
@@ -138,7 +138,7 @@ export async function answerTapWater(
     const basins = resolved.pwsid !== 'UNKNOWN' ? resolved.primaryBasins : (dirSystem?.basins.map((b) => b.name) ?? []);
     const [compliance, metrics] = await Promise.all([
       loadCompliance(effectivePwsid),
-      Promise.resolve(ingestNycMetrics(effectivePwsid)),
+      Promise.resolve(loadCityMetrics(effectivePwsid)),
     ]);
     schematic = {
       pwsid: effectivePwsid,
@@ -195,7 +195,7 @@ export async function answerTapWater(
         { label: 'Distribution Zone', role: 'distribution_zone' as const, at: [clon, clat] },
       ]),
       regulatoryCompliance: pendingCompliance(dir.pwsid, auditTimestamp),
-      latestReportedMetrics: [],
+      latestReportedMetrics: loadCityMetrics(dir.pwsid),
       disclaimer: `${PUBLIC_HEALTH_NOTICE} ${SCHEMATIC_DISCLAIMER}`,
     };
     }

@@ -275,6 +275,16 @@ describe('answerTapWater', () => {
     assert.ok(res.narrative.overview.includes('Schuylkill River'));
   });
 
+  it('chicago serves curated lab metrics from its CCR snapshot', async () => {
+    const res = await answerTapWater(
+      { question: 'chicago tap water?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.groundTruth.pwsid, 'IL0316000');
+    assert.equal(res.groundTruth.latestReportedMetrics.length, 2);
+    assert.ok(res.narrative.metricsSummary.includes('Turbidity'));
+  });
+
   it('explicit coordinates in a Verified ring keep the verified verdict', async () => {
     const res = await answerTapWater(
       { question: 'tell me about the water here', lat: 34.05, lon: -118.25 },
