@@ -139,11 +139,10 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
 .icon-pill button:hover { background: #e2e8f0; color: var(--ink); }
 .icon-pill button.active { color: var(--navy); background: #dbe7f5; }
 
-/* Working indicator (SS: mark + "Working" dark + gray rest) */
-.working { display: flex; align-items: center; gap: 10px; margin: 18px 2px; font-size: 16px; color: var(--faint); }
-.working strong { color: var(--ink); font-weight: 600; }
-.working .logo-mark { animation: bob 1.4s ease-in-out infinite; }
-@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+/* Thinking indicator: phrases alternate, one word at a time goes bold/dark. */
+.working { display: block; margin: 18px 2px; font-size: 17px; color: var(--faint); }
+.working .w { font-weight: 400; }
+.working .w.on { color: var(--ink); font-weight: 700; }
 
 .composer-wrap { position: sticky; bottom: 0; background: #fff; padding: 12px 24px 8px; }
 .composer-wrap .composer { max-width: 680px; margin: 0 auto; }

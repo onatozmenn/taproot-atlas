@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { askTapWater, type TapAnswer } from './api';
 import { AnswerCard } from './components/Answer';
 import { Logo } from './components/Logo';
@@ -69,6 +69,53 @@ function IconCheck() {
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="m4 12.5 5 5L20 6.5" />
     </svg>
+  );
+}
+
+/**
+ * America.gov-style thinking indicator: "Thinking..." and
+ * "Working through your request..." alternate while one word at a time
+ * turns bold/dark, sweeping left to right in a loop.
+ */
+const THINKING_PHRASES = ['Thinking...', 'Working through your request...'];
+
+// Flattened animation steps: [phraseIndex, wordIndex]. Boundary steps are
+// repeated so each phrase holds briefly before switching.
+const THINKING_STEPS: Array<[number, number]> = (() => {
+  const steps: Array<[number, number]> = [];
+  THINKING_PHRASES.forEach((phrase, p) => {
+    const n = phrase.split(' ').length;
+    for (let w = 0; w < n; w++) {
+      steps.push([p, w]);
+      if (w === 0 || w === n - 1) steps.push([p, w]);
+    }
+  });
+  return steps;
+})();
+
+function WorkingIndicator() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return;
+    }
+    const t = setInterval(() => setTick((x) => x + 1), 300);
+    return () => clearInterval(t);
+  }, []);
+  const [pi, wi] = THINKING_STEPS[tick % THINKING_STEPS.length];
+  const words = THINKING_PHRASES[pi].split(' ');
+  return (
+    <div className="working" role="status" aria-label={THINKING_PHRASES[pi]}>
+      {words.map((w, i) => (
+        <span key={`${pi}-${i}`} className={i === wi ? 'w on' : 'w'}>
+          {w}
+          {i < words.length - 1 ? ' ' : ''}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -356,14 +403,7 @@ export default function App() {
                 </div>
               ),
             )}
-            {busy && (
-              <div className="working" role="status">
-                <Logo size={19} />
-                <span>
-                  <strong>Working</strong> through your request…
-                </span>
-              </div>
-            )}
+            {busy && <WorkingIndicator />}
           </>
         )}
         {error && (
