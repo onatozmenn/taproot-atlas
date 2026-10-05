@@ -28,6 +28,14 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
         const maplibregl = await import('maplibre-gl');
         await import('maplibre-gl/dist/maplibre-gl.css');
         if (cancelled || !divRef.current) return;
+        // Vite code-splits the MapLibre web worker into a hashed chunk whose
+        // URL the default resolver cannot find ("Worker failed to load").
+        // Point it at the bundled worker explicitly (verified pattern for
+        // maplibre-gl v6 + Vite 5; config.WORKER_URL is the public API).
+        const { default: mapWorkerUrl } = await import(
+          'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+        );
+        maplibregl.config.WORKER_URL = mapWorkerUrl;
 
         const apiKey = (import.meta.env.VITE_PROTOMAPS_API_KEY as string | undefined)?.trim();
         const tilesUrl = (import.meta.env.VITE_PROTOMAPS_TILES_URL as string | undefined)?.trim();
