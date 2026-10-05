@@ -24,6 +24,8 @@ function metricSentence(m: QualityMetricRecord): string {
 
 export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
   const basins = schematic.primaryBasins;
+  // Tier B directory entry: verified PWSID + city, basins not yet curated.
+  const isTierB = schematic.pwsid !== 'UNKNOWN' && basins.length === 0;
   const basinPhrase =
     basins.length === 1
       ? `the ${basins[0]} basin`
@@ -43,11 +45,15 @@ export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
         `and the ${windowStart} to ${windowEnd} compliance record are detailed below.`
       : 'Lab metrics and compliance records for this system are not yet curated, ' +
         'so verify live records at the linked ECHO profile.';
-  const overview =
-    `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}) ` +
-    `is sourced from ${basinPhrase}. ` +
-    `${detailPhrase} ` +
-    `${boundaryPhrase}; paths on the map are schematic approximations.`;
+  const overview = isTierB
+    ? `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}). ` +
+      'Source details for this system are not yet curated in the snapshot, ' +
+      'so verify live records at the linked ECHO profile. ' +
+      `${boundaryPhrase}; paths on the map are schematic approximations.`
+    : `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}) ` +
+      `is sourced from ${basinPhrase}. ` +
+      `${detailPhrase} ` +
+      `${boundaryPhrase}; paths on the map are schematic approximations.`;
 
   const metricsSummary =
     schematic.latestReportedMetrics.length > 0

@@ -223,6 +223,19 @@ describe('answerTapWater', () => {
     assert.equal(res.groundTruth.pwsid, 'TX1010013');
   });
 
+  it('tier B cities resolve with honest uncurated narratives', async () => {
+    const res = await answerTapWater(
+      { question: 'miami?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'water');
+    assert.equal(res.groundTruth.pwsid, 'FL4130871');
+    assert.deepEqual(res.groundTruth.primaryBasins, []);
+    assert.equal(res.groundTruth.regulatoryCompliance.snapshotPending, true);
+    assert.ok(res.narrative.overview.includes('not yet curated'));
+    assert.ok(!res.narrative.overview.includes('basins outside'));
+  });
+
   it('nyc by name resolves to the curated snapshot from anywhere', async () => {
     const res = await answerTapWater(
       { question: 'new york water?', lat: 39.9, lon: 32.8 },

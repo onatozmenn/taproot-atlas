@@ -88,9 +88,9 @@ Local check without deploying: `npm --prefix web run test` covers the handler
 
 ## Showcase
 
-Primary: New York City (PWSID example: NYC DEP system) plus directory cities
-Los Angeles (CA1910067), Chicago (IL0316000), and Houston (TX1010013) with
-curated basins and pending compliance. Global fallback: nearby
+Primary: New York City (PWSID example: NYC DEP system) plus a top-100 US
+systems directory (verified PWSIDs from EPA SDWIS; curated basins + metrics
+only where vendored, honest pending states elsewhere). Global fallback: nearby
 public drinking points with explicit unverified-boundary notice.
 
 ## Repo hygiene

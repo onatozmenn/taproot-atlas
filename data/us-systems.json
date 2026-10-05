@@ -1,8 +1,10 @@
 {
   "snapshotVersion": "us-systems-2026-10-v1",
   "captureTime": "2026-10-05T00:00:00Z",
-  "provenanceNote": "Curated directory of major US public water systems. Every PWSID and basin list is verified against an official source (state SDWIS, utility CCR page, or utility supply page linked per entry). Only NYC ships lab metrics and a compliance snapshot; other entries carry basins + utility links with unverified boundaries until agency polygons and curated snapshots land. Schematic points are representative and approximate, never engineering alignments.",
+  "provenanceNote": "Top-100 US community water systems by population served, from EPA SDWIS (Envirofacts efservice WATER_SYSTEM: active CWS serving >100k, largest per city). Map centers geocoded via OSM Nominatim. Only the 4 curated entries ship verified basins and utility links (see verificationSources); the rest carry PWSID + city + center with pending compliance and no lab metrics. Schematic points are representative and approximate, never engineering alignments.",
   "verificationSources": [
+    "https://data.epa.gov/efservice (WATER_SYSTEM table)",
+    "https://nominatim.openstreetmap.org (map centers)",
     "https://sdwis.waterboards.ca.gov/PDWW/JSP/WaterSystemDetail.jsp?tinwsys_is_number=2544&tinwsys_st_code=CA",
     "https://chicagoccr.org/docs/2025_WaterQualityReport.pdf",
     "https://www.ladwp.com/who-we-are/water-system/sources-supply",
@@ -11,64 +13,1775 @@
   "systems": [
     {
       "pwsid": "NY7003493",
-      "systemName": "NYC DEP Catskill-Delaware",
+      "systemName": "New York City System",
       "city": "New York",
       "state": "NY",
-      "aliases": ["new york", "new york city", "nyc"],
-      "center": [-73.97, 40.78],
+      "aliases": [
+        "new york",
+        "new york city",
+        "nyc"
+      ],
+      "center": [
+        -73.97,
+        40.78
+      ],
       "boundaryType": "modeled_epa",
       "basins": [
-        { "name": "Catskill", "at": [-74.3, 42.0] },
-        { "name": "Delaware", "at": [-75.2, 41.7] }
+        {
+          "name": "Catskill",
+          "at": [
+            -74.3,
+            42.0
+          ]
+        },
+        {
+          "name": "Delaware",
+          "at": [
+            -75.2,
+            41.7
+          ]
+        }
       ],
+      "populationServed": 8271000,
+      "metricsCurated": true,
       "utilityUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page",
-      "reportUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page",
-      "metricsCurated": true
+      "reportUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page"
     },
     {
       "pwsid": "CA1910067",
-      "systemName": "Los Angeles Dept. of Water and Power",
+      "systemName": "Los Angeles-City, Dept. Of Water & Power",
       "city": "Los Angeles",
       "state": "CA",
-      "aliases": ["los angeles", "ladwp", "l.a."],
-      "center": [-118.25, 34.05],
+      "aliases": [
+        "l.a.",
+        "ladwp",
+        "los angeles"
+      ],
+      "center": [
+        -118.25,
+        34.05
+      ],
       "boundaryType": "unverified_fallback",
       "basins": [
-        { "name": "Owens Valley", "at": [-118.3, 37.0] },
-        { "name": "Mono Basin", "at": [-119.0, 38.0] },
-        { "name": "Colorado River", "at": [-114.7, 36.0] }
+        {
+          "name": "Owens Valley",
+          "at": [
+            -118.3,
+            37.0
+          ]
+        },
+        {
+          "name": "Mono Basin",
+          "at": [
+            -119.0,
+            38.0
+          ]
+        },
+        {
+          "name": "Colorado River",
+          "at": [
+            -114.7,
+            36.0
+          ]
+        }
       ],
+      "populationServed": 3875566,
+      "metricsCurated": false,
       "utilityUrl": "https://www.ladwp.com/who-we-are/water-system/sources-supply",
-      "reportUrl": "https://www.ladwp.com/who-we-are/water-system/las-drinking-water-quality-report",
-      "metricsCurated": false
-    },
-    {
-      "pwsid": "IL0316000",
-      "systemName": "City of Chicago Dept. of Water Management",
-      "city": "Chicago",
-      "state": "IL",
-      "aliases": ["chicago"],
-      "center": [-87.63, 41.88],
-      "boundaryType": "unverified_fallback",
-      "basins": [{ "name": "Lake Michigan", "at": [-87.2, 42.8] }],
-      "utilityUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
-      "reportUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
-      "metricsCurated": false
+      "reportUrl": "https://www.ladwp.com/who-we-are/water-system/las-drinking-water-quality-report"
     },
     {
       "pwsid": "TX1010013",
-      "systemName": "City of Houston Public Works",
+      "systemName": "City Of Houston",
       "city": "Houston",
       "state": "TX",
-      "aliases": ["houston"],
-      "center": [-95.37, 29.76],
+      "aliases": [
+        "houston"
+      ],
+      "center": [
+        -95.37,
+        29.76
+      ],
       "boundaryType": "unverified_fallback",
       "basins": [
-        { "name": "Trinity River", "at": [-94.8, 30.6] },
-        { "name": "Lake Livingston", "at": [-95.1, 30.7] }
+        {
+          "name": "Trinity River",
+          "at": [
+            -94.8,
+            30.6
+          ]
+        },
+        {
+          "name": "Lake Livingston",
+          "at": [
+            -95.1,
+            30.7
+          ]
+        }
       ],
+      "populationServed": 2970543,
+      "metricsCurated": false,
       "utilityUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report",
-      "reportUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report",
+      "reportUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report"
+    },
+    {
+      "pwsid": "IL0316000",
+      "systemName": "Chicago",
+      "city": "Chicago",
+      "state": "IL",
+      "aliases": [
+        "chicago"
+      ],
+      "center": [
+        -87.63,
+        41.88
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [
+        {
+          "name": "Lake Michigan",
+          "at": [
+            -87.2,
+            42.8
+          ]
+        }
+      ],
+      "populationServed": 2721308,
+      "metricsCurated": false,
+      "utilityUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
+      "reportUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html"
+    },
+    {
+      "pwsid": "TX0150018",
+      "systemName": "San Antonio Water System",
+      "city": "San Antonio",
+      "state": "TX",
+      "aliases": [
+        "san antonio"
+      ],
+      "center": [
+        -98.4951,
+        29.4246
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 2643729,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MA6000000",
+      "systemName": "Mwra",
+      "city": "Chelsea",
+      "state": "MA",
+      "aliases": [
+        "chelsea"
+      ],
+      "center": [
+        -71.0369,
+        42.3912
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 2580000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL4130871",
+      "systemName": "Mdwasa - Main System",
+      "city": "Miami",
+      "state": "FL",
+      "aliases": [
+        "miami"
+      ],
+      "center": [
+        -80.1936,
+        25.7742
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 2377460,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MD0150005",
+      "systemName": "Washington Suburban Sanitary Commission",
+      "city": "Laurel",
+      "state": "MD",
+      "aliases": [
+        "laurel"
+      ],
+      "center": [
+        -76.8485,
+        39.0984
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1900000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MD0300002",
+      "systemName": "City Of Baltimore",
+      "city": "Baltimore",
+      "state": "MD",
+      "aliases": [
+        "baltimore"
+      ],
+      "center": [
+        -76.6108,
+        39.2909
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1600000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "PA1510001",
+      "systemName": "Philadelphia Water Department",
+      "city": "Philadelphia",
+      "state": "PA",
+      "aliases": [
+        "philadelphia"
+      ],
+      "center": [
+        -75.1635,
+        39.9527
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1600000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NV0000090",
+      "systemName": "Las Vegas Valley Water District",
+      "city": "Las Vegas",
+      "state": "NV",
+      "aliases": [
+        "las vegas"
+      ],
+      "center": [
+        -115.1484,
+        36.1674
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1539277,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA0110005",
+      "systemName": "East Bay Mud",
+      "city": "Oakland",
+      "state": "CA",
+      "aliases": [
+        "oakland"
+      ],
+      "center": [
+        -122.2714,
+        37.8045
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1442800,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA3710020",
+      "systemName": "San Diego, City Of",
+      "city": "San Diego",
+      "state": "CA",
+      "aliases": [
+        "san diego"
+      ],
+      "center": [
+        -117.1638,
+        32.7157
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1385379,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "TX0570004",
+      "systemName": "Dallas Water Utility",
+      "city": "Dallas",
+      "state": "TX",
+      "aliases": [
+        "dallas"
+      ],
+      "center": [
+        -96.7969,
+        32.7763
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1356479,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "OH1801212",
+      "systemName": "Cleveland Public Water System",
+      "city": "Cleveland",
+      "state": "OH",
+      "aliases": [
+        "cleveland"
+      ],
+      "center": [
+        -81.6937,
+        41.4997
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1308955,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "OH2504412",
+      "systemName": "Columbus Public Water System",
+      "city": "Columbus",
+      "state": "OH",
+      "aliases": [
+        "columbus"
+      ],
+      "center": [
+        -83.0007,
+        39.9623
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1305946,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CO0116001",
+      "systemName": "Denver Water Board",
+      "city": "Denver",
+      "state": "CO",
+      "aliases": [
+        "denver"
+      ],
+      "center": [
+        -104.9849,
+        39.7392
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1287000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NC0160010",
+      "systemName": "Charlotte Water",
+      "city": "Charlotte",
+      "state": "NC",
+      "aliases": [
+        "charlotte"
+      ],
+      "center": [
+        -80.8431,
+        35.2272
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1163701,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "WA5377050",
+      "systemName": "Seattle Public Utilities",
+      "city": "Seattle",
+      "state": "WA",
+      "aliases": [
+        "seattle"
+      ],
+      "center": [
+        -122.3301,
+        47.6038
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1161961,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "VA6059501",
+      "systemName": "Fairfax County Water Authority",
+      "city": "Herndon",
+      "state": "VA",
+      "aliases": [
+        "herndon"
+      ],
+      "center": [
+        -77.3859,
+        38.9695
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1121613,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "TX2270001",
+      "systemName": "City Of Austin Water & Wastewater",
+      "city": "Austin",
+      "state": "TX",
+      "aliases": [
+        "austin"
+      ],
+      "center": [
+        -97.7437,
+        30.2711
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1115323,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MO6010716",
+      "systemName": "Mo American St Louis St Charles Counties",
+      "city": "Chesterfield",
+      "state": "MO",
+      "aliases": [
+        "chesterfield"
+      ],
+      "center": [
+        -90.5681,
+        38.6582
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1111000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NY5110526",
+      "systemName": "Suffolk County Water Authority",
+      "city": "Hauppauge",
+      "state": "NY",
+      "aliases": [
+        "hauppauge"
+      ],
+      "center": [
+        -73.2062,
+        40.8237
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1100000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "GA1210001",
+      "systemName": "Atlanta",
+      "city": "Atlanta",
+      "state": "GA",
+      "aliases": [
+        "atlanta"
+      ],
+      "center": [
+        -84.3898,
+        33.7545
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1089893,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA4310011",
+      "systemName": "San Jose Water",
+      "city": "San Jose",
+      "state": "CA",
+      "aliases": [
+        "san jose"
+      ],
+      "center": [
+        -121.8906,
+        37.3362
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 1039920,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "GA1350004",
+      "systemName": "Gwinnett Co. Dept. Of Water Resources",
+      "city": "Lawrenceville",
+      "state": "GA",
+      "aliases": [
+        "lawrenceville"
+      ],
+      "center": [
+        -83.989,
+        33.9566
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 975000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "TX2200012",
+      "systemName": "City Of Fort Worth",
+      "city": "Fort Worth",
+      "state": "TX",
+      "aliases": [
+        "fort worth"
+      ],
+      "center": [
+        -97.3327,
+        32.7532
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 955900,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "IN5249004",
+      "systemName": "Citizens Water - Indianapolis",
+      "city": "Indianapolis",
+      "state": "IN",
+      "aliases": [
+        "indianapolis"
+      ],
+      "center": [
+        -86.1584,
+        39.7683
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 880345,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA3810011",
+      "systemName": "Sfpuc City Distribution Division",
+      "city": "Burlingame",
+      "state": "CA",
+      "aliases": [
+        "burlingame"
+      ],
+      "center": [
+        -122.3473,
+        37.5781
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 848019,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL2161328",
+      "systemName": "Jea Major Grid",
+      "city": "Jacksonville",
+      "state": "FL",
+      "aliases": [
+        "jacksonville"
+      ],
+      "center": [
+        -81.6579,
+        30.3262
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 826664,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "PA1460073",
+      "systemName": "Aqua Pa Main System",
+      "city": "Bryn Mawr",
+      "state": "PA",
+      "aliases": [
+        "bryn mawr"
+      ],
+      "center": [
+        -75.3173,
+        40.0238
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 822600,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "KY0560258",
+      "systemName": "Louisville Water Company",
+      "city": "Louisville",
+      "state": "KY",
+      "aliases": [
+        "louisville"
+      ],
+      "center": [
+        -85.7594,
+        38.2542
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 806997,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NJ0238001",
+      "systemName": "Veolia Water New Jersey Hackensack",
+      "city": "Haworth",
+      "state": "NJ",
+      "aliases": [
+        "haworth"
+      ],
+      "center": [
+        -73.9901,
+        40.9609
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 792713,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "OH3102612",
+      "systemName": "Cincinnati Public Water System",
+      "city": "Cincinnati",
+      "state": "OH",
+      "aliases": [
+        "cincinnati"
+      ],
+      "center": [
+        -84.5127,
+        39.1013
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 750200,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "TX0710002",
+      "systemName": "El Paso Water Utilities",
+      "city": "El Paso",
+      "state": "TX",
+      "aliases": [
+        "el paso"
+      ],
+      "center": [
+        -106.487,
+        31.7601
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 747168,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "GA0890001",
+      "systemName": "Dekalb County",
+      "city": "Decatur",
+      "state": "GA",
+      "aliases": [
+        "decatur"
+      ],
+      "center": [
+        -84.5741,
+        30.8737
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 743000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL6290327",
+      "systemName": "City Of Tampa Water Department",
+      "city": "Tampa",
+      "state": "FL",
+      "aliases": [
+        "tampa"
+      ],
+      "center": [
+        -82.4583,
+        27.945
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 733886,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "GA0670003",
+      "systemName": "Cobb County",
+      "city": "Marietta",
+      "state": "GA",
+      "aliases": [
+        "marietta"
+      ],
+      "center": [
+        -84.5496,
+        33.9528
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 695000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "PA5020039",
+      "systemName": "Pa Amer Water Co-Pittsburgh",
+      "city": "Elrama",
+      "state": "PA",
+      "aliases": [
+        "elrama"
+      ],
+      "center": [
+        -79.925,
+        40.252
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 686000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MA3035000",
+      "systemName": "Boston Water And Sewer Commission (Mwra)",
+      "city": "Boston",
+      "state": "MA",
+      "aliases": [
+        "boston"
+      ],
+      "center": [
+        -71.0578,
+        42.3588
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 675647,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL4504393",
+      "systemName": "Palm Beach County Water Utilities",
+      "city": "West Palm Beach",
+      "state": "FL",
+      "aliases": [
+        "west palm beach"
+      ],
+      "center": [
+        -80.0533,
+        26.7154
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 671114,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "KY0340250",
+      "systemName": "Kentucky-American Water Co",
+      "city": "Lexington",
+      "state": "KY",
+      "aliases": [
+        "lexington"
+      ],
+      "center": [
+        -84.497,
+        38.0464
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 669042,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA3310009",
+      "systemName": "Eastern Municipal Wd",
+      "city": "Perris",
+      "state": "CA",
+      "aliases": [
+        "perris"
+      ],
+      "center": [
+        -117.2298,
+        33.7819
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 666581,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "OR4100657",
+      "systemName": "Portland Water Bureau",
+      "city": "Portland",
+      "state": "OR",
+      "aliases": [
+        "portland"
+      ],
+      "center": [
+        -122.6742,
+        45.5202
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 666200,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NE3105507",
+      "systemName": "Metropolitan Utilities District",
+      "city": "Omaha",
+      "state": "NE",
+      "aliases": [
+        "omaha"
+      ],
+      "center": [
+        -95.9384,
+        41.2587
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 660000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "TN0000450",
+      "systemName": "Memphis Light, Gas, & Water",
+      "city": "Memphis",
+      "state": "TN",
+      "aliases": [
+        "memphis"
+      ],
+      "center": [
+        -90.0518,
+        35.146
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 659500,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NC0392010",
+      "systemName": "Raleigh, City Of",
+      "city": "Raleigh",
+      "state": "NC",
+      "aliases": [
+        "raleigh"
+      ],
+      "center": [
+        -78.6391,
+        35.7804
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 650000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "OK1020902",
+      "systemName": "Oklahoma City",
+      "city": "Oklahoma City",
+      "state": "OK",
+      "aliases": [
+        "oklahoma city"
+      ],
+      "center": [
+        -97.5171,
+        35.473
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 644000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MI0001800",
+      "systemName": "Detroit City Of",
+      "city": "Detroit",
+      "state": "MI",
+      "aliases": [
+        "detroit"
+      ],
+      "center": [
+        -83.0466,
+        42.3316
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 633218,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "DC0000002",
+      "systemName": "D.C. Water And Sewer Authority",
+      "city": "Washington",
+      "state": "DC",
+      "aliases": [
+        "washington"
+      ],
+      "center": [
+        -77.0364,
+        38.8951
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 632323,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "HI0000331",
+      "systemName": "Hnl-Windward-Pearl Harbor",
+      "city": "Honolulu",
+      "state": "HI",
+      "aliases": [
+        "honolulu"
+      ],
+      "center": [
+        -157.8557,
+        21.3045
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 631389,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "WI2410100",
+      "systemName": "Milwaukee Waterworks",
+      "city": "Milwaukee",
+      "state": "WI",
+      "aliases": [
+        "milwaukee"
+      ],
+      "center": [
+        -87.9091,
+        43.0386
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 626000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "LA1033005",
+      "systemName": "Baton Rouge Water Company",
+      "city": "Baton Rouge",
+      "state": "LA",
+      "aliases": [
+        "baton rouge"
+      ],
+      "center": [
+        -91.187,
+        30.4494
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 596844,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "AL0000738",
+      "systemName": "Central Alabama Water System",
+      "city": "Birmingham",
+      "state": "AL",
+      "aliases": [
+        "birmingham"
+      ],
+      "center": [
+        -86.8024,
+        33.5207
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 585000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NM3510701",
+      "systemName": "Albuquerque Water System",
+      "city": "Albuquerque",
+      "state": "NM",
+      "aliases": [
+        "albuquerque"
+      ],
+      "center": [
+        -106.651,
+        35.0841
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 560326,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MO1010415",
+      "systemName": "Kansas City Pws",
+      "city": "Kansas City",
+      "state": "MO",
+      "aliases": [
+        "kansas city"
+      ],
+      "center": [
+        -94.5781,
+        39.1001
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 553295,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA1010007",
+      "systemName": "City Of Fresno",
+      "city": "Fresno",
+      "state": "CA",
+      "aliases": [
+        "fresno"
+      ],
+      "center": [
+        -119.7848,
+        36.7394
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 545716,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL3480962",
+      "systemName": "Orlando Utilities Commission",
+      "city": "Orlando",
+      "state": "FL",
+      "aliases": [
+        "orlando"
+      ],
+      "center": [
+        -81.379,
+        28.5421
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 536466,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CO0103005",
+      "systemName": "Aurora City Of",
+      "city": "Aurora",
+      "state": "CO",
+      "aliases": [
+        "aurora"
+      ],
+      "center": [
+        -104.8733,
+        39.7401
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 533407,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA3410020",
+      "systemName": "City Of Sacramento Main",
+      "city": "Sacramento",
+      "state": "CA",
+      "aliases": [
+        "sacramento"
+      ],
+      "center": [
+        -121.4939,
+        38.5811
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 527979,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NY2701047",
+      "systemName": "Mcwa",
+      "city": "Rochester",
+      "state": "NY",
+      "aliases": [
+        "rochester"
+      ],
+      "center": [
+        -77.6152,
+        43.1573
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 525262,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "PA5020038",
+      "systemName": "Pittsburgh Water & Sewer Auth",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "aliases": [
+        "pittsburgh"
+      ],
+      "center": [
+        -80.0026,
+        40.4407
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 520000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL6521405",
+      "systemName": "Pinellas County Utilities",
+      "city": "Largo",
+      "state": "FL",
+      "aliases": [
+        "largo"
+      ],
+      "center": [
+        -82.7873,
+        27.9095
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 506353,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "KS2009110",
+      "systemName": "Water District 1 Of Johnson Co",
+      "city": "Kansas City",
+      "state": "KS",
+      "aliases": [
+        "kansas city"
+      ],
+      "center": [
+        -94.6265,
+        39.1135
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 490000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA1910065",
+      "systemName": "Long Beach Utilities Department",
+      "city": "Long Beach",
+      "state": "CA",
+      "aliases": [
+        "long beach"
+      ],
+      "center": [
+        -118.1916,
+        33.769
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 466772,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "AZ0407095",
+      "systemName": "Mesa City Of",
+      "city": "Mesa",
+      "state": "AZ",
+      "aliases": [
+        "mesa"
+      ],
+      "center": [
+        -111.8315,
+        33.4151
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 466000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CO0121150",
+      "systemName": "Colorado Springs Utilities",
+      "city": "Colorado Springs",
+      "state": "CO",
+      "aliases": [
+        "colorado springs"
+      ],
+      "center": [
+        -104.8253,
+        38.834
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 464111,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "WA5386800",
+      "systemName": "Tacoma Water Division City Of",
+      "city": "Tacoma",
+      "state": "WA",
+      "aliases": [
+        "tacoma"
+      ],
+      "center": [
+        -122.4383,
+        47.2455
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 446170,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA3010092",
+      "systemName": "Irvine Ranch Water District",
+      "city": "Irvine",
+      "state": "CA",
+      "aliases": [
+        "irvine"
+      ],
+      "center": [
+        -117.826,
+        33.6857
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 444800,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NV0000190",
+      "systemName": "Truckee Meadows Water Authority",
+      "city": "Reno",
+      "state": "NV",
+      "aliases": [
+        "reno"
+      ],
+      "center": [
+        -119.8127,
+        39.5262
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 442000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "VA3810900",
+      "systemName": "Virginia Beach, City Of",
+      "city": "Virginia Beach",
+      "state": "VA",
+      "aliases": [
+        "virginia beach"
+      ],
+      "center": [
+        -75.9761,
+        36.8497
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 437994,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "GA1210005",
+      "systemName": "North Fulton County",
+      "city": "Alpharetta",
+      "state": "GA",
+      "aliases": [
+        "alpharetta"
+      ],
+      "center": [
+        -84.2946,
+        34.0756
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 434517,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "SC2310001",
+      "systemName": "Greenville Water (Sc2310001)",
+      "city": "Greenville",
+      "state": "SC",
+      "aliases": [
+        "greenville"
+      ],
+      "center": [
+        -82.3985,
+        34.8514
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 426057,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MN1270024",
+      "systemName": "Minneapolis",
+      "city": "Minneapolis",
+      "state": "MN",
+      "aliases": [
+        "minneapolis"
+      ],
+      "center": [
+        -93.2655,
+        44.9773
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 425300,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CT0930011",
+      "systemName": "Regional Water Authority",
+      "city": "New Haven",
+      "state": "CT",
+      "aliases": [
+        "new haven"
+      ],
+      "center": [
+        -72.9251,
+        41.3082
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 418900,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "TX2200001",
+      "systemName": "City Of Arlington",
+      "city": "Arlington",
+      "state": "TX",
+      "aliases": [
+        "arlington"
+      ],
+      "center": [
+        -97.1071,
+        32.7356
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 413955,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "OK1020418",
+      "systemName": "Tulsa",
+      "city": "Tulsa",
+      "state": "OK",
+      "aliases": [
+        "tulsa"
+      ],
+      "center": [
+        -95.9928,
+        36.1563
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 413000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "VA3700500",
+      "systemName": "Newport News, City Of",
+      "city": "Newport News",
+      "state": "VA",
+      "aliases": [
+        "newport news"
+      ],
+      "center": [
+        -76.4298,
+        36.9775
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 407300,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "KS2017308",
+      "systemName": "Wichita, City Of",
+      "city": "Wichita",
+      "state": "KS",
+      "aliases": [
+        "wichita"
+      ],
+      "center": [
+        -97.3375,
+        37.6922
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 395699,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "MN1620026",
+      "systemName": "Saint Paul Regional Water Services",
+      "city": "St. Paul",
+      "state": "MN",
+      "aliases": [
+        "saint paul",
+        "st. paul"
+      ],
+      "center": [
+        -93.0931,
+        44.9497
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 392529,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NC0234010",
+      "systemName": "Winston-Salem, City Of",
+      "city": "Pfafftown",
+      "state": "NC",
+      "aliases": [
+        "pfafftown"
+      ],
+      "center": [
+        -80.3623,
+        36.1526
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 391900,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CT0640011",
+      "systemName": "Metropolitan District Commission",
+      "city": "Hartford",
+      "state": "CT",
+      "aliases": [
+        "hartford"
+      ],
+      "center": [
+        -72.6733,
+        41.7662
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 390887,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "VA4041845",
+      "systemName": "Chesterfield Co Central Water System",
+      "city": "Chesterfield",
+      "state": "VA",
+      "aliases": [
+        "chesterfield"
+      ],
+      "center": [
+        -77.5785,
+        37.386
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 389897,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "UTAH18026",
+      "systemName": "Salt Lake City Water System",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "aliases": [
+        "salt lake city"
+      ],
+      "center": [
+        -111.8868,
+        40.7596
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 383612,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NJ1345001",
+      "systemName": "Nj American Water - Coastal North",
+      "city": "Colts Neck",
+      "state": "NJ",
+      "aliases": [
+        "colts neck"
+      ],
+      "center": [
+        -74.1724,
+        40.2876
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 377613,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NV0000175",
+      "systemName": "North Las Vegas Utilities",
+      "city": "North Las Vegas",
+      "state": "NV",
+      "aliases": [
+        "north las vegas"
+      ],
+      "center": [
+        -115.1215,
+        36.2005
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 376515,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "WA5391200",
+      "systemName": "Vancouver City Of",
+      "city": "Vancouver",
+      "state": "WA",
+      "aliases": [
+        "vancouver"
+      ],
+      "center": [
+        -122.6745,
+        45.6307
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 373047,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "AR0000465",
+      "systemName": "Central Arkansas Water",
+      "city": "Little Rock",
+      "state": "AR",
+      "aliases": [
+        "little rock"
+      ],
+      "center": [
+        -92.2896,
+        34.7465
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 368455,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "OH4801411",
+      "systemName": "Toledo City Of",
+      "city": "Toledo",
+      "state": "OH",
+      "aliases": [
+        "toledo"
+      ],
+      "center": [
+        -83.5378,
+        41.6529
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 360000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "SC4010001",
+      "systemName": "Columbia City Of (Sc4010001)",
+      "city": "Columbia",
+      "state": "SC",
+      "aliases": [
+        "columbia"
+      ],
+      "center": [
+        -81.0352,
+        34.0008
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 354068,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CT0150011",
+      "systemName": "Aquarion-Eastern Fairfield County",
+      "city": "Shelton",
+      "state": "CT",
+      "aliases": [
+        "shelton"
+      ],
+      "center": [
+        -73.0932,
+        41.3165
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 351756,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NY3304336",
+      "systemName": "Ocwa",
+      "city": "Syracuse",
+      "state": "NY",
+      "aliases": [
+        "syracuse"
+      ],
+      "center": [
+        -76.1474,
+        43.0481
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 350000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL6521715",
+      "systemName": "St Petersburg, City Of",
+      "city": "St Petersburg",
+      "state": "FL",
+      "aliases": [
+        "st petersburg"
+      ],
+      "center": [
+        -82.634,
+        27.7712
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 349979,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA3010001",
+      "systemName": "City Of Anaheim",
+      "city": "Anaheim",
+      "state": "CA",
+      "aliases": [
+        "anaheim"
+      ],
+      "center": [
+        -117.9117,
+        33.8348
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 348593,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "FL6411132",
+      "systemName": "Manatee County Utilities  Dept",
+      "city": "Bradenton",
+      "state": "FL",
+      "aliases": [
+        "bradenton"
+      ],
+      "center": [
+        -82.5748,
+        27.4989
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 347800,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "WA5383100",
+      "systemName": "Spokane City Of",
+      "city": "Spokane",
+      "state": "WA",
+      "aliases": [
+        "spokane"
+      ],
+      "center": [
+        -117.4235,
+        47.6572
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 346138,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "CA0110001",
+      "systemName": "Alameda County Water District",
+      "city": "Fremont",
+      "state": "CA",
+      "aliases": [
+        "fremont"
+      ],
+      "center": [
+        -121.9886,
+        37.5483
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 344000,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "NV0000076",
+      "systemName": "Henderson City Of",
+      "city": "Henderson",
+      "state": "NV",
+      "aliases": [
+        "henderson"
+      ],
+      "center": [
+        -114.9815,
+        36.0301
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 336534,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "LA1071009",
+      "systemName": "New Orleans Carrollton Water Works",
+      "city": "New Orleans",
+      "state": "LA",
+      "aliases": [
+        "new orleans"
+      ],
+      "center": [
+        -90.0629,
+        29.9575
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 334903,
+      "metricsCurated": false
+    },
+    {
+      "pwsid": "VA6107350",
+      "systemName": "Loudoun Water - Central System",
+      "city": "Ashburn",
+      "state": "VA",
+      "aliases": [
+        "ashburn"
+      ],
+      "center": [
+        -77.4744,
+        39.0298
+      ],
+      "boundaryType": "unverified_fallback",
+      "basins": [],
+      "populationServed": 334808,
       "metricsCurated": false
     }
   ]

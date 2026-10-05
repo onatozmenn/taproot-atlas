@@ -22,8 +22,7 @@ describe('generateDeterministicSummary', () => {
     assert.ok(!out.includes('pure'));
   });
 
-  it('uses plain language for boundaries, never enum codes', () => {
-    const out = generateDeterministicSummary(mockSchematic());
+  it('uses plain language for boundaries, never enum codes', () => {    const out = generateDeterministicSummary(mockSchematic());
     assert.ok(!out.includes('modeled_epa'));
     assert.ok(!out.includes('unverified_fallback'));
     assert.ok(!out.includes('verified_agency'));
@@ -37,5 +36,26 @@ describe('generateDeterministicSummary', () => {
     assert.ok(singleOut.includes('Lake Michigan basin'));
     assert.ok(singleOut.includes('Exact service-area boundaries are not shown here.'));
     assert.ok(!singleOut.includes('unverified_fallback'));
+  });
+
+  it('tier B systems get an uncurated overview, never showcase wording', () => {
+    const tierB = {
+      ...mockSchematic(),
+      pwsid: 'FL4130871',
+      systemName: 'Miami-Dade Water System',
+      boundaryType: 'unverified_fallback',
+      primaryBasins: [],
+      latestReportedMetrics: [],
+      regulatoryCompliance: {
+        ...mockSchematic().regulatoryCompliance,
+        pwsid: 'FL4130871',
+        snapshotPending: true,
+      },
+    };
+    const out = generateDeterministicSummary(tierB);
+    assert.ok(out.includes('### Water System Overview'));
+    assert.ok(out.includes('not yet curated'));
+    assert.ok(!out.includes('basins outside'));
+    assert.ok(!out.includes('Verified Water Distribution'));
   });
 });

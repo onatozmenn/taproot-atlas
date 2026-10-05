@@ -21,8 +21,10 @@ export interface DirectorySystem {
   center: [number, number];
   boundaryType: BoundaryConfidence;
   basins: DirectoryBasin[];
-  utilityUrl: string;
-  reportUrl: string;
+  /** Tier B entries (PWSID + city only) omit these until curated. */
+  utilityUrl?: string;
+  reportUrl?: string;
+  populationServed?: number;
   metricsCurated: boolean;
 }
 
