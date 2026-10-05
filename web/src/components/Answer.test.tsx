@@ -1,14 +1,18 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import { AnswerCard } from './Answer';
 import type { TapAnswer } from '../api';
+
+afterEach(() => cleanup());
 
 const base: TapAnswer = {
   systemName: 'NYC DEP Catskill-Delaware',
   pwsid: 'NY7003493',
   boundaryType: 'MODELED_EPA',
+  scope: 'water',
   basins: ['Catskill', 'Delaware'],
   overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',
+  details: '',
   flow: [
     { label: 'Catskill Watershed', role: 'watershed', at: [-74.3, 42.0] as [number, number] },
     { label: 'Treatment', role: 'treatment_facility', at: [-73.9, 40.9] as [number, number] },
@@ -61,5 +65,21 @@ describe('AnswerCard', () => {
     const { container } = render(<AnswerCard answer={base} />);
     const text = container.textContent?.toLowerCase() ?? '';
     for (const word of ['drinkable', 'pure', 'potable']) expect(text).not.toContain(word);
+  });
+
+  it('renders redirects as slim text with no map or metric cards', () => {
+    const redirect = {
+      ...base,
+      scope: 'redirect' as const,
+      overview: 'I do not give opinions or commentary outside tap-water records.',
+      details: 'Ask it in plain English words.',
+      flow: [],
+      metrics: [],
+    };
+    const { container, queryAllByText } = render(<AnswerCard answer={redirect} />);
+    expect(container.textContent).toContain('outside tap-water records');
+    expect(queryAllByText('Reported quality metrics')).toHaveLength(0);
+    expect(queryAllByText(/Regulatory compliance/)).toHaveLength(0);
+    expect(queryAllByText(/schematic overlay/i)).toHaveLength(0);
   });
 });

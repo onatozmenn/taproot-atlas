@@ -16,6 +16,7 @@ import { narrateGroundTruth, joinNarrative, type Narrative } from './narrator.js
 import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
+import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -91,7 +92,7 @@ export async function answerTapWater(
     narrate = narrateGroundTruth,
     narratorKind = deps.narrate ? 'llm' : 'template',
   } = deps;
-  void input.question; // Reserved for future query parsing / eval logging.
+  const question = (input.question ?? '').slice(0, 2000);
   const rawLat = input.lat ?? SHOWCASE_CENTER.lat;
   const rawLon = input.lon ?? SHOWCASE_CENTER.lon;
   const lat = isValidCoord(rawLat, rawLon) ? rawLat : SHOWCASE_CENTER.lat;
@@ -118,6 +119,24 @@ export async function answerTapWater(
     };
   }
 
+  // Scope gate: off-topic questions get a short redirect, never the report.
+  const scope = classifyScope(question);
+  if (scope !== 'water') {
+    const redirect = scope === 'greeting' ? greetingNarrative() : offTopicNarrative();
+    return {
+      narrative: { ...redirect, stewardshipNote: schematic.disclaimer },
+      groundTruth: schematic,
+      scope: 'redirect',
+      validationStatus: {
+        passedLlmAudit: true,
+        auditTimestamp,
+        recordSource,
+        narrator: 'template',
+        jev: 'skipped',
+      },
+    };
+  }
+
   const resolverOutput: ResolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic) };
   const rawNarrated = await narrate(schematic);
   const isWrapped = typeof rawNarrated === 'object' && rawNarrated !== null && 'narrative' in rawNarrated;
@@ -136,7 +155,7 @@ export async function answerTapWater(
   }
   const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: usedKind, jev };
   if (valid) {
-    return { narrative, groundTruth: schematic, validationStatus };
+    return { narrative, groundTruth: schematic, scope: 'water' as const, validationStatus };
   }
   const fallbackText = generateDeterministicSummary(schematic);
   // Populate all narrative fields so the UI never renders empty sections.
@@ -149,6 +168,7 @@ export async function answerTapWater(
       stewardshipNote: schematic.disclaimer,
     },
     groundTruth: schematic,
+    scope: 'water' as const,
     validationStatus: { ...validationStatus, passedLlmAudit: false },
   };
 }

@@ -60,6 +60,15 @@ export function ValidationLine({ answer }: { answer: TapAnswer }) {
 }
 
 export function AnswerCard({ answer }: { answer: TapAnswer }) {
+  if (answer.scope === 'redirect') {
+    // Slim America.gov-style deflection: text only, no map or metric cards.
+    const text = [answer.overview, answer.details].filter((p) => p && p.trim().length > 0).join('\n\n');
+    return (
+      <div className="answer redirect">
+        <div className="markdown">{renderMarkdown(text)}</div>
+      </div>
+    );
+  }
   return (
     <div className="answer">
       <ValidationLine answer={answer} />

@@ -10,8 +10,12 @@ export interface TapAnswer {
   systemName: string;
   pwsid: string;
   boundaryType: 'VERIFIED_AGENCY' | 'MODELED_EPA' | 'UNVERIFIED_FALLBACK';
+  /** water = full report; redirect = slim off-topic deflection, no map/cards. */
+  scope: 'water' | 'redirect';
   basins: string[];
   overview: string;
+  /** Redirect call-to-action lines (metricsSummary + complianceNote); empty for water scope. */
+  details: string;
   flow: Array<{ label: string; role: string; at: [number, number] }>;
   metrics: QualityMetricRecord[];
   windowStart: string;
@@ -33,8 +37,12 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     systemName: g.systemName,
     pwsid: g.pwsid,
     boundaryType: g.boundaryType.toUpperCase() as TapAnswer['boundaryType'],
+    scope: res.scope ?? 'water',
     basins: g.primaryBasins,
     overview: res.narrative.overview,
+    details: [res.narrative.metricsSummary, res.narrative.complianceNote]
+      .filter((p) => p && p.trim().length > 0)
+      .join('\n\n'),
     flow: g.schematicFlow.features.flatMap((f) => {
       if (f.geometry.type !== 'Point') return [];
       const [lon, lat] = f.geometry.coordinates;

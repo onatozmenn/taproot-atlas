@@ -57,7 +57,7 @@ describe('answerTapWater', () => {
       stewardshipNote: '',
     });
     const res = await answerTapWater(
-      { question: 'x', ...SHOWCASE_CENTER },
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture', narrate },
     );
     assert.equal(res.validationStatus.passedLlmAudit, false);
@@ -76,7 +76,7 @@ describe('answerTapWater', () => {
 
   it('JEV flag forces fallback even when the deterministic audit passes', async () => {
     const res = await answerTapWater(
-      { question: 'x', ...SHOWCASE_CENTER },
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: false }) },
     );
     assert.equal(res.validationStatus.jev, 'flag');
@@ -86,7 +86,7 @@ describe('answerTapWater', () => {
 
   it('JEV pass keeps the narrative and is recorded', async () => {
     const res = await answerTapWater(
-      { question: 'x', ...SHOWCASE_CENTER },
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture', jevCheck: async () => ({ passed: true }) },
     );
     assert.equal(res.validationStatus.jev, 'pass');
@@ -94,14 +94,14 @@ describe('answerTapWater', () => {
   });
 
   it('absent JEV records skipped without blocking', async () => {
-    const res = await answerTapWater({ question: 'x', ...SHOWCASE_CENTER }, { fetchEcho });
+    const res = await answerTapWater({ question: 'Where does my tap water come from?', ...SHOWCASE_CENTER }, { fetchEcho });
     assert.equal(res.validationStatus.jev, 'skipped');
     assert.equal(res.validationStatus.passedLlmAudit, true);
   });
 
   it('reports the actual narrator when the model path falls back to template', async () => {
     const res = await answerTapWater(
-      { question: 'x', ...SHOWCASE_CENTER },
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
       {
         fetchEcho,
         narratorKind: 'llm',
@@ -110,5 +110,37 @@ describe('answerTapWater', () => {
     );
     assert.equal(res.validationStatus.narrator, 'template');
     assert.equal(res.validationStatus.passedLlmAudit, true);
+  });
+
+  it('water questions keep the full report scope', async () => {
+    const res = await answerTapWater(
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'water');
+    assert.ok(res.narrative.overview.includes('NY7003493'));
+  });
+
+  it('smalltalk gets a greeting redirect, never the report', async () => {
+    const res = await answerTapWater(
+      { question: 'Hi how are you', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'redirect');
+    assert.equal(res.validationStatus.narrator, 'template');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
+    assert.ok(res.narrative.overview.toLowerCase().includes('tap water'));
+    assert.ok(!res.narrative.overview.includes('NY7003493'));
+  });
+
+  it('off-topic questions get a deflection back to tap-water records', async () => {
+    const res = await answerTapWater(
+      { question: 'What do you think about hitler', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'redirect');
+    const all = [res.narrative.overview, res.narrative.metricsSummary].join(' ');
+    assert.ok(all.includes('tap-water records'));
+    assert.ok(!all.includes('NY7003493'));
   });
 });

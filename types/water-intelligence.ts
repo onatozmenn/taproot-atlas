@@ -89,6 +89,12 @@ export interface ValidatedApiResponse {
     stewardshipNote: string;
   };
   groundTruth: WaterOriginSchematic;
+  /**
+   * water = full Resolver report; redirect = off-topic/smalltalk deflection
+   * (America.gov-style: no opinions, back to tap-water records; the UI
+   * renders a slim text card with no map or metric cards).
+   */
+  scope: 'water' | 'redirect';
   validationStatus: {
     passedLlmAudit: boolean;
     auditTimestamp: string;
