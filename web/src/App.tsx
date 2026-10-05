@@ -82,16 +82,40 @@ interface ComposerProps {
   listening: boolean;
   onAttach: (file: File) => void;
   placeholder: string;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
+  inputRef?: { current: HTMLTextAreaElement | null };
   label: string;
 }
 
+const COMPOSER_MAX_HEIGHT = 160;
+
 function Composer(p: ComposerProps) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const areaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [multiline, setMultiline] = useState(false);
   const hasText = p.value.trim().length > 0;
+
+  const autosize = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = 'auto';
+    const grown = Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT);
+    el.style.height = `${grown}px`;
+    el.style.overflowY = el.scrollHeight > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden';
+    setMultiline(grown > el.clientHeight + 4 || el.value.includes('\n'));
+  };
+
+  // Shrink back after send clears the value.
+  useEffect(() => {
+    if (p.value === '') {
+      setMultiline(false);
+      if (areaRef.current) {
+        areaRef.current.style.height = 'auto';
+        areaRef.current.style.overflowY = 'hidden';
+      }
+    }
+  }, [p.value]);
   return (
     <form
-      className="composer"
+      className={`composer${multiline ? ' multiline' : ''}`}
       role="search"
       aria-label={p.label}
       onSubmit={(e) => {
@@ -99,10 +123,24 @@ function Composer(p: ComposerProps) {
         p.onSubmit();
       }}
     >
-      <input
-        ref={p.inputRef as React.RefObject<HTMLInputElement>}
+      <textarea
+        ref={(el) => {
+          areaRef.current = el;
+          if (p.inputRef) p.inputRef.current = el;
+        }}
+        rows={1}
         value={p.value}
-        onChange={(e) => p.onChange(e.target.value)}
+        onChange={(e) => {
+          p.onChange(e.target.value);
+          autosize(e.target);
+        }}
+        onKeyDown={(e) => {
+          // Enter sends, Shift+Enter breaks the line (desktop).
+          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            p.onSubmit();
+          }
+        }}
         placeholder={p.placeholder}
         aria-label={p.label}
         maxLength={2000}
@@ -166,7 +204,7 @@ export default function App() {
   const [copied, setCopied] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestion = useRef('');
 
@@ -192,7 +230,9 @@ export default function App() {
     } finally {
       abortRef.current = null;
       setBusy(false);
-      requestAnimationFrame(() => boxRef.current?.scrollTo({ top: 99999 }));
+      requestAnimationFrame(() =>
+        boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight, behavior: 'smooth' }),
+      );
     }
   }
 
