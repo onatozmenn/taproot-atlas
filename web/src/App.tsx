@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { askTapWater, type TapAnswer } from './api';
 import { AnswerCard } from './components/Answer';
+import { Logo } from './components/Logo';
 import { suggestFollowUps } from './suggest';
 
 interface Msg {
@@ -12,8 +13,14 @@ interface Msg {
 
 const STARTERS = [
   'Where does my tap water come from?',
-  'Show the watershed map',
   'Any violations in the last 5 years?',
+  'What did the 2024 Annual report test?',
+];
+
+const PLACEHOLDERS = [
+  'Ask where your tap water comes from…',
+  'Help me check violations in the last 5 years…',
+  'What did the 2024 Annual report test…',
 ];
 
 let nextId = 1;
@@ -26,8 +33,30 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'not-helpful' | null>>({});
   const [copied, setCopied] = useState<number | null>(null);
+  const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0]);
+  const [listening, setListening] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const lastQuestion = useRef('');
+
+  useEffect(() => {
+    if (messages.length > 0) return;
+    let i = 0;
+    const t = setInterval(() => {
+      i = (i + 1) % PLACEHOLDERS.length;
+      setPlaceholder(PLACEHOLDERS[i]);
+    }, 4000);
+    return () => clearInterval(t);
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
 
   async function send(question: string) {
     const q = question.trim().slice(0, 2000);
@@ -60,6 +89,31 @@ export default function App() {
       setCopied(null);
     }
   }
+
+  function toggleVoice() {
+    const SR: any =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      inputRef.current?.focus();
+      return;
+    }
+    try {
+      const rec = new SR();
+      rec.lang = 'en-US';
+      rec.interimResults = false;
+      setListening(true);
+      rec.onresult = (e: any) => {
+        const text = e.results?.[0]?.[0]?.transcript ?? '';
+        if (text) void send(text);
+      };
+      rec.onend = () => setListening(false);
+      rec.onerror = () => setListening(false);
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  }
+
   const chips = lastAnswer
     ? suggestFollowUps({
         violations: lastAnswer.violations,
@@ -76,25 +130,48 @@ export default function App() {
   return (
     <div className="page">
       <a className="skip-link" href="#chat">Skip to conversation</a>
+
+      <div className="official-strip" role="note">
+        <span className="dot" aria-hidden="true" />
+        <span>
+          Demonstration snapshot · EPA / NYC open data · No account, no search history, no precise location
+        </span>
+      </div>
+
       <header className="topbar">
         <div className="brand">
-          <svg width="26" height="18" viewBox="0 0 26 18" aria-hidden="true" className="flag">
-            <rect width="26" height="18" rx="2" fill="#fff" stroke="#d0d0d0" />
-            {Array.from({ length: 7 }).map((_, i) => (
-              <rect key={i} y={i * 2.6} width="26" height="1.3" fill={i % 2 === 0 ? '#b31942' : '#fff'} />
-            ))}
-            <rect width="11" height="9" fill="#0a3161" />
-          </svg>
+          <Logo size={30} />
           <span className="wordmark">Taproot Atlas</span>
-          <span className="tag">Xylem Innovation Challenge</span>
+          <span className="tag">Water snapshot</span>
         </div>
-        <button className="menu-btn" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)}>Menu</button>
+        <button
+          className="menu-btn"
+          type="button"
+          aria-expanded={menuOpen}
+          aria-controls="site-menu"
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          Menu
+        </button>
       </header>
       {menuOpen && (
-        <nav className="menu-panel" aria-label="Site menu">
+        <nav className="menu-panel" id="site-menu" aria-label="Site menu">
           <a href="https://echo.epa.gov/" target="_blank" rel="noreferrer">EPA ECHO</a>
-          <a href="https://www.nyc.gov/site/dep/water/drinking-water.page" target="_blank" rel="noreferrer">NYC DEP drinking water</a>
-          <button type="button" className="ghost-btn" onClick={() => { setMessages([]); setError(null); setMenuOpen(false); }}>
+          <a href="https://www.nyc.gov/site/dep/water/drinking-water.page" target="_blank" rel="noreferrer">
+            NYC DEP drinking water
+          </a>
+          <a href="https://www.epa.gov/ground-water-and-drinking-water" target="_blank" rel="noreferrer">
+            EPA drinking water
+          </a>
+          <button
+            type="button"
+            className="ghost-btn"
+            onClick={() => {
+              setMessages([]);
+              setError(null);
+              setMenuOpen(false);
+            }}
+          >
             Start over
           </button>
         </nav>
@@ -103,20 +180,55 @@ export default function App() {
       <main className="chat" ref={boxRef} id="chat" aria-live="polite">
         {empty ? (
           <div className="hero">
-            <h1>Where does your tap water come from?</h1>
-            <p>
-              Ask in everyday words. Answers cite the public water system, source basins,
-              reported lab tests, and EPA compliance records — shown on a schematic map.
-            </p>
-            <div className="chips">
+            <h1>Hello — where does your tap water come from?</h1>
+            <p className="lede">Whatever you need to know about your water, start here.</p>
+            <form
+              className="hero-search"
+              role="search"
+              aria-label="Ask about tap water"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void send(input);
+              }}
+            >
+              <span className="search-icon" aria-hidden="true">✦</span>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={placeholder}
+                aria-label="Ask about your tap water"
+                maxLength={2000}
+              />
+              <button
+                type="button"
+                className={`icon-btn${listening ? ' live' : ''}`}
+                aria-label={listening ? 'Listening…' : 'Ask by voice'}
+                title="Ask by voice"
+                onClick={toggleVoice}
+              >
+                🎙
+              </button>
+              <button
+                type="submit"
+                className="send-btn"
+                disabled={busy || !input.trim()}
+                aria-label="Send"
+                title="Send"
+              >
+                ↑
+              </button>
+            </form>
+            <div className="try-row" aria-label="Try asking">
+              <span className="try-label">Try</span>
               {STARTERS.map((s) => (
                 <button key={s} type="button" className="chip" onClick={() => void send(s)}>
                   {s}
                 </button>
               ))}
             </div>
-            <p className="fine">
-              Include a city or system name if it helps, but no names, addresses, or personal details.
+            <p className="privacy">
+              Share only what&rsquo;s needed · Approximate area only · Answers cite official records
             </p>
           </div>
         ) : (
@@ -164,8 +276,8 @@ export default function App() {
                 </div>
               ),
             )}
-            {!empty && !busy && (
-              <div className="chips">
+            {!busy && (
+              <div className="chips" aria-label="Follow-up questions">
                 {chips.map((s) => (
                   <button key={s} type="button" className="chip" onClick={() => void send(s)}>
                     {s}
@@ -175,7 +287,7 @@ export default function App() {
             )}
           </>
         )}
-        {busy && <div className="typing">Looking up EPA / NYC records…</div>}
+        {busy && <div className="typing" role="status">Looking up official sources…</div>}
         {error && (
           <div className="error-box" role="alert">
             <p>{error}</p>
@@ -184,26 +296,43 @@ export default function App() {
         )}
       </main>
 
-      <footer className="composer-wrap">
-        <form
-          className="composer"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void send(input);
-          }}
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything…"
-            aria-label="Ask about your tap water"
-          />
-          <button type="submit" disabled={busy || !input.trim()} aria-label="Send">
-            →
-          </button>
-        </form>
-        <p className="foot-note">Reports only — never a safety verdict. Schematic map, not engineering.</p>
-      </footer>
+      {!empty && (
+        <footer className="composer-wrap">
+          <form
+            className="composer"
+            role="search"
+            aria-label="Ask a follow-up"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void send(input);
+            }}
+          >
+            <span className="search-icon" aria-hidden="true">✦</span>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={placeholder}
+              aria-label="Ask about your tap water"
+              maxLength={2000}
+            />
+            <button
+              type="button"
+              className={`icon-btn${listening ? ' live' : ''}`}
+              aria-label={listening ? 'Listening…' : 'Ask by voice'}
+              title="Ask by voice"
+              onClick={toggleVoice}
+            >
+              🎙
+            </button>
+            <button type="submit" className="send-btn" disabled={busy || !input.trim()} aria-label="Send">
+              ↑
+            </button>
+          </form>
+          <p className="foot-note">
+            Reports only — never a safety verdict. Schematic map, not engineering. Verify at the official source.
+          </p>
+        </footer>
+      )}
     </div>
   );
 }
