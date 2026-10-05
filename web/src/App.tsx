@@ -23,11 +23,14 @@ export default function App() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'not-helpful' | null>>({});
+  const [copied, setCopied] = useState<number | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const lastQuestion = useRef('');
 
   async function send(question: string) {
-    const q = question.trim();
+    const q = question.trim().slice(0, 2000);
     if (!q || busy) return;
     setBusy(true);
     setError(null);
@@ -47,6 +50,16 @@ export default function App() {
 
   const empty = messages.length === 0;
   const lastAnswer = [...messages].reverse().find((m) => m.answer)?.answer;
+
+  async function copyAnswer(id: number, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(id);
+      setTimeout(() => setCopied((c) => (c === id ? null : c)), 1500);
+    } catch {
+      setCopied(null);
+    }
+  }
   const chips = lastAnswer
     ? suggestFollowUps({
         violations: lastAnswer.violations,
@@ -75,8 +88,17 @@ export default function App() {
           <span className="wordmark">Taproot Atlas</span>
           <span className="tag">Xylem Innovation Challenge</span>
         </div>
-        <button className="menu-btn" type="button">Menu</button>
+        <button className="menu-btn" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)}>Menu</button>
       </header>
+      {menuOpen && (
+        <nav className="menu-panel" aria-label="Site menu">
+          <a href="https://echo.epa.gov/" target="_blank" rel="noreferrer">EPA ECHO</a>
+          <a href="https://www.nyc.gov/site/dep/water/drinking-water.page" target="_blank" rel="noreferrer">NYC DEP drinking water</a>
+          <button type="button" className="ghost-btn" onClick={() => { setMessages([]); setError(null); setMenuOpen(false); }}>
+            Start over
+          </button>
+        </nav>
+      )}
 
       <main className="chat" ref={boxRef} id="chat" aria-live="polite">
         {empty ? (
@@ -113,9 +135,31 @@ export default function App() {
                 <div key={m.id} className="assistant-block">
                   {m.answer && <AnswerCard answer={m.answer} />}
                   <div className="feedback">
-                    <button type="button" aria-label="Helpful">Helpful</button>
-                    <button type="button" aria-label="Not helpful">Not helpful</button>
-                    <button type="button" aria-label="Copy">Copy</button>
+                    <button
+                      type="button"
+                      aria-label="Helpful"
+                      aria-pressed={feedback[m.id] === 'helpful'}
+                      className={feedback[m.id] === 'helpful' ? 'active' : ''}
+                      onClick={() => setFeedback((f) => ({ ...f, [m.id]: 'helpful' }))}
+                    >
+                      Helpful
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Not helpful"
+                      aria-pressed={feedback[m.id] === 'not-helpful'}
+                      className={feedback[m.id] === 'not-helpful' ? 'active' : ''}
+                      onClick={() => setFeedback((f) => ({ ...f, [m.id]: 'not-helpful' }))}
+                    >
+                      Not helpful
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Copy"
+                      onClick={() => m.answer && void copyAnswer(m.id, m.answer.overview)}
+                    >
+                      {copied === m.id ? 'Copied' : 'Copy'}
+                    </button>
                   </div>
                 </div>
               ),

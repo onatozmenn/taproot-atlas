@@ -113,6 +113,8 @@ export async function llmNarrate(
       api === 'responses'
         ? {
             model: config.model,
+            temperature: 0,
+            max_output_tokens: 800,
             input: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
               { role: 'user', content: buildFactsMessage(schematic) },
@@ -121,6 +123,7 @@ export async function llmNarrate(
         : {
             model: config.model,
             temperature: 0,
+            max_tokens: 800,
             messages: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
               { role: 'user', content: buildFactsMessage(schematic) },

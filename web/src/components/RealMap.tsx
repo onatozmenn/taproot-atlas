@@ -14,7 +14,7 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
       ? { text: 'Verified boundary', cls: 'badge-verified' }
       : answer.boundaryType === 'MODELED_EPA'
         ? { text: 'Modeled boundary', cls: 'badge-modeled' }
-        : { text: 'Unverified boundary', cls: 'badge-modeled' };
+        : { text: 'Unverified boundary', cls: 'badge-unverified' };
 
   useEffect(() => {
     let map: { remove: () => void } | null = null;

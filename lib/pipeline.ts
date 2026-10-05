@@ -35,6 +35,7 @@ export type NarrateInput = Narrative | NarrateResult | Promise<Narrative | Narra
 export interface PipelineDeps {
   /** Live compliance fetch. Absent → bundled fixture (recordSource: snapshot_fixture). */
   fetchEcho?: (pwsid: string) => Promise<SdwisComplianceProfile>;
+  /** Explicit source label. Defaults to snapshot_fixture; live callers must pass live_fetch. */
   recordSource?: 'snapshot_fixture' | 'live_fetch';
   /** Sync template or async model narrator. Output is always audited. */
   narrate?: (schematic: WaterOriginSchematic) => NarrateInput;
@@ -47,10 +48,21 @@ export interface PipelineDeps {
 const PUBLIC_HEALTH_NOTICE =
   'Reported lab results and regulatory records only; not a real-time safety guarantee.';
 
+function isValidCoord(lat: number, lon: number): boolean {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lon >= -180 &&
+    lon <= 180
+  );
+}
+
 function unknownSchematic(now: string): WaterOriginSchematic {
   return {
     pwsid: 'UNKNOWN',
-    systemName: 'Area outside showcase snapshot',
+    systemName: 'Unserved by showcase snapshot',
     boundaryType: 'unverified_fallback',
     primaryBasins: [],
     schematicFlow: buildSchematicFlow([]),
@@ -71,17 +83,19 @@ export async function answerTapWater(
   input: AskInput,
   deps: PipelineDeps = {},
 ): Promise<ValidatedApiResponse> {
+  const now = deps.now ?? (() => new Date().toISOString());
+  const auditTimestamp = now();
   const {
     fetchEcho = async (pwsid: string) => readSnapshotCompliance(pwsid, undefined, auditTimestamp),
-    recordSource = deps.fetchEcho ? 'live_fetch' : 'snapshot_fixture',
+    recordSource = deps.recordSource ?? 'snapshot_fixture',
     narrate = narrateGroundTruth,
     narratorKind = deps.narrate ? 'llm' : 'template',
-    now = () => new Date().toISOString(),
   } = deps;
   void input.question; // Reserved for future query parsing / eval logging.
-  const auditTimestamp = now();
-  const lat = input.lat ?? SHOWCASE_CENTER.lat;
-  const lon = input.lon ?? SHOWCASE_CENTER.lon;
+  const rawLat = input.lat ?? SHOWCASE_CENTER.lat;
+  const rawLon = input.lon ?? SHOWCASE_CENTER.lon;
+  const lat = isValidCoord(rawLat, rawLon) ? rawLat : SHOWCASE_CENTER.lat;
+  const lon = isValidCoord(rawLat, rawLon) ? rawLon : SHOWCASE_CENTER.lon;
 
   const resolved = resolveSystem(lat, lon);
   let schematic: WaterOriginSchematic;
@@ -125,11 +139,13 @@ export async function answerTapWater(
     return { narrative, groundTruth: schematic, validationStatus };
   }
   const fallbackText = generateDeterministicSummary(schematic);
+  // Populate all narrative fields so the UI never renders empty sections.
+  const templateFallback = narrateGroundTruth(schematic);
   return {
     narrative: {
       overview: fallbackText,
-      metricsSummary: '',
-      complianceNote: '',
+      metricsSummary: templateFallback.metricsSummary,
+      complianceNote: templateFallback.complianceNote,
       stewardshipNote: schematic.disclaimer,
     },
     groundTruth: schematic,

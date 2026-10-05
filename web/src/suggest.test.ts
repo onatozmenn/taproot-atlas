@@ -40,4 +40,18 @@ describe('suggestFollowUps', () => {
       'Why is this boundary unverified?',
     ]);
   });
+
+  it('handles uppercased boundary types from TapAnswer', () => {
+    const chips = suggestFollowUps({
+      violations: 0,
+      windowStart: '2021-01-01',
+      windowEnd: '2026-01-01',
+      boundaryType: 'UNVERIFIED_FALLBACK',
+      metrics: [],
+    });
+    expect(chips).toEqual([
+      'Where is the nearest public drinking point?',
+      'Why is this boundary unverified?',
+    ]);
+  });
 });

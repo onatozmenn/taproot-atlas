@@ -54,6 +54,14 @@ export function pointInPolygon(point: [number, number], polygon: [number, number
  * fallback — never a guessed PWSID.
  */
 export function resolveSystem(lat: number, lon: number, areas: ServiceArea[] = SNAPSHOT.systems): ResolvedSystem {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return {
+      pwsid: 'UNKNOWN',
+      systemName: 'Unserved by showcase snapshot',
+      boundaryType: 'unverified_fallback',
+      primaryBasins: [],
+    };
+  }
   for (const area of areas) {
     if (pointInPolygon([lon, lat], area.polygon)) {
       return {

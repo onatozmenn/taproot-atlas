@@ -26,19 +26,17 @@ export interface SchematicFlow {
 export const SCHEMATIC_DISCLAIMER =
   'Flow paths and boundaries are schematic approximations for orientation only; they do not depict operational engineering alignments.';
 
-/** Showcase nodes: Catskill/Delaware watersheds → treatment → NYC tap zone. */
+/** Showcase nodes: Catskill/Delaware watersheds → treatment → NYC tap zone.
+ * Unknown basin names are skipped (never fabricated, never thrown) so the
+ * pipeline always returns a 200 fallback instead of a 502. */
 export function showcaseNodes(basins: string[]): FlowNode[] {
   const watershedAt: Record<string, [number, number]> = {
     Catskill: [-74.3, 42.0],
     Delaware: [-75.2, 41.7],
   };
-  for (const b of basins) {
-    if (!(b in watershedAt)) {
-      throw new Error(`Unknown basin "${b}": a representative coordinate is required, never a fabricated one.`);
-    }
-  }
+  const known = basins.filter((b) => b in watershedAt);
   return [
-    ...basins.map((b) => ({
+    ...known.map((b) => ({
       label: `${b} Watershed`,
       role: 'watershed' as FlowRole,
       at: watershedAt[b],

@@ -35,11 +35,12 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     boundaryType: g.boundaryType.toUpperCase() as TapAnswer['boundaryType'],
     basins: g.primaryBasins,
     overview: res.narrative.overview,
-    flow: g.schematicFlow.features.map((f) => ({
-      label: f.properties.label,
-      role: f.properties.role,
-      at: (f.geometry.type === 'Point' ? f.geometry.coordinates : [0, 0]) as [number, number],
-    })),
+    flow: g.schematicFlow.features.flatMap((f) => {
+      if (f.geometry.type !== 'Point') return [];
+      const [lon, lat] = f.geometry.coordinates;
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return [];
+      return [{ label: f.properties.label, role: f.properties.role, at: [lon, lat] as [number, number] }];
+    }),
     metrics: g.latestReportedMetrics,
     windowStart: g.regulatoryCompliance.queryWindow.startDate,
     windowEnd: g.regulatoryCompliance.queryWindow.endDate,
@@ -55,16 +56,29 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
   };
 }
 
-export async function askTapWater(question: string): Promise<TapAnswer> {
+export async function askTapWater(question: string, opts: { lat?: number; lon?: number } = {}): Promise<TapAnswer> {
+  const q = question.slice(0, 2000);
+  const hasCoords =
+    typeof opts.lat === 'number' &&
+    typeof opts.lon === 'number' &&
+    Number.isFinite(opts.lat) &&
+    Number.isFinite(opts.lon);
   try {
-    const res = await fetch('/api/ask', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ question }),
-    });
-    if (res.ok) return toTapAnswer((await res.json()) as ValidatedApiResponse);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question: q, ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}) }),
+        signal: controller.signal,
+      });
+      if (res.ok) return toTapAnswer((await res.json()) as ValidatedApiResponse);
+    } finally {
+      clearTimeout(timer);
+    }
   } catch {
     // Preview/dev without functions, or offline: fall back to the local pipeline.
   }
-  return toTapAnswer(await answerTapWater({ question }));
+  return toTapAnswer(await answerTapWater({ question: q, ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}) }));
 }

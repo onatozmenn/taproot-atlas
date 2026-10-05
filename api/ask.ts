@@ -16,21 +16,49 @@ interface AskRequest {
 interface AskResponse {
   status: (code: number) => AskResponse;
   json: (value: unknown) => void;
+  setHeader?: (name: string, value: string) => void;
+}
+
+function setCors(res: AskResponse): void {
+  res.setHeader?.('access-control-allow-origin', '*');
+  res.setHeader?.('access-control-allow-methods', 'POST, OPTIONS');
+  res.setHeader?.('access-control-allow-headers', 'content-type');
+}
+
+function isValidCoord(lat: unknown, lon: unknown): lat is number {
+  return (
+    typeof lat === 'number' &&
+    typeof lon === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    (lon as number) >= -180 &&
+    (lon as number) <= 180
+  );
 }
 
 export default async function handler(req: AskRequest, res: AskResponse): Promise<void> {
-  if (req.method && req.method !== 'POST') {
+  setCors(res);
+  if (!req.method || req.method === 'OPTIONS') {
+    res.status(200).json({ ok: true });
+    return;
+  }
+  if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed; use POST.' });
     return;
   }
   const body = req.body ?? {};
-  const question = typeof body.question === 'string' ? body.question : '';
+  const rawQuestion = typeof body.question === 'string' ? body.question : '';
+  const question = rawQuestion.slice(0, 2000);
   const lat = typeof body.lat === 'number' ? body.lat : undefined;
   const lon = typeof body.lon === 'number' ? body.lon : undefined;
+  const coords =
+    lat !== undefined && lon !== undefined && isValidCoord(lat, lon) ? { lat, lon } : {};
 
   const apiKey = process.env.AI_API_KEY ?? '';
   const baseUrl = process.env.AI_BASE_URL ?? 'https://api.openai.com/v1';
-  const model = process.env.AI_MODEL ?? 'gpt-6-luna';
+  const model = process.env.AI_MODEL ?? 'gpt-4o-mini';
   const apiMode = process.env.AI_API_MODE === 'chat-completions' ? 'chat-completions' : 'responses';
   const jevKey = process.env.JEV_API_KEY ?? '';
   const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://opencode.ai/zen';
@@ -38,7 +66,7 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
 
   try {
     const out = await answerTapWater(
-      { question, lat, lon },
+      { question, ...coords },
       {
         ...(apiKey
           ? {

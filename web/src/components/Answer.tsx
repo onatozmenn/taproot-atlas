@@ -2,6 +2,7 @@ import React from 'react';
 import type { TapAnswer } from '../api';
 import type { QualityMetricRecord } from '../../../types/water-intelligence';
 import { RealMap } from './RealMap';
+import { renderMarkdown } from '../md';
 
 export function MetricCard({ metric }: { metric: QualityMetricRecord }) {
   const value = (v: string | undefined) => (v && v.length > 0 ? v : 'not reported');
@@ -62,7 +63,7 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
   return (
     <div className="answer">
       <ValidationLine answer={answer} />
-      <p>{answer.overview}</p>
+      <div className="markdown">{renderMarkdown(answer.overview)}</div>
       <RealMap answer={answer} />
       {answer.metrics.length > 0 && (
         <>

@@ -4,7 +4,7 @@ Run on the preview URL (see README “Preview deploys”). All answers are
 snapshot-backed, so the demo works offline-proof on stage.
 
 ## Q1 — “Where does my tap water come from?” (60s)
-- Shows: system name + PWSID, Catskill and Delaware basins, Verified boundary badge.
+- Shows: system name + PWSID, Catskill and Delaware basins, Modeled boundary badge.
 - Say: “The Resolver owns every fact; the chat only narrates.”
 - Point at: schematic overlay on real OSM tiles + attribution corner.
 
@@ -13,7 +13,7 @@ snapshot-backed, so the demo works offline-proof on stage.
 - Say: “Zero is reported as no records found in window — never safe or clean.”
 - Click: the ECHO profile link (public EPA page).
 
-## Q3 — click the “What did the 2025 Annual report test for Turbidity?” chip (60s)
+## Q3 — click the “What did the 2024 Annual report test for Turbidity?” chip (60s)
 - Shows: MetricCard with value, threshold, test date, report period, version, source link.
 - Say: “Every number traces to a dated filing. Ask in Turkish — the answer stays English and grounded.”
 - Point at: the “Verified summary · audited …” line under the answer.

@@ -6,16 +6,19 @@ export interface FlowNode {
   at: [number, number];
 }
 
-/** GeoJSON [lon, lat] → Leaflet [lat, lon]. */
+/** GeoJSON [lon, lat] → Leaflet [lat, lon]. Drops non-finite points. */
 export function toLatLngs(nodes: FlowNode[]): Array<[number, number]> {
-  return nodes.map((n) => [n.at[1], n.at[0]]);
+  return nodes
+    .filter((n) => Number.isFinite(n.at[0]) && Number.isFinite(n.at[1]))
+    .map((n) => [n.at[1], n.at[0]]);
 }
 
 /** Center + zoom for the current schematic; falls back to the NYC showcase view. */
 export function mapView(nodes: FlowNode[]): { center: [number, number]; zoom: number } {
-  if (nodes.length === 0) return { center: [40.78, -73.97], zoom: 10 };
-  const lats = nodes.map((n) => n.at[1]);
-  const lons = nodes.map((n) => n.at[0]);
+  const valid = nodes.filter((n) => Number.isFinite(n.at[0]) && Number.isFinite(n.at[1]));
+  if (valid.length === 0) return { center: [40.78, -73.97], zoom: 10 };
+  const lats = valid.map((n) => n.at[1]);
+  const lons = valid.map((n) => n.at[0]);
   const span = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lons) - Math.min(...lons));
   const center: [number, number] = [
     (Math.min(...lats) + Math.max(...lats)) / 2,

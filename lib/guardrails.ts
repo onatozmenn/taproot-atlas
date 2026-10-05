@@ -28,7 +28,14 @@ export function extractGluedNumbers(text: string): string[] {
 }
 
 export function normalizeNumericToken(token: string): string {
-  return String(Number(token));
+  const n = Number(token);
+  if (!Number.isFinite(n)) return token;
+  // Canonical form so "0.080" and "0.08" compare equal.
+  return String(n);
+}
+
+function normalizeNumberList(tokens: string[]): Set<string> {
+  return new Set(tokens.map(normalizeNumericToken));
 }
 
 export function buildResolverFacts(
@@ -63,7 +70,7 @@ export function buildResolverFacts(
   }
 
   const allowedNumbers = Array.from(
-    new Set(rawSources.flatMap((text) => extractNormalizedNumbers(text)))
+    new Set(rawSources.flatMap((text) => extractNormalizedNumbers(text)).map(normalizeNumericToken))
   );
 
   const allowedGluedNumbers = Array.from(
@@ -103,7 +110,44 @@ const ENTITY_PATTERNS = [
 ];
 
 function splitIntoSentences(text: string): string[] {
-  return text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  // Protect common abbreviations so "e.g." / "i.e." don't split sentences.
+  const protectedText = text
+    .replace(/\be\.g\./gi, 'e<eg>')
+    .replace(/\bi\.e\./gi, 'i<ie>');
+  return protectedText
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.replace(/e<eg>/g, 'e.g.').replace(/i<ie>/g, 'i.e.'))
+    .filter(Boolean);
+}
+
+/** Strict entity match: exact entity or standalone single-word entity.
+ * Avoids "cat" matching "catskill" via substring, and bare "treatment"
+ * matching the real label "treatment facility" (narrator must avoid
+ * facility words; see evals E10 vs F12). Basin names pass because they
+ * exist as standalone primaryBasins entries. */
+function entityAllowed(candidate: string, allowedList: string[]): boolean {
+  const allowedSet = new Set(allowedList.map((e) => e.toLowerCase().trim()));
+  const singleWordAllowed = new Set(
+    [...allowedSet].filter((e) => e.length > 0 && !e.includes(' ') && !e.includes('-')),
+  );
+  let cand = candidate.toLowerCase().trim();
+  // Strip leading articles/conjunctions/prepositions captured by the lazy prefix.
+  cand = cand.replace(/^(?:the|a|an|and|or|of|at|in|to|from)\s+/i, '').trim();
+  // Re-strip repeatedly (e.g. "and the croton").
+  let prev = '';
+  while (prev !== cand) {
+    prev = cand;
+    cand = cand.replace(/^(?:the|a|an|and|or|of|at|in|to|from)\s+/i, '').trim();
+  }
+  if (!cand) return true;
+  if (allowedSet.has(cand)) return true;
+  const tokens = cand.split(/[^a-z0-9]+/).filter(Boolean);
+  const head = tokens[tokens.length - 1] ?? '';
+  // Head word passes only if it exists as a standalone allowed entity
+  // (e.g. "catskill" from primaryBasins), never as a fragment of a
+  // longer label (e.g. "treatment" from "treatment facility").
+  if (head && singleWordAllowed.has(head)) return true;
+  return false;
 }
 
 export function auditLlmNarrative(
@@ -154,9 +198,9 @@ export function auditLlmNarrative(
   }
 
   const extractedNumbers = extractNormalizedNumbers(narrativeText);
-  const allowedNumbersSet = new Set(resolverOutput.extractedFacts.allowedNumbers);
+  const allowedNumbersSet = normalizeNumberList(resolverOutput.extractedFacts.allowedNumbers);
   for (const num of extractedNumbers) {
-    if (!allowedNumbersSet.has(num)) {
+    if (!allowedNumbersSet.has(normalizeNumericToken(num))) {
       violations.push(
         `Unauthorized numeric value: "${num}". Not present in ground-truth facts.`
       );
@@ -164,7 +208,7 @@ export function auditLlmNarrative(
   }
 
   const groundedNumeric = new Set(
-    [...allowedNumbersSet, ...resolverOutput.extractedFacts.allowedGluedNumbers].map(normalizeNumericToken)
+    [...resolverOutput.extractedFacts.allowedNumbers, ...resolverOutput.extractedFacts.allowedGluedNumbers].map(normalizeNumericToken)
   );
   for (const glued of extractGluedNumbers(narrativeText)) {
     if (!groundedNumeric.has(normalizeNumericToken(glued))) {
@@ -188,13 +232,7 @@ export function auditLlmNarrative(
         const candidate = match[1].toLowerCase().trim();
         if (['the', 'a', 'an', 'this', 'water'].includes(candidate)) continue;
         const allowedList: string[] = Array.from(allowedEntitiesSet);
-        const exists = allowedList.some(
-          (allowed) =>
-            allowed === candidate ||
-            allowed.includes(candidate) ||
-            candidate.includes(allowed)
-        );
-        if (!exists) {
+        if (!entityAllowed(candidate, allowedList)) {
           violations.push(
             `Unverified water entity or parameter claimed: "${candidate}".`
           );

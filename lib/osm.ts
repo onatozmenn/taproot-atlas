@@ -57,9 +57,20 @@ export async function findDrinkingPoints(
   lon: number,
   options: OsmClientOptions = {},
 ): Promise<DrinkingPoint[]> {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    throw new OsmError('Invalid coordinates for Overpass lookup', 'bad_response');
+  }
   const {
     fetchJson = async (url: string, body: string, init?: { signal: AbortSignal }) => {
-      const res = await fetch(url, { method: 'POST', body, signal: init?.signal });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'user-agent': 'taproot-atlas/0.1.0 (water-intelligence; contact: showcase)',
+        },
+        body: `data=${encodeURIComponent(body)}`,
+        signal: init?.signal,
+      });
       if (res.status === 429) throw new OsmError('Overpass rate limit reached', 'rate_limited');
       if (!res.ok) throw new OsmError(`Overpass fetch failed: HTTP ${res.status}`, 'bad_response');
       return (await res.json()) as unknown;

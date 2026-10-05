@@ -10,7 +10,7 @@ export interface ChipFacts {
 
 export function suggestFollowUps(facts: ChipFacts): string[] {
   const chips: string[] = [];
-  if (facts.boundaryType === 'unverified_fallback') {
+  if (facts.boundaryType.toLowerCase() === 'unverified_fallback') {
     chips.push('Where is the nearest public drinking point?');
     chips.push('Why is this boundary unverified?');
     return chips;

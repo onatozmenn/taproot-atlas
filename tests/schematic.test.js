@@ -15,8 +15,13 @@ describe('buildSchematicFlow', () => {
     }
   });
 
-  it('refuses to fabricate coordinates for unknown basins', () => {
-    assert.throws(() => showcaseNodes(['Hudson']), /representative coordinate/);
+  it('skips unknown basins instead of throwing (never fabricates coordinates)', () => {
+    const nodes = showcaseNodes(['Hudson']);
+    assert.equal(nodes.filter((n) => n.role === 'watershed').length, 0);
+    assert.ok(nodes.some((n) => n.role === 'treatment_facility'));
+    const mixed = showcaseNodes(['Catskill', 'Hudson']);
+    assert.ok(mixed.some((n) => n.label === 'Catskill Watershed'));
+    assert.ok(!mixed.some((n) => n.label.includes('Hudson')));
   });
 
   it('disclaimer forbids engineering interpretation', () => {
