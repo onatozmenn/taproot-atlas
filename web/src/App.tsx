@@ -11,12 +11,6 @@ interface Msg {
   answer?: TapAnswer;
 }
 
-const STARTERS = [
-  'Where does my tap water come from?',
-  'Any violations in the last 5 years?',
-  'What did the 2024 Annual report test?',
-];
-
 let nextId = 1;
 
 /* ---- inline stroke icons (no emoji) ---- */
@@ -280,7 +274,7 @@ export default function App() {
           reportPeriod: m.provenance.reportPeriod,
         })),
       })
-    : STARTERS;
+    : [];
 
   return (
     <div className="page">
@@ -325,13 +319,6 @@ export default function App() {
                 inputRef={inputRef}
                 label="Ask about your tap water"
               />
-            </div>
-            <div className="try-row" aria-label="Try asking">
-              {STARTERS.map((s) => (
-                <button key={s} type="button" className="try-chip" onClick={() => void send(s)}>
-                  {s}
-                </button>
-              ))}
             </div>
           </div>
         ) : (
@@ -392,7 +379,7 @@ export default function App() {
                 </span>
               </div>
             )}
-            {!busy && (
+            {!busy && chips.length > 0 && (
               <div className="followups" aria-label="Follow-up questions">
                 {chips.map((s) => (
                   <button key={s} type="button" className="follow-chip" onClick={() => void send(s)}>

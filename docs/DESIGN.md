@@ -186,7 +186,7 @@ Thread + working + done states of the campsite conversation:
 - [ ] Header: logo left, subtle Start over right (in thread only), 68–76px, no menu.
 - [ ] Hero centered, H1 clamp(40–56px), sub muted, spacing per §1.3.
 - [ ] Search pill w/ shadow, mic + navy send inside, focus ring.
-- [ ] Try chips ×3, wrap on mobile.
+- [ ] No starter chips on the hero (omitted per product request); follow-ups only.
 - [ ] Privacy microcopy under composer.
 - [ ] Thread: right gray user bubble, full-width assistant, source + next-step
       anatomy, typing pulse, Start over, feedback/copy.

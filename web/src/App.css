@@ -48,13 +48,6 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
 }
 .lede { color: var(--muted); font-size: 18.5px; margin: 0 0 30px; }
 .hero-composer { max-width: 680px; margin: 0 auto; }
-.try-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 22px 0 0; }
-.try-chip {
-  border: 1px solid var(--line); background: #fff; border-radius: 999px;
-  padding: 11px 20px; cursor: pointer; font-size: 14.5px; color: var(--ink);
-  font-family: var(--font-body);
-}
-.try-chip:hover { border-color: var(--navy); color: var(--navy); }
 
 /* Composer — 2px near-black pill like the SS */
 .composer {
