@@ -255,11 +255,11 @@ describe('answerTapWater', () => {
 
   it('tier B cities resolve with honest uncurated narratives', async () => {
     const res = await answerTapWater(
-      { question: 'seattle?', ...SHOWCASE_CENTER },
+      { question: 'herndon?', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture' },
     );
     assert.equal(res.scope, 'water');
-    assert.equal(res.groundTruth.pwsid, 'WA5377050');
+    assert.equal(res.groundTruth.pwsid, 'VA6059501');
     assert.deepEqual(res.groundTruth.primaryBasins, []);
     assert.equal(res.groundTruth.regulatoryCompliance.snapshotPending, true);
     assert.ok(res.narrative.overview.includes('not yet curated'));
@@ -273,6 +273,15 @@ describe('answerTapWater', () => {
     );
     assert.equal(res.groundTruth.pwsid, 'PA1510001');
     assert.ok(res.narrative.overview.includes('Schuylkill River'));
+  });
+
+  it('explicit coordinates in a Verified ring keep the verified verdict', async () => {
+    const res = await answerTapWater(
+      { question: 'tell me about the water here', lat: 34.05, lon: -118.25 },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.groundTruth.pwsid, 'CA1910067');
+    assert.equal(res.groundTruth.boundaryType, 'verified_agency');
   });
 
   it('nyc by name resolves to the curated snapshot from anywhere', async () => {

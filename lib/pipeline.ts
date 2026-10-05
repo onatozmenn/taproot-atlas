@@ -17,7 +17,7 @@ import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
-import { findSystemByText } from './systems.js';
+import { findSystemByText, getDirectorySystem } from './systems.js';
 import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
@@ -155,12 +155,35 @@ export async function answerTapWater(
     // boundary, curated basins, pending compliance, no lab metrics yet.
     // Pending shells are static, never live — label them as such.
     effectiveRecordSource = 'snapshot_fixture';
-    const dir = dirSystem!;
+    const dir = dirSystem ?? getDirectorySystem(effectivePwsid);
+    if (!dir) {
+      // Polygon hit outside the curated directory: answer from the resolved
+      // location with pending compliance and location-anchored schematic
+      // points (approximate, as always).
+      schematic = {
+        pwsid: effectivePwsid,
+        systemName: resolved.systemName,
+        boundaryType: resolved.boundaryType,
+        primaryBasins: resolved.primaryBasins,
+        schematicFlow: buildSchematicFlow([
+          { label: 'Treatment Facility', role: 'treatment_facility' as const, at: [lon + 0.07, lat + 0.12] },
+          { label: 'Distribution Zone', role: 'distribution_zone' as const, at: [lon, lat] },
+        ]),
+        regulatoryCompliance: pendingCompliance(effectivePwsid, auditTimestamp),
+        latestReportedMetrics: [],
+        disclaimer: `${PUBLIC_HEALTH_NOTICE} ${SCHEMATIC_DISCLAIMER}`,
+      };
+    } else {
     const [clon, clat] = dir.center;
+    // When the coordinate polygon matched the same system, its EPA boundary
+    // verdict stands (Verified rings included). A pure name match stays
+    // unverified — the user's location is unproven.
+    const boundaryType =
+      resolved.pwsid === dir.pwsid ? resolved.boundaryType : dir.boundaryType;
     schematic = {
       pwsid: dir.pwsid,
       systemName: dir.systemName,
-      boundaryType: dir.boundaryType,
+      boundaryType,
       primaryBasins: dir.basins.map((b) => b.name),
       schematicFlow: buildSchematicFlow([
         ...dir.basins.map((b) => ({
@@ -175,6 +198,7 @@ export async function answerTapWater(
       latestReportedMetrics: [],
       disclaimer: `${PUBLIC_HEALTH_NOTICE} ${SCHEMATIC_DISCLAIMER}`,
     };
+    }
   }
 
   // Routing hint, not a gate: a directory-city mention counts as water, and

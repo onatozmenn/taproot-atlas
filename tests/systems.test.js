@@ -18,17 +18,17 @@ describe('systems directory', () => {
   });
 
   it('marks tier B entries (PWSID + city, no curated basins)', () => {
-    const seattle = getDirectorySystem('WA5377050');
-    assert.ok(seattle);
-    assert.equal(seattle.city, 'Seattle');
-    assert.deepEqual(seattle.basins, []);
-    assert.equal(seattle.metricsCurated, false);
+    const herndon = getDirectorySystem('VA6059501');
+    assert.ok(herndon);
+    assert.equal(herndon.city, 'Herndon');
+    assert.deepEqual(herndon.basins, []);
+    assert.equal(herndon.metricsCurated, false);
   });
 
-  it('curates basins for 18 tier A metros from official utility sources', () => {
+  it('curates basins for 22 tier A metros from official utility sources', () => {
     const systems = listDirectorySystems();
     const tierA = systems.filter((s) => s.basins.length > 0);
-    assert.equal(tierA.length, 18);
+    assert.equal(tierA.length, 22);
     const philly = getDirectorySystem('PA1510001');
     assert.deepEqual(
       philly?.basins.map((b) => b.name),

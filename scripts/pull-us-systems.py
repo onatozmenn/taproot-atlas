@@ -158,6 +158,30 @@ CURATED = {
         "reportUrl": "https://www.charlottenc.gov/water/Water-Quality",
         "metricsCurated": False,
     },
+    "WA5377050": {
+        "basins": [{"name": "Cedar River", "at": [-121.9, 47.35]}, {"name": "Tolt River", "at": [-121.7, 47.7]}],
+        "utilityUrl": "https://www.seattle.gov/utilities/protecting-our-environment/our-water-sources",
+        "reportUrl": "https://www.seattle.gov/utilities/protecting-our-environment/our-water-sources",
+        "metricsCurated": False,
+    },
+    "TX2270001": {
+        "basins": [{"name": "Colorado River", "at": [-97.8, 30.4]}, {"name": "Highland Lakes", "at": [-98.1, 30.5]}],
+        "utilityUrl": "https://www.austintexas.gov/water/programs/water-quality-reports",
+        "reportUrl": "https://www.austintexas.gov/water/programs/water-quality-reports",
+        "metricsCurated": False,
+    },
+    "GA1210001": {
+        "basins": [{"name": "Chattahoochee River", "at": [-84.4, 33.9]}, {"name": "Lake Lanier", "at": [-84.0, 34.1]}],
+        "utilityUrl": "https://atlantawatershed.org/water-quality-faqs/",
+        "reportUrl": "https://atlantawatershed.org/water-quality-faqs/",
+        "metricsCurated": False,
+    },
+    "CA4310011": {
+        "basins": [{"name": "Santa Clara Groundwater Basin", "at": [-121.9, 37.3]}, {"name": "Hetch Hetchy", "at": [-119.8, 37.95]}],
+        "utilityUrl": "https://www.sjwater.com/customer-care/help-information/water-supply-faqs/",
+        "reportUrl": "https://www.sjwater.com/customer-care/help-information/water-supply-faqs/",
+        "metricsCurated": False,
+    },
 }
 
 UA = {"User-Agent": "taproot-atlas/0.1.0 (water-intelligence; contact: showcase-only demo)"}

@@ -1,6 +1,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { pointInPolygon, resolveSystem, listServiceAreas, snapshotVersion } from '../dist/lib/geo.js';
+import {
+  pointInPolygon,
+  pointInRings,
+  resolveBoundary,
+  resolveSystem,
+  listServiceAreas,
+  snapshotVersion,
+  boundariesVersion,
+} from '../dist/lib/geo.js';
 
 describe('pointInPolygon', () => {
   const square = [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]];
@@ -45,5 +53,44 @@ describe('resolveSystem', () => {
   it('snapshot is versioned and lists service areas', () => {
     assert.match(snapshotVersion(), /^epa-service-area-/);
     assert.ok(listServiceAreas().length >= 1);
+  });
+
+  it('matches points inside any ring of a multipolygon', () => {
+    const rings = [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+        [0, 0],
+      ],
+      [
+        [5, 5],
+        [6, 5],
+        [6, 6],
+        [5, 6],
+        [5, 5],
+      ],
+    ];
+    assert.equal(pointInRings([0.5, 0.5], rings), true);
+    assert.equal(pointInRings([5.5, 5.5], rings), true);
+    assert.equal(pointInRings([3, 3], rings), false);
+  });
+
+  it('resolves real EPA rings with verification mapping', () => {
+    // Downtown Los Angeles sits inside an EPA-Verified LADWP ring.
+    const la = resolveBoundary(34.05, -118.25);
+    assert.equal(la?.pwsid, 'CA1910067');
+    assert.equal(la?.boundaryType, 'verified_agency');
+    assert.ok((la?.primaryBasins.length ?? 0) >= 1);
+    // Mid-Atlantic ocean is inside nothing.
+    assert.equal(resolveBoundary(37.0, -70.0), null);
+    assert.match(boundariesVersion(), /^us-boundaries-/);
+  });
+
+  it('prefers national rings over the legacy extent', () => {
+    const r = resolveSystem(34.05, -118.25);
+    assert.equal(r.pwsid, 'CA1910067');
+    assert.equal(r.boundaryType, 'verified_agency');
   });
 });

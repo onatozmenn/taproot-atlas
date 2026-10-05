@@ -641,9 +641,26 @@
         47.6038
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Cedar River",
+          "at": [
+            -121.9,
+            47.35
+          ]
+        },
+        {
+          "name": "Tolt River",
+          "at": [
+            -121.7,
+            47.7
+          ]
+        }
+      ],
       "populationServed": 1161961,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.seattle.gov/utilities/protecting-our-environment/our-water-sources",
+      "reportUrl": "https://www.seattle.gov/utilities/protecting-our-environment/our-water-sources"
     },
     {
       "pwsid": "VA6059501",
@@ -675,9 +692,26 @@
         30.2711
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Colorado River",
+          "at": [
+            -97.8,
+            30.4
+          ]
+        },
+        {
+          "name": "Highland Lakes",
+          "at": [
+            -98.1,
+            30.5
+          ]
+        }
+      ],
       "populationServed": 1115323,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.austintexas.gov/water/programs/water-quality-reports",
+      "reportUrl": "https://www.austintexas.gov/water/programs/water-quality-reports"
     },
     {
       "pwsid": "MO6010716",
@@ -726,9 +760,26 @@
         33.7545
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Chattahoochee River",
+          "at": [
+            -84.4,
+            33.9
+          ]
+        },
+        {
+          "name": "Lake Lanier",
+          "at": [
+            -84.0,
+            34.1
+          ]
+        }
+      ],
       "populationServed": 1089893,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://atlantawatershed.org/water-quality-faqs/",
+      "reportUrl": "https://atlantawatershed.org/water-quality-faqs/"
     },
     {
       "pwsid": "CA4310011",
@@ -743,9 +794,26 @@
         37.3362
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Santa Clara Groundwater Basin",
+          "at": [
+            -121.9,
+            37.3
+          ]
+        },
+        {
+          "name": "Hetch Hetchy",
+          "at": [
+            -119.8,
+            37.95
+          ]
+        }
+      ],
       "populationServed": 1039920,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.sjwater.com/customer-care/help-information/water-supply-faqs/",
+      "reportUrl": "https://www.sjwater.com/customer-care/help-information/water-supply-faqs/"
     },
     {
       "pwsid": "GA1350004",

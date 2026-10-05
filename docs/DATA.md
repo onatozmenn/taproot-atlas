@@ -6,21 +6,25 @@ All datasets are versioned snapshots under `data/`. Re-ingests ship a new
 | File | Provider | Report period | Capture time | License |
 | ---- | -------- | ------------- | ------------ | ------- |
 | `epa-service-area.json` | Coarse modeled extent approximating the five NYC boroughs, derived from EPA Service Area Boundary geography | n/a (boundary snapshot) | 2026-01-02 | US public data; schematic only — never `verified_agency`, never a legal definition |
+| `us-boundaries.json` | EPA national service-area rings for the 100 directory systems (FeatureServer, precision 3 + simplified; 100/100 matched). `Verification_Status=Verified` → `verified_agency`, else `modeled_epa`. Rebuild: `python scripts/pull-us-boundaries.py` | n/a (boundary snapshot) | per pull | EPA public data; coarse orientation rings, never a legal definition |
 | `echo-nyc.json` | **Demonstration fixture** in ECHO SDWIS record shape for NY7003493 (NOT a captured EPA response) | 2021-01-01 → 2026-01-01 | 2026-01-02 | Fixture; verify live records at the `sourceQueryUrl` inside the file |
 | `nyc-2024.json` | NYC DEP Annual Drinking Water Supply and Quality Report, curated extract (2024 report) | 2024 Annual | 2026-01-02 | NYC public data; source doc linked per metric |
 | `us-systems.json` | Top-100 US community water systems by population served, from EPA SDWIS (Envirofacts efservice WATER_SYSTEM: active CWS serving >100k, largest per city). Map centers geocoded via OSM Nominatim. Rebuild: `python scripts/pull-us-systems.py` | 2021-01-01 → 2026-01-01 (compliance window) | capture per pull | EPA SDWIS (PWSID/city/pop) + OSM (centers); only the 4 curated entries ship verified basins and utility links (see `verificationSources` in-file) |
 
 ## Boundary confidence
 
-- Bundled borough extent → `modeled_epa`. `verified_agency` is reserved for
-  agency-published polygons (not yet vendored).
+- National EPA rings (`us-boundaries.json`, 100/100 directory systems) →
+  `verified_agency` when the EPA `Verification_Status` is Verified, else
+  `modeled_epa`. Bundled borough extent likewise → `modeled_epa`.
+  `verified_agency` is reachable by coordinate; name-only matches stay
+  `unverified_fallback` (location unproven).
 - Directory cities split into two tiers:
-  - **Tier A (18 systems)** — verified basins + utility links from official
+  - **Tier A (22 systems)** — verified basins + utility links from official
     utility pages (NYC, LA, Chicago, Houston, San Antonio, Boston/MWRA, Miami,
     WSSC, Baltimore, Philadelphia, Las Vegas, EBMUD, San Diego, Dallas,
-    Cleveland, Columbus, Denver, Charlotte); NYC additionally ships lab
-    metrics + compliance snapshot.
-  - **Tier B (82 systems)** — verified PWSID + city + map center only; no
+    Cleveland, Columbus, Denver, Charlotte, Seattle, Austin, Atlanta,
+    San Jose); NYC additionally ships lab metrics + compliance snapshot.
+  - **Tier B (78 systems)** — verified PWSID + city + map center only; no
     basins, no metrics, `snapshotPending` compliance. Narratives say so
     plainly instead of claiming coverage.
   Both tiers resolve by city-name match (a name mention beats the default
