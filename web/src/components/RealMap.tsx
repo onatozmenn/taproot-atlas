@@ -19,12 +19,6 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
   const divRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [basemap, setBasemap] = useState<'protomaps' | 'osm'>('protomaps');
-  const badge =
-    answer.boundaryType === 'VERIFIED_AGENCY'
-      ? { text: 'Verified boundary', cls: 'badge-verified' }
-      : answer.boundaryType === 'MODELED_EPA'
-        ? { text: 'Modeled boundary', cls: 'badge-modeled' }
-        : { text: 'Unverified boundary', cls: 'badge-unverified' };
 
   useEffect(() => {
     let map: { remove: () => void } | null = null;
@@ -200,10 +194,6 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
 
   return (
     <div className="map-card">
-      <div className="map-head">
-        <span className={`badge ${badge.cls}`}>{badge.text}</span>
-        <span className="map-note">Schematic overlay — not an engineering alignment</span>
-      </div>
       {failed ? (
         <p className="map-fallback">Map tiles unavailable. The schematic flow is listed below.</p>
       ) : (
@@ -235,7 +225,7 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
           ) : (
             <>Tiles © OpenStreetMap contributors (context only).</>
           )}{' '}
-          Flow data: {answer.pwsid} snapshot.
+          Flow data: {answer.pwsid} snapshot. Schematic overlay, not an engineering alignment.
         </span>
       </div>
     </div>
