@@ -194,7 +194,7 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
   transition: grid-template-rows 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.3s ease;
 }
 .disclosure.open { grid-template-rows: 1fr; opacity: 1; }
-.disclosure-inner { overflow: hidden; min-height: 0; }
+.disclosure-inner { overflow: hidden; min-height: 0; font-family: var(--font-display); }
 .disclosure-inner h4 { margin: 12px 0 4px; font-size: 15px; }
 .disclosure-inner ul { margin: 6px 0; padding-left: 20px; font-size: 14px; line-height: 1.7; }
 .icon-pill {
