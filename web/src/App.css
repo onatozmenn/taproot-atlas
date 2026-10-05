@@ -84,6 +84,20 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
   font-family: var(--font-body); color: var(--ink);
 }
 .composer input::placeholder { color: var(--faint); }
+/* No rectangular ring on the textbox itself (see SS): the pill carries focus. */
+.composer input:focus { outline: none; box-shadow: none; }
+/* Keyboard-only pill highlight that follows the pill curve — mouse click
+   shows just the caret, exactly like America.gov. */
+.composer:has(input:focus-visible) {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 4px rgba(10, 47, 92, 0.14);
+}
+@supports not selector(:has(*)) {
+  .composer:focus-within {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 4px rgba(10, 47, 92, 0.14);
+  }
+}
 .tool-btn {
   width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent;
   cursor: pointer; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; flex: none;
@@ -174,7 +188,7 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
 .validation-line { font-size: 13px; color: var(--muted); }
 .error-box { border: 1px solid var(--danger); border-radius: 10px; padding: 10px 14px; margin: 10px 0; background: #fff5f5; }
 .error-box button { border: 1px solid var(--navy); background: #fff; color: var(--navy); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
-button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .foot-note { text-align: center; color: var(--muted); font-size: 12px; max-width: 680px; margin: 8px auto 0; }
 @media (max-width: 640px) {
