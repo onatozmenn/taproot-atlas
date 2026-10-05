@@ -164,9 +164,19 @@
         29.4246
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Edwards Aquifer",
+          "at": [
+            -98.6,
+            29.6
+          ]
+        }
+      ],
       "populationServed": 2643729,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.saws.org/your-water/management-sources/",
+      "reportUrl": "https://www.saws.org/your-water/management-sources/"
     },
     {
       "pwsid": "MA6000000",
@@ -174,16 +184,35 @@
       "city": "Chelsea",
       "state": "MA",
       "aliases": [
-        "chelsea"
+        "boston",
+        "chelsea",
+        "mwra"
       ],
       "center": [
         -71.0369,
         42.3912
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Quabbin Reservoir",
+          "at": [
+            -72.3,
+            42.3
+          ]
+        },
+        {
+          "name": "Wachusett Reservoir",
+          "at": [
+            -71.7,
+            42.4
+          ]
+        }
+      ],
       "populationServed": 2580000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.mwra.com/your-water-system",
+      "reportUrl": "https://www.mwra.com/your-water-system"
     },
     {
       "pwsid": "FL4130871",
@@ -191,16 +220,27 @@
       "city": "Miami",
       "state": "FL",
       "aliases": [
-        "miami"
+        "miami",
+        "miami-dade"
       ],
       "center": [
         -80.1936,
         25.7742
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Biscayne Aquifer",
+          "at": [
+            -80.3,
+            25.7
+          ]
+        }
+      ],
       "populationServed": 2377460,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.miamidade.gov/global/water/water-supply-and-treatment.page",
+      "reportUrl": "https://www.miamidade.gov/global/water/water-supply-and-treatment.page"
     },
     {
       "pwsid": "MD0150005",
@@ -208,16 +248,34 @@
       "city": "Laurel",
       "state": "MD",
       "aliases": [
-        "laurel"
+        "laurel",
+        "wssc"
       ],
       "center": [
         -76.8485,
         39.0984
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Patuxent River",
+          "at": [
+            -76.7,
+            39.0
+          ]
+        },
+        {
+          "name": "Potomac River",
+          "at": [
+            -77.25,
+            39.0
+          ]
+        }
+      ],
       "populationServed": 1900000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.wsscwater.com/mywater",
+      "reportUrl": "https://www.wsscwater.com/mywater"
     },
     {
       "pwsid": "MD0300002",
@@ -232,9 +290,33 @@
         39.2909
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Liberty Reservoir",
+          "at": [
+            -76.9,
+            39.6
+          ]
+        },
+        {
+          "name": "Loch Raven Reservoir",
+          "at": [
+            -76.55,
+            39.45
+          ]
+        },
+        {
+          "name": "Prettyboy Reservoir",
+          "at": [
+            -76.75,
+            39.6
+          ]
+        }
+      ],
       "populationServed": 1600000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.baltimorecity.gov/publicworks/water-system-in-the-city/water-quality",
+      "reportUrl": "https://www.baltimorecity.gov/publicworks/water-system-in-the-city/water-quality"
     },
     {
       "pwsid": "PA1510001",
@@ -242,16 +324,34 @@
       "city": "Philadelphia",
       "state": "PA",
       "aliases": [
-        "philadelphia"
+        "philadelphia",
+        "philly"
       ],
       "center": [
         -75.1635,
         39.9527
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Delaware River",
+          "at": [
+            -75.05,
+            40.0
+          ]
+        },
+        {
+          "name": "Schuylkill River",
+          "at": [
+            -75.2,
+            40.0
+          ]
+        }
+      ],
       "populationServed": 1600000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://water.phila.gov/drinking-water/",
+      "reportUrl": "https://water.phila.gov/drinking-water/"
     },
     {
       "pwsid": "NV0000090",
@@ -259,16 +359,35 @@
       "city": "Las Vegas",
       "state": "NV",
       "aliases": [
-        "las vegas"
+        "las vegas",
+        "snwa",
+        "vegas"
       ],
       "center": [
         -115.1484,
         36.1674
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Lake Mead",
+          "at": [
+            -114.7,
+            36.1
+          ]
+        },
+        {
+          "name": "Colorado River",
+          "at": [
+            -114.6,
+            34.3
+          ]
+        }
+      ],
       "populationServed": 1539277,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.snwa.com/water-resources/where-water-comes-from/",
+      "reportUrl": "https://www.snwa.com/water-resources/where-water-comes-from/"
     },
     {
       "pwsid": "CA0110005",
@@ -276,6 +395,7 @@
       "city": "Oakland",
       "state": "CA",
       "aliases": [
+        "ebmud",
         "oakland"
       ],
       "center": [
@@ -283,9 +403,19 @@
         37.8045
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Mokelumne River",
+          "at": [
+            -120.85,
+            38.25
+          ]
+        }
+      ],
       "populationServed": 1442800,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.ebmud.com/water/about-your-water",
+      "reportUrl": "https://www.ebmud.com/water/about-your-water"
     },
     {
       "pwsid": "CA3710020",
@@ -300,9 +430,26 @@
         32.7157
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Colorado River",
+          "at": [
+            -114.6,
+            34.3
+          ]
+        },
+        {
+          "name": "State Water Project",
+          "at": [
+            -121.8,
+            38.0
+          ]
+        }
+      ],
       "populationServed": 1385379,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.sandiego.gov/public-utilities/sustainability/water-supply",
+      "reportUrl": "https://www.sandiego.gov/public-utilities/sustainability/water-supply"
     },
     {
       "pwsid": "TX0570004",
@@ -317,9 +464,33 @@
         32.7763
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Elm Fork Trinity River",
+          "at": [
+            -96.95,
+            32.95
+          ]
+        },
+        {
+          "name": "Lewisville Lake",
+          "at": [
+            -97.0,
+            33.05
+          ]
+        },
+        {
+          "name": "Ray Hubbard Lake",
+          "at": [
+            -96.5,
+            32.8
+          ]
+        }
+      ],
       "populationServed": 1356479,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://dallascityhall.com/departments/waterutilities/Pages/water_quality_information.aspx",
+      "reportUrl": "https://dallascityhall.com/departments/waterutilities/Pages/water_quality_information.aspx"
     },
     {
       "pwsid": "OH1801212",
@@ -334,9 +505,19 @@
         41.4997
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Lake Erie",
+          "at": [
+            -81.9,
+            41.9
+          ]
+        }
+      ],
       "populationServed": 1308955,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.clevelandwater.com/your-water/lake-erie",
+      "reportUrl": "https://www.clevelandwater.com/your-water/lake-erie"
     },
     {
       "pwsid": "OH2504412",
@@ -351,9 +532,33 @@
         39.9623
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Scioto River",
+          "at": [
+            -83.05,
+            40.0
+          ]
+        },
+        {
+          "name": "Big Walnut Creek",
+          "at": [
+            -82.8,
+            40.1
+          ]
+        },
+        {
+          "name": "Alum Creek",
+          "at": [
+            -82.85,
+            40.15
+          ]
+        }
+      ],
       "populationServed": 1305946,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.columbus.gov/files/sharedassets/city/v/3/utilities/documents/water-publications/facts-on-columbus-water-reservoirs-brochure.pdf",
+      "reportUrl": "https://www.columbus.gov/files/sharedassets/city/v/3/utilities/documents/water-publications/facts-on-columbus-water-reservoirs-brochure.pdf"
     },
     {
       "pwsid": "CO0116001",
@@ -368,9 +573,26 @@
         39.7392
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "South Platte River",
+          "at": [
+            -105.0,
+            39.6
+          ]
+        },
+        {
+          "name": "Colorado River",
+          "at": [
+            -106.05,
+            39.6
+          ]
+        }
+      ],
       "populationServed": 1287000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.denverwater.org/tap/where-does-your-water-come",
+      "reportUrl": "https://www.denverwater.org/tap/where-does-your-water-come"
     },
     {
       "pwsid": "NC0160010",
@@ -385,9 +607,26 @@
         35.2272
       ],
       "boundaryType": "unverified_fallback",
-      "basins": [],
+      "basins": [
+        {
+          "name": "Mountain Island Lake",
+          "at": [
+            -80.9,
+            35.4
+          ]
+        },
+        {
+          "name": "Lake Norman",
+          "at": [
+            -80.85,
+            35.55
+          ]
+        }
+      ],
       "populationServed": 1163701,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "utilityUrl": "https://www.charlottenc.gov/water/Water-Quality",
+      "reportUrl": "https://www.charlottenc.gov/water/Water-Quality"
     },
     {
       "pwsid": "WA5377050",

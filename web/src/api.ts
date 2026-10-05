@@ -14,6 +14,8 @@ export interface TapAnswer {
   scope: 'water' | 'redirect';
   /** True when compliance has no curated snapshot yet (verify live at ECHO). */
   compliancePending: boolean;
+  /** Nearest OSM drinking-water points (UNKNOWN areas, best effort). */
+  nearbyPoints: Array<{ name: string; distanceM: number; osmUrl: string }>;
   basins: string[];
   overview: string;
   /** Redirect call-to-action lines (metricsSummary + complianceNote); empty for water scope. */
@@ -41,6 +43,11 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     boundaryType: g.boundaryType.toUpperCase() as TapAnswer['boundaryType'],
     scope: res.scope ?? 'water',
     compliancePending: res.groundTruth.regulatoryCompliance.snapshotPending === true,
+    nearbyPoints: (res.groundTruth.nearbyDrinkingPoints ?? []).map((p) => ({
+      name: p.name,
+      distanceM: p.distanceM,
+      osmUrl: p.osmUrl,
+    })),
     basins: g.primaryBasins,
     overview: res.narrative.overview,
     details: [res.narrative.metricsSummary, res.narrative.complianceNote]

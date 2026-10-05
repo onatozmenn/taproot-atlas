@@ -18,10 +18,33 @@ describe('systems directory', () => {
   });
 
   it('marks tier B entries (PWSID + city, no curated basins)', () => {
+    const seattle = getDirectorySystem('WA5377050');
+    assert.ok(seattle);
+    assert.equal(seattle.city, 'Seattle');
+    assert.deepEqual(seattle.basins, []);
+    assert.equal(seattle.metricsCurated, false);
+  });
+
+  it('curates basins for 18 tier A metros from official utility sources', () => {
+    const systems = listDirectorySystems();
+    const tierA = systems.filter((s) => s.basins.length > 0);
+    assert.equal(tierA.length, 18);
+    const philly = getDirectorySystem('PA1510001');
+    assert.deepEqual(
+      philly?.basins.map((b) => b.name),
+      ['Delaware River', 'Schuylkill River'],
+    );
+    const denver = getDirectorySystem('CO0116001');
+    assert.ok(denver?.basins.some((b) => b.name === 'South Platte River'));
     const miami = getDirectorySystem('FL4130871');
-    assert.ok(miami);
-    assert.deepEqual(miami.basins, []);
-    assert.equal(miami.metricsCurated, false);
+    assert.deepEqual(
+      miami?.basins.map((b) => b.name),
+      ['Biscayne Aquifer'],
+    );
+    // Utility-name aliases resolve too.
+    assert.equal(findSystemByText('philly water?')?.pwsid, 'PA1510001');
+    assert.equal(findSystemByText('boston tap water')?.pwsid, 'MA6000000');
+    assert.equal(findSystemByText('vegas drinking water')?.pwsid, 'NV0000090');
   });
 
   it('matches city mentions, longest alias wins', () => {

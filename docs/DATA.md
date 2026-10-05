@@ -15,9 +15,12 @@ All datasets are versioned snapshots under `data/`. Re-ingests ship a new
 - Bundled borough extent → `modeled_epa`. `verified_agency` is reserved for
   agency-published polygons (not yet vendored).
 - Directory cities split into two tiers:
-  - **Tier A (4 systems: NYC, LA, Chicago, Houston)** — verified basins +
-    utility links; NYC additionally ships lab metrics + compliance snapshot.
-  - **Tier B (96 systems)** — verified PWSID + city + map center only; no
+  - **Tier A (18 systems)** — verified basins + utility links from official
+    utility pages (NYC, LA, Chicago, Houston, San Antonio, Boston/MWRA, Miami,
+    WSSC, Baltimore, Philadelphia, Las Vegas, EBMUD, San Diego, Dallas,
+    Cleveland, Columbus, Denver, Charlotte); NYC additionally ships lab
+    metrics + compliance snapshot.
+  - **Tier B (82 systems)** — verified PWSID + city + map center only; no
     basins, no metrics, `snapshotPending` compliance. Narratives say so
     plainly instead of claiming coverage.
   Both tiers resolve by city-name match (a name mention beats the default
@@ -29,13 +32,20 @@ All datasets are versioned snapshots under `data/`. Re-ingests ship a new
 
 ## Going live (ECHO adapter)
 
-Live ECHO integration points (verified):
-- Drinking Water System Search REST: https://echo.epa.gov/tools/web-services/facility-search-drinking-water
-- Detailed Facility Report REST: https://echo.epa.gov/tools/web-services/detailed-facility-report
-- Human verification for the showcase system: https://echo.epa.gov/detailed-facility-report?fid=NY7003493
+Live SDWIS compliance is served by `lib/echo-live.ts` against the public
+Envirofacts efservice `VIOLATION` table (no key; verified 2026-10-05):
+`VIOLATION/PWSID/=/{pwsid}/rows` → window overlap on
+`compl_per_begin/end_date` → `SdwisViolationRecord[]`
+(`health_based` iff `is_health_based_ind=Y`, `monitoring_and_reporting` iff
+category `MR`, `complianceAchieved` iff `rtc_date` set). Absence of rows in
+the window is a real finding, served with `recordSource: live_fetch`.
 
-`fetchEchoCompliance` expects the `EchoSnapshotShape` contract
-(`pwsid`, `queryWindow`, integer `totalViolationsFound`, `records[]`); map the
-chosen ECHO endpoint's fields onto it in one adapter function, then pass its URL
-as `sourceUrl`. Until then, `readSnapshotCompliance` serves the bundled fixture
-and every consumer must render the fixture label (see `recordSource`).
+Enable with `ECHO_LIVE_SOURCE=efservice` (server only). Anything else keeps
+the bundled snapshot so previews and tests stay hermetic. Any live failure
+degrades inside the pipeline — NYC to its snapshot, other systems to
+`snapshotPending` — and relabels `recordSource` to `snapshot_fixture`;
+a failed fetch never 502s.
+
+The older ECHO web-services search endpoints remain documented in git history
+for PWSID discovery; the snapshot fixture contract (`EchoSnapshotShape`) is
+unchanged.

@@ -167,6 +167,8 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
 .status-ok { background: #e7f4e4; color: #1e6b34; border-color: #b6dfb6; }
 .status-bad { background: #fde8e8; color: #9b1c1c; border-color: #f3b8b8; }
 .status-warn { background: #fff3cd; color: #7a5b00; border-color: #e6c87a; }
+.fine { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+.nearby-list { margin: 8px 0; padding-left: 20px; font-size: 14.5px; line-height: 1.7; }
 .map-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 14px 0; background: #fafbfc; }
 .real-map { height: 320px; width: 100%; margin-top: 8px; border-radius: 8px; z-index: 0; }
 .map-flow-list { font-size: 13px; color: var(--muted); margin: 8px 0 0; padding-left: 18px; }

@@ -11,6 +11,7 @@ const base: TapAnswer = {
   boundaryType: 'MODELED_EPA',
   scope: 'water',
   compliancePending: false,
+  nearbyPoints: [],
   basins: ['Catskill', 'Delaware'],
   overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',
   details: '',
@@ -86,6 +87,16 @@ describe('AnswerCard', () => {
     expect(text).toContain('not yet curated in the snapshot');
     expect(text).toContain('Verify live records at EPA ECHO');
     expect(text).not.toContain('Violations recorded');
+  });
+
+  it('lists nearby drinking-water points when present', () => {
+    const withPoints = {
+      ...base,
+      nearbyPoints: [{ name: 'Park fountain', distanceM: 120, osmUrl: 'https://www.openstreetmap.org/node/1' }],
+    };
+    const { container } = render(<AnswerCard answer={withPoints} />);
+    expect(container.textContent).toContain('Park fountain');
+    expect(container.textContent).toContain('Unverified community data');
   });
 
   it('toggles the compliance proofs open and closed', () => {

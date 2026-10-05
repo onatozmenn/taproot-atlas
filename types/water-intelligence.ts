@@ -55,6 +55,13 @@ export interface SdwisComplianceProfile {
   snapshotPending?: boolean;
 }
 
+/** Nearby public drinking-water point (OSM, always unverified). */
+export interface NearbyDrinkingPoint {
+  name: string;
+  distanceM: number;
+  osmUrl: string;
+}
+
 export interface WaterOriginSchematic {
   pwsid: string;
   systemName: string;
@@ -75,6 +82,8 @@ export interface WaterOriginSchematic {
   };
   regulatoryCompliance: SdwisComplianceProfile;
   latestReportedMetrics: QualityMetricRecord[];
+  /** Nearest OSM drinking-water points (UNKNOWN areas only, best effort). */
+  nearbyDrinkingPoints?: NearbyDrinkingPoint[];
   disclaimer: string;
 }
 

@@ -43,10 +43,40 @@ describe('answerTapWater', () => {
   it('unknown area returns explicit unverified fallback (never a guessed PWSID)', async () => {
     const res = await answerTapWater(
       { question: 'Ankara water?', lat: 39.9, lon: 32.8 },
-      { fetchEcho, recordSource: 'snapshot_fixture' },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
     );
     assert.equal(res.groundTruth.pwsid, 'UNKNOWN');
     assert.equal(res.groundTruth.boundaryType, 'unverified_fallback');
+  });
+
+  it('attaches nearby drinking-water points for unknown areas (best effort)', async () => {
+    const res = await answerTapWater(
+      { question: 'Ankara water?', lat: 39.9, lon: 32.8 },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        findNearby: async () => [
+          { name: 'Park fountain', lat: 39.9, lon: 32.8, distanceM: 120, osmUrl: 'https://www.openstreetmap.org/node/1' },
+        ],
+      },
+    );
+    assert.equal(res.groundTruth.nearbyDrinkingPoints?.length, 1);
+    assert.equal(res.groundTruth.nearbyDrinkingPoints?.[0].osmUrl, 'https://www.openstreetmap.org/node/1');
+  });
+
+  it('a failed nearby lookup only omits the list, never blocks', async () => {
+    const res = await answerTapWater(
+      { question: 'Ankara water?', lat: 39.9, lon: 32.8 },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        findNearby: async () => {
+          throw new Error('overpass down');
+        },
+      },
+    );
+    assert.equal(res.groundTruth.pwsid, 'UNKNOWN');
+    assert.equal(res.groundTruth.nearbyDrinkingPoints, undefined);
   });
 
   it('fail path: bad narrator output falls back to deterministic summary', async () => {
@@ -225,15 +255,24 @@ describe('answerTapWater', () => {
 
   it('tier B cities resolve with honest uncurated narratives', async () => {
     const res = await answerTapWater(
-      { question: 'miami?', ...SHOWCASE_CENTER },
+      { question: 'seattle?', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture' },
     );
     assert.equal(res.scope, 'water');
-    assert.equal(res.groundTruth.pwsid, 'FL4130871');
+    assert.equal(res.groundTruth.pwsid, 'WA5377050');
     assert.deepEqual(res.groundTruth.primaryBasins, []);
     assert.equal(res.groundTruth.regulatoryCompliance.snapshotPending, true);
     assert.ok(res.narrative.overview.includes('not yet curated'));
     assert.ok(!res.narrative.overview.includes('basins outside'));
+  });
+
+  it('tier A directory cities narrate their curated basins', async () => {
+    const res = await answerTapWater(
+      { question: 'philadelphia tap water?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.groundTruth.pwsid, 'PA1510001');
+    assert.ok(res.narrative.overview.includes('Schuylkill River'));
   });
 
   it('nyc by name resolves to the curated snapshot from anywhere', async () => {
@@ -244,5 +283,27 @@ describe('answerTapWater', () => {
     assert.equal(res.scope, 'water');
     assert.equal(res.groundTruth.pwsid, 'NY7003493');
     assert.ok(res.groundTruth.latestReportedMetrics.length >= 1);
+  });
+
+  it('a failed compliance fetch degrades honestly instead of 502', async () => {
+    const throwing = async () => {
+      throw new Error('network down');
+    };
+    const nyc = await answerTapWater(
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
+      { fetchEcho: throwing, recordSource: 'live_fetch' },
+    );
+    assert.equal(nyc.scope, 'water');
+    assert.equal(nyc.groundTruth.pwsid, 'NY7003493');
+    assert.equal(nyc.validationStatus.recordSource, 'snapshot_fixture');
+    assert.ok(nyc.groundTruth.latestReportedMetrics.length >= 1);
+
+    const la = await answerTapWater(
+      { question: 'los angeles water?', ...SHOWCASE_CENTER },
+      { fetchEcho: throwing, recordSource: 'live_fetch' },
+    );
+    assert.equal(la.groundTruth.pwsid, 'CA1910067');
+    assert.equal(la.groundTruth.regulatoryCompliance.snapshotPending, true);
+    assert.equal(la.validationStatus.recordSource, 'snapshot_fixture');
   });
 });

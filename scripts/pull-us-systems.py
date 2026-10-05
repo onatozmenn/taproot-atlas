@@ -56,6 +56,108 @@ CURATED = {
         "reportUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report",
         "metricsCurated": False,
     },
+    "TX0150018": {
+        "basins": [{"name": "Edwards Aquifer", "at": [-98.6, 29.6]}],
+        "utilityUrl": "https://www.saws.org/your-water/management-sources/",
+        "reportUrl": "https://www.saws.org/your-water/management-sources/",
+        "metricsCurated": False,
+    },
+    "MA6000000": {
+        "aliases": ["chelsea", "boston", "mwra"],
+        "basins": [{"name": "Quabbin Reservoir", "at": [-72.3, 42.3]}, {"name": "Wachusett Reservoir", "at": [-71.7, 42.4]}],
+        "utilityUrl": "https://www.mwra.com/your-water-system",
+        "reportUrl": "https://www.mwra.com/your-water-system",
+        "metricsCurated": False,
+    },
+    "FL4130871": {
+        "aliases": ["miami", "miami-dade"],
+        "basins": [{"name": "Biscayne Aquifer", "at": [-80.3, 25.7]}],
+        "utilityUrl": "https://www.miamidade.gov/global/water/water-supply-and-treatment.page",
+        "reportUrl": "https://www.miamidade.gov/global/water/water-supply-and-treatment.page",
+        "metricsCurated": False,
+    },
+    "MD0150005": {
+        "aliases": ["laurel", "wssc"],
+        "basins": [{"name": "Patuxent River", "at": [-76.7, 39.0]}, {"name": "Potomac River", "at": [-77.25, 39.0]}],
+        "utilityUrl": "https://www.wsscwater.com/mywater",
+        "reportUrl": "https://www.wsscwater.com/mywater",
+        "metricsCurated": False,
+    },
+    "MD0300002": {
+        "basins": [
+            {"name": "Liberty Reservoir", "at": [-76.9, 39.6]},
+            {"name": "Loch Raven Reservoir", "at": [-76.55, 39.45]},
+            {"name": "Prettyboy Reservoir", "at": [-76.75, 39.6]},
+        ],
+        "utilityUrl": "https://www.baltimorecity.gov/publicworks/water-system-in-the-city/water-quality",
+        "reportUrl": "https://www.baltimorecity.gov/publicworks/water-system-in-the-city/water-quality",
+        "metricsCurated": False,
+    },
+    "PA1510001": {
+        "aliases": ["philadelphia", "philly"],
+        "basins": [{"name": "Delaware River", "at": [-75.05, 40.0]}, {"name": "Schuylkill River", "at": [-75.2, 40.0]}],
+        "utilityUrl": "https://water.phila.gov/drinking-water/",
+        "reportUrl": "https://water.phila.gov/drinking-water/",
+        "metricsCurated": False,
+    },
+    "NV0000090": {
+        "aliases": ["las vegas", "vegas", "snwa"],
+        "basins": [{"name": "Lake Mead", "at": [-114.7, 36.1]}, {"name": "Colorado River", "at": [-114.6, 34.3]}],
+        "utilityUrl": "https://www.snwa.com/water-resources/where-water-comes-from/",
+        "reportUrl": "https://www.snwa.com/water-resources/where-water-comes-from/",
+        "metricsCurated": False,
+    },
+    "CA0110005": {
+        "aliases": ["oakland", "ebmud"],
+        "basins": [{"name": "Mokelumne River", "at": [-120.85, 38.25]}],
+        "utilityUrl": "https://www.ebmud.com/water/about-your-water",
+        "reportUrl": "https://www.ebmud.com/water/about-your-water",
+        "metricsCurated": False,
+    },
+    "CA3710020": {
+        "basins": [{"name": "Colorado River", "at": [-114.6, 34.3]}, {"name": "State Water Project", "at": [-121.8, 38.0]}],
+        "utilityUrl": "https://www.sandiego.gov/public-utilities/sustainability/water-supply",
+        "reportUrl": "https://www.sandiego.gov/public-utilities/sustainability/water-supply",
+        "metricsCurated": False,
+    },
+    "TX0570004": {
+        "basins": [
+            {"name": "Elm Fork Trinity River", "at": [-96.95, 32.95]},
+            {"name": "Lewisville Lake", "at": [-97.0, 33.05]},
+            {"name": "Ray Hubbard Lake", "at": [-96.5, 32.8]},
+        ],
+        "utilityUrl": "https://dallascityhall.com/departments/waterutilities/Pages/water_quality_information.aspx",
+        "reportUrl": "https://dallascityhall.com/departments/waterutilities/Pages/water_quality_information.aspx",
+        "metricsCurated": False,
+    },
+    "OH1801212": {
+        "basins": [{"name": "Lake Erie", "at": [-81.9, 41.9]}],
+        "utilityUrl": "https://www.clevelandwater.com/your-water/lake-erie",
+        "reportUrl": "https://www.clevelandwater.com/your-water/lake-erie",
+        "metricsCurated": False,
+    },
+    "OH2504412": {
+        "basins": [
+            {"name": "Scioto River", "at": [-83.05, 40.0]},
+            {"name": "Big Walnut Creek", "at": [-82.8, 40.1]},
+            {"name": "Alum Creek", "at": [-82.85, 40.15]},
+        ],
+        "utilityUrl": "https://www.columbus.gov/files/sharedassets/city/v/3/utilities/documents/water-publications/facts-on-columbus-water-reservoirs-brochure.pdf",
+        "reportUrl": "https://www.columbus.gov/files/sharedassets/city/v/3/utilities/documents/water-publications/facts-on-columbus-water-reservoirs-brochure.pdf",
+        "metricsCurated": False,
+    },
+    "CO0116001": {
+        "basins": [{"name": "South Platte River", "at": [-105.0, 39.6]}, {"name": "Colorado River", "at": [-106.05, 39.6]}],
+        "utilityUrl": "https://www.denverwater.org/tap/where-does-your-water-come",
+        "reportUrl": "https://www.denverwater.org/tap/where-does-your-water-come",
+        "metricsCurated": False,
+    },
+    "NC0160010": {
+        "basins": [{"name": "Mountain Island Lake", "at": [-80.9, 35.4]}, {"name": "Lake Norman", "at": [-80.85, 35.55]}],
+        "utilityUrl": "https://www.charlottenc.gov/water/Water-Quality",
+        "reportUrl": "https://www.charlottenc.gov/water/Water-Quality",
+        "metricsCurated": False,
+    },
 }
 
 UA = {"User-Agent": "taproot-atlas/0.1.0 (water-intelligence; contact: showcase-only demo)"}
@@ -103,7 +205,7 @@ def main():
         city = curated.get("city", s["city_name"].strip())
         state = s["state_code"].strip()
         name = (s.get("pws_name") or "").strip().title()
-        if pwsid in CURATED:
+        if pwsid in ("NY7003493", "CA1910067", "IL0316000", "TX1010013"):
             center = {"NY7003493": [-73.97, 40.78], "CA1910067": [-118.25, 34.05],
                       "IL0316000": [-87.63, 41.88], "TX1010013": [-95.37, 29.76]}[pwsid]
         else:
@@ -129,6 +231,8 @@ def main():
             aliases = ["new york", "new york city", "nyc"]
         if pwsid == "CA1910067":
             aliases = ["los angeles", "ladwp", "l.a."]
+        if "aliases" in curated:
+            aliases = curated["aliases"]
         entry = {
             "pwsid": pwsid,
             "systemName": name or f"{city} Water System",

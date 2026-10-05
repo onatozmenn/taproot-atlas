@@ -78,6 +78,22 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
           <MetricsTable metrics={answer.metrics} />
         </>
       )}
+      {answer.nearbyPoints.length > 0 && (
+        <>
+          <h4>Nearby public drinking-water points</h4>
+          <ul className="nearby-list">
+            {answer.nearbyPoints.map((p) => (
+              <li key={p.osmUrl}>
+                {p.name} · {p.distanceM} m ·{' '}
+                <a href={p.osmUrl} target="_blank" rel="noreferrer">
+                  OpenStreetMap<span className="ext" aria-hidden="true">↗</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p className="fine">Unverified community data. Boundaries here are unverified.</p>
+        </>
+      )}
     </div>
   );
 }

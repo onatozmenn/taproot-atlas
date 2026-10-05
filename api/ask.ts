@@ -7,6 +7,7 @@ import { answerTapWater } from '../lib/pipeline.js';
 import { narrateGroundTruth } from '../lib/narrator.js';
 import { llmNarrate } from '../lib/llm-narrator.js';
 import { jevCheckNarrative } from '../lib/jev-audit.js';
+import { fetchLiveCompliance } from '../lib/echo-live.js';
 
 interface AskRequest {
   body?: { question?: unknown; lat?: unknown; lon?: unknown };
@@ -63,11 +64,21 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
   const jevKey = process.env.JEV_API_KEY ?? '';
   const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://opencode.ai/zen';
   const jevModel = process.env.JEV_MODEL ?? 'jev-1.13-free';
+  // Live SDWIS compliance (Envirofacts efservice, no key). Off by default so
+  // previews and tests stay hermetic; the pipeline degrades to snapshot
+  // records on any live failure.
+  const liveEcho = process.env.ECHO_LIVE_SOURCE === 'efservice';
 
   try {
     const out = await answerTapWater(
       { question, ...coords },
       {
+        ...(liveEcho
+          ? {
+              fetchEcho: (pwsid: string) => fetchLiveCompliance(pwsid, { timeoutMs: 8000 }),
+              recordSource: 'live_fetch' as const,
+            }
+          : { recordSource: 'snapshot_fixture' as const }),
         ...(apiKey
           ? {
               narratorKind: 'llm' as const,

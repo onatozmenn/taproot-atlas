@@ -18,6 +18,7 @@ import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
 import { findSystemByText } from './systems.js';
+import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -44,6 +45,11 @@ export interface PipelineDeps {
   narratorKind?: 'llm' | 'template';
   /** JEV second-layer check. A flag forces fallback; absence/errors never block. */
   jevCheck?: (narrativeText: string, factsText: string) => Promise<{ passed: boolean } | null>;
+  /**
+   * Nearby-points lookup for UNKNOWN areas. Defaults to the Overpass client
+   * (fail-soft, 8s); inject a stub in tests. Never blocks the answer.
+   */
+  findNearby?: (lat: number, lon: number) => Promise<DrinkingPoint[]>;
   now?: () => string;
 }
 
@@ -86,9 +92,9 @@ export async function answerTapWater(
     recordSource = deps.recordSource ?? 'snapshot_fixture',
     narrate = narrateGroundTruth,
     narratorKind = deps.narrate ? 'llm' : 'template',
+    findNearby = (aLat: number, aLon: number) => findDrinkingPoints(aLat, aLon, { timeoutMs: 8000 }),
   } = deps;
-  const question = (input.question ?? '').slice(0, 2000);
-  const rawLat = input.lat ?? SHOWCASE_CENTER.lat;
+  const question = (input.question ?? '').slice(0, 2000);  const rawLat = input.lat ?? SHOWCASE_CENTER.lat;
   const rawLon = input.lon ?? SHOWCASE_CENTER.lon;
   const lat = isValidCoord(rawLat, rawLon) ? rawLat : SHOWCASE_CENTER.lat;
   const lon = isValidCoord(rawLat, rawLon) ? rawLon : SHOWCASE_CENTER.lon;
@@ -103,13 +109,35 @@ export async function answerTapWater(
     dirHit && (resolved.pwsid === 'UNKNOWN' || dirHit.pwsid !== resolved.pwsid) ? dirHit : null;
   // Effective system: named directory city first, else polygon, else unknown.
   const effectivePwsid = dirSystem ? dirSystem.pwsid : resolved.pwsid;
+  // Compliance fetch with honest degradation: a failed live/source fetch
+  // never 502s — NYC degrades to its snapshot, others to pending.
+  let effectiveRecordSource = recordSource;
+  async function loadCompliance(pwsid: string): Promise<SdwisComplianceProfile> {
+    try {
+      return await fetchEcho(pwsid);
+    } catch {
+      effectiveRecordSource = 'snapshot_fixture';
+      return pwsid === 'NY7003493'
+        ? readSnapshotCompliance(pwsid, undefined, auditTimestamp)
+        : pendingCompliance(pwsid, auditTimestamp);
+    }
+  }
   let schematic: WaterOriginSchematic;
   if (effectivePwsid === 'UNKNOWN') {
     schematic = unknownSchematic(auditTimestamp);
+    // Best-effort nearby points for uncovered areas. Failure (offline,
+    // rate-limited) only omits the list — the answer still returns.
+    try {
+      const points = await findNearby(lat, lon);
+      const nearest = points.slice(0, 5).map((p) => ({ name: p.name, distanceM: p.distanceM, osmUrl: p.osmUrl }));
+      if (nearest.length > 0) schematic.nearbyDrinkingPoints = nearest;
+    } catch {
+      // Omit the list; honesty over completeness.
+    }
   } else if (effectivePwsid === 'NY7003493') {
     const basins = resolved.pwsid !== 'UNKNOWN' ? resolved.primaryBasins : (dirSystem?.basins.map((b) => b.name) ?? []);
     const [compliance, metrics] = await Promise.all([
-      fetchEcho(effectivePwsid),
+      loadCompliance(effectivePwsid),
       Promise.resolve(ingestNycMetrics(effectivePwsid)),
     ]);
     schematic = {
@@ -125,6 +153,8 @@ export async function answerTapWater(
   } else {
     // Curated directory city without a vendored polygon: honest unverified
     // boundary, curated basins, pending compliance, no lab metrics yet.
+    // Pending shells are static, never live — label them as such.
+    effectiveRecordSource = 'snapshot_fixture';
     const dir = dirSystem!;
     const [clon, clat] = dir.center;
     schematic = {
@@ -170,7 +200,7 @@ export async function answerTapWater(
         validationStatus: {
           passedLlmAudit: true,
           auditTimestamp,
-          recordSource,
+          recordSource: effectiveRecordSource,
           narrator: 'template',
           jev: 'skipped',
         },
@@ -183,7 +213,7 @@ export async function answerTapWater(
       validationStatus: {
         passedLlmAudit: true,
         auditTimestamp,
-        recordSource,
+        recordSource: effectiveRecordSource,
         narrator: 'template' as const,
         jev: 'skipped' as const,
       },
@@ -214,7 +244,7 @@ export async function answerTapWater(
     console.error('[pipeline] model narrator without a JEV gate; using template fallback');
     valid = false;
   }
-  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource, narrator: usedKind, jev };
+  const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource: effectiveRecordSource, narrator: usedKind, jev };
   if (valid) {
     return { narrative, groundTruth: schematic, scope: 'water' as const, validationStatus };
   }

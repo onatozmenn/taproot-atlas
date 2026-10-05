@@ -45,6 +45,7 @@ Dashboard → Project → Settings → Environment Variables:
 | `JEV_BASE_URL` | JEV root (default `https://opencode.ai/zen`, i.e. `/v1/systemone`) |
 | `JEV_MODEL` | JEV model (default `jev-1.13-free`, free tier) |
 | `JEV_API_KEY` | Zen key for JEV (empty = deterministic audit only) |
+| `ECHO_LIVE_SOURCE` | `efservice` = live SDWIS compliance via Envirofacts (no key); anything else = bundled snapshot. Previews/tests stay hermetic without it. |
 
 Local check without deploying: `npm --prefix web run test` covers the handler
 (`api-server.test.ts`), and the chat falls back to the local pipeline when

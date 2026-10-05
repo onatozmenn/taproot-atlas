@@ -10,6 +10,7 @@ import {
   ThumbsDownIcon,
   ThumbsUpIcon,
   Tick02Icon,
+  Location01Icon,
 } from '@hugeicons/core-free-icons';
 import { askTapWater, type TapAnswer } from './api';
 import { AnswerCard, SourcePanel } from './components/Answer';
@@ -81,6 +82,9 @@ interface ComposerProps {
   onVoice: () => void;
   listening: boolean;
   onAttach: (file: File) => void;
+  onLocate: () => void;
+  locating: boolean;
+  coordsActive: boolean;
   placeholder: string;
   inputRef?: { current: HTMLTextAreaElement | null };
   label: string;
@@ -176,6 +180,17 @@ function Composer(p: ComposerProps) {
       >
         <HugeiconsIcon icon={Mic01Icon} size={21} />
       </button>
+      <button
+        type="button"
+        className={`tool-btn${p.coordsActive ? ' live' : ''}`}
+        aria-label={p.coordsActive ? 'Location on — tap to turn off' : 'Use my location'}
+        title={p.coordsActive ? 'Location on — tap to turn off' : 'Use my location'}
+        aria-pressed={p.coordsActive}
+        onClick={p.onLocate}
+        disabled={p.locating}
+      >
+        <HugeiconsIcon icon={Location01Icon} size={21} />
+      </button>
       {p.busy ? (
         <button type="button" className="send-btn working" aria-label="Stop" title="Stop" onClick={p.onStop}>
           <HugeiconsIcon icon={StopIcon} size={15} />
@@ -203,6 +218,8 @@ export default function App() {
   const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'not-helpful' | null>>({});
   const [copied, setCopied] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [locating, setLocating] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -219,7 +236,10 @@ export default function App() {
     setMessages((m) => [...m, { id: nextId++, role: 'user', text: q }]);
     setInput('');
     try {
-      const answer = await askTapWater(q, { signal: controller.signal });
+      const answer = await askTapWater(q, {
+        signal: controller.signal,
+        ...(coords ? { lat: coords.lat, lon: coords.lon } : {}),
+      });
       setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer }]);
     } catch (e) {
       if (controller.signal.aborted) {
@@ -250,6 +270,30 @@ export default function App() {
     } catch {
       setCopied(null);
     }
+  }
+
+  function toggleLocate() {
+    if (coords) {
+      setCoords(null);
+      return;
+    }
+    if (!('geolocation' in navigator)) {
+      setError('Geolocation is not available in this browser.');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        inputRef.current?.focus();
+      },
+      () => {
+        setLocating(false);
+        setError('Could not read your location. Check the browser permission and retry.');
+      },
+      { timeout: 10000, maximumAge: 300000 },
+    );
   }
 
   function toggleVoice() {
@@ -342,6 +386,9 @@ export default function App() {
                 onVoice={toggleVoice}
                 listening={listening}
                 onAttach={attachFile}
+                onLocate={toggleLocate}
+                locating={locating}
+                coordsActive={coords !== null}
                 placeholder="Ask anything…"
                 inputRef={inputRef}
                 label="Ask about your tap water"
@@ -415,6 +462,9 @@ export default function App() {
             onVoice={toggleVoice}
             listening={listening}
             onAttach={attachFile}
+                onLocate={toggleLocate}
+                locating={locating}
+                coordsActive={coords !== null}
             placeholder="Ask anything…"
             label="Ask a follow-up"
           />
