@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { askTapWater, type TapAnswer } from './api';
 import { AnswerCard } from './components/Answer';
 import { Logo } from './components/Logo';
-import { suggestFollowUps } from './suggest';
 
 interface Msg {
   id: number;
@@ -202,7 +201,6 @@ export default function App() {
   }
 
   const empty = messages.length === 0;
-  const lastAnswer = [...messages].reverse().find((m) => m.answer)?.answer;
 
   async function copyAnswer(id: number, text: string) {
     try {
@@ -262,19 +260,6 @@ export default function App() {
   }
 
   const submit = () => void send(input);
-
-  const chips = lastAnswer
-    ? suggestFollowUps({
-        violations: lastAnswer.violations,
-        windowStart: lastAnswer.windowStart,
-        windowEnd: lastAnswer.windowEnd,
-        boundaryType: lastAnswer.boundaryType,
-        metrics: lastAnswer.metrics.map((m) => ({
-          parameter: m.parameter,
-          reportPeriod: m.provenance.reportPeriod,
-        })),
-      })
-    : [];
 
   return (
     <div className="page">
@@ -377,15 +362,6 @@ export default function App() {
                 <span>
                   <strong>Working</strong> through your request…
                 </span>
-              </div>
-            )}
-            {!busy && chips.length > 0 && (
-              <div className="followups" aria-label="Follow-up questions">
-                {chips.map((s) => (
-                  <button key={s} type="button" className="follow-chip" onClick={() => void send(s)}>
-                    {s}
-                  </button>
-                ))}
               </div>
             )}
           </>
