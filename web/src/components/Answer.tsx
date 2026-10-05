@@ -68,7 +68,6 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
         </li>
         <li>Record verified at: {answer.verifiedAt}</li>
       </ul>
-      <p className="disclaimer">{answer.disclaimer}</p>
     </div>
   );
 }
