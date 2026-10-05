@@ -25,6 +25,8 @@ export interface DirectorySystem {
   utilityUrl?: string;
   reportUrl?: string;
   populationServed?: number;
+  /** EPA gw_sw_code: groundwater, surface, or unknown. */
+  sourceKind?: 'groundwater' | 'surface' | 'unknown';
   metricsCurated: boolean;
 }
 

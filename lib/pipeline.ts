@@ -185,6 +185,7 @@ export async function answerTapWater(
       systemName: dir.systemName,
       boundaryType,
       primaryBasins: dir.basins.map((b) => b.name),
+      sourceKind: dir.sourceKind,
       schematicFlow: buildSchematicFlow([
         ...dir.basins.map((b) => ({
           label: `${b.name} Watershed`,

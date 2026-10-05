@@ -44,6 +44,7 @@
       ],
       "populationServed": 8271000,
       "metricsCurated": true,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page",
       "reportUrl": "https://www.nyc.gov/site/dep/water/drinking-water.page"
     },
@@ -87,6 +88,7 @@
       ],
       "populationServed": 3875566,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.ladwp.com/who-we-are/water-system/sources-supply",
       "reportUrl": "https://www.ladwp.com/who-we-are/water-system/las-drinking-water-quality-report"
     },
@@ -121,6 +123,7 @@
       ],
       "populationServed": 2970543,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report",
       "reportUrl": "https://www.houstonpublicworks.org/drinking-water-quality-report"
     },
@@ -148,6 +151,7 @@
       ],
       "populationServed": 2721308,
       "metricsCurated": true,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.chicago.gov/city/en/depts/water/supp_info/Consumer_ConfidenceReports.html",
       "reportUrl": "https://chicagoccr.org/docs/2025_WaterQualityReport.pdf"
     },
@@ -175,6 +179,7 @@
       ],
       "populationServed": 2643729,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.saws.org/your-water/management-sources/",
       "reportUrl": "https://www.saws.org/your-water/management-sources/"
     },
@@ -211,6 +216,7 @@
       ],
       "populationServed": 2580000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.mwra.com/your-water-system",
       "reportUrl": "https://www.mwra.com/your-water-system"
     },
@@ -239,6 +245,7 @@
       ],
       "populationServed": 2377460,
       "metricsCurated": false,
+      "sourceKind": "groundwater",
       "utilityUrl": "https://www.miamidade.gov/global/water/water-supply-and-treatment.page",
       "reportUrl": "https://www.miamidade.gov/global/water/water-supply-and-treatment.page"
     },
@@ -274,6 +281,7 @@
       ],
       "populationServed": 1900000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.wsscwater.com/mywater",
       "reportUrl": "https://www.wsscwater.com/mywater"
     },
@@ -315,6 +323,7 @@
       ],
       "populationServed": 1600000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.baltimorecity.gov/publicworks/water-system-in-the-city/water-quality",
       "reportUrl": "https://www.baltimorecity.gov/publicworks/water-system-in-the-city/water-quality"
     },
@@ -350,6 +359,7 @@
       ],
       "populationServed": 1600000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://water.phila.gov/drinking-water/",
       "reportUrl": "https://water.phila.gov/drinking-water/"
     },
@@ -386,6 +396,7 @@
       ],
       "populationServed": 1539277,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.snwa.com/water-resources/where-water-comes-from/",
       "reportUrl": "https://www.snwa.com/water-resources/where-water-comes-from/"
     },
@@ -414,6 +425,7 @@
       ],
       "populationServed": 1442800,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.ebmud.com/water/about-your-water",
       "reportUrl": "https://www.ebmud.com/water/about-your-water"
     },
@@ -448,6 +460,7 @@
       ],
       "populationServed": 1385379,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.sandiego.gov/public-utilities/sustainability/water-supply",
       "reportUrl": "https://www.sandiego.gov/public-utilities/sustainability/water-supply"
     },
@@ -489,6 +502,7 @@
       ],
       "populationServed": 1356479,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://dallascityhall.com/departments/waterutilities/Pages/water_quality_information.aspx",
       "reportUrl": "https://dallascityhall.com/departments/waterutilities/Pages/water_quality_information.aspx"
     },
@@ -516,6 +530,7 @@
       ],
       "populationServed": 1308955,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.clevelandwater.com/your-water/lake-erie",
       "reportUrl": "https://www.clevelandwater.com/your-water/lake-erie"
     },
@@ -557,6 +572,7 @@
       ],
       "populationServed": 1305946,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.columbus.gov/files/sharedassets/city/v/3/utilities/documents/water-publications/facts-on-columbus-water-reservoirs-brochure.pdf",
       "reportUrl": "https://www.columbus.gov/files/sharedassets/city/v/3/utilities/documents/water-publications/facts-on-columbus-water-reservoirs-brochure.pdf"
     },
@@ -591,6 +607,7 @@
       ],
       "populationServed": 1287000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.denverwater.org/tap/where-does-your-water-come",
       "reportUrl": "https://www.denverwater.org/tap/where-does-your-water-come"
     },
@@ -625,6 +642,7 @@
       ],
       "populationServed": 1163701,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.charlottenc.gov/water/Water-Quality",
       "reportUrl": "https://www.charlottenc.gov/water/Water-Quality"
     },
@@ -659,6 +677,7 @@
       ],
       "populationServed": 1161961,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.seattle.gov/utilities/protecting-our-environment/our-water-sources",
       "reportUrl": "https://www.seattle.gov/utilities/protecting-our-environment/our-water-sources"
     },
@@ -694,6 +713,7 @@
       ],
       "populationServed": 1121613,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.fairfaxwater.org/about-us",
       "reportUrl": "https://www.fairfaxwater.org/about-us"
     },
@@ -728,6 +748,7 @@
       ],
       "populationServed": 1115323,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.austintexas.gov/water/programs/water-quality-reports",
       "reportUrl": "https://www.austintexas.gov/water/programs/water-quality-reports"
     },
@@ -746,7 +767,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 1111000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NY5110526",
@@ -773,6 +795,7 @@
       ],
       "populationServed": 1100000,
       "metricsCurated": false,
+      "sourceKind": "groundwater",
       "utilityUrl": "https://www.scwa.com/sourcetotap/",
       "reportUrl": "https://www.scwa.com/sourcetotap/"
     },
@@ -807,6 +830,7 @@
       ],
       "populationServed": 1089893,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://atlantawatershed.org/water-quality-faqs/",
       "reportUrl": "https://atlantawatershed.org/water-quality-faqs/"
     },
@@ -841,6 +865,7 @@
       ],
       "populationServed": 1039920,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.sjwater.com/customer-care/help-information/water-supply-faqs/",
       "reportUrl": "https://www.sjwater.com/customer-care/help-information/water-supply-faqs/"
     },
@@ -869,6 +894,7 @@
       ],
       "populationServed": 975000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.gwinnettcounty.com/government/departments/water/what-we-do/drinking-water/quality",
       "reportUrl": "https://www.gwinnettcounty.com/government/departments/water/what-we-do/drinking-water/quality"
     },
@@ -910,6 +936,7 @@
       ],
       "populationServed": 955900,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.fortworthtexas.gov/departments/water",
       "reportUrl": "https://www.fortworthtexas.gov/departments/water"
     },
@@ -951,6 +978,7 @@
       ],
       "populationServed": 880345,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://info.citizensenergygroup.com/water",
       "reportUrl": "https://info.citizensenergygroup.com/water"
     },
@@ -978,6 +1006,7 @@
       ],
       "populationServed": 848019,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.burlingame.org/1007/Water-Quality",
       "reportUrl": "https://www.burlingame.org/1007/Water-Quality"
     },
@@ -1006,6 +1035,7 @@
       ],
       "populationServed": 826664,
       "metricsCurated": false,
+      "sourceKind": "groundwater",
       "utilityUrl": "https://www.jea.com/about/water_supply/",
       "reportUrl": "https://www.jea.com/about/water_supply/"
     },
@@ -1040,6 +1070,7 @@
       ],
       "populationServed": 822600,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.aquawater.com/all-about-water-wastewater/water-quality",
       "reportUrl": "https://www.aquawater.com/all-about-water-wastewater/water-quality"
     },
@@ -1067,6 +1098,7 @@
       ],
       "populationServed": 806997,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://louisvillewater.com/your-water/water-quality/riverbank-filtration/",
       "reportUrl": "https://louisvillewater.com/your-water/water-quality/riverbank-filtration/"
     },
@@ -1095,6 +1127,7 @@
       ],
       "populationServed": 792713,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.veolianorthamerica.com/media/press-releases/veolia-celebrates-centennial-oradell-dam",
       "reportUrl": "https://www.veolianorthamerica.com/media/press-releases/veolia-celebrates-centennial-oradell-dam"
     },
@@ -1129,6 +1162,7 @@
       ],
       "populationServed": 750200,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.cincinnati-oh.gov/water/water-quality-and-treatment/water-sources-resource-protection/",
       "reportUrl": "https://www.cincinnati-oh.gov/water/water-quality-and-treatment/water-sources-resource-protection/"
     },
@@ -1163,6 +1197,7 @@
       ],
       "populationServed": 747168,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.epwater.org/our-water/water-resources",
       "reportUrl": "https://www.epwater.org/our-water/water-resources"
     },
@@ -1181,7 +1216,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 743000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "FL6290327",
@@ -1207,6 +1243,7 @@
       ],
       "populationServed": 733886,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.tampa.gov/water",
       "reportUrl": "https://www.tampa.gov/water"
     },
@@ -1242,6 +1279,7 @@
       ],
       "populationServed": 695000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.cobbcounty.gov/water",
       "reportUrl": "https://www.cobbcounty.gov/water"
     },
@@ -1270,6 +1308,7 @@
       ],
       "populationServed": 686000,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.pgh2o.com/your-water/water-quality-treatment",
       "reportUrl": "https://www.pgh2o.com/your-water/water-quality-treatment"
     },
@@ -1304,6 +1343,7 @@
       ],
       "populationServed": 675647,
       "metricsCurated": false,
+      "sourceKind": "surface",
       "utilityUrl": "https://www.bwsc.org/environment-education/water-sewer-and-stormwater/water-system",
       "reportUrl": "https://www.bwsc.org/environment-education/water-sewer-and-stormwater/water-system"
     },
@@ -1332,6 +1372,7 @@
       ],
       "populationServed": 671114,
       "metricsCurated": false,
+      "sourceKind": "groundwater",
       "utilityUrl": "https://www.wpb.org/Departments/Public-Utilities/Our-Watershed",
       "reportUrl": "https://www.wpb.org/Departments/Public-Utilities/Our-Watershed"
     },
@@ -1350,7 +1391,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 669042,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CA3310009",
@@ -1367,7 +1409,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 666581,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "OR4100657",
@@ -1384,7 +1427,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 666200,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NE3105507",
@@ -1401,7 +1445,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 660000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "TN0000450",
@@ -1418,7 +1463,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 659500,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "groundwater"
     },
     {
       "pwsid": "NC0392010",
@@ -1435,7 +1481,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 650000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "OK1020902",
@@ -1452,7 +1499,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 644000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "MI0001800",
@@ -1469,7 +1517,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 633218,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "DC0000002",
@@ -1486,7 +1535,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 632323,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "HI0000331",
@@ -1503,7 +1553,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 631389,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "groundwater"
     },
     {
       "pwsid": "WI2410100",
@@ -1520,7 +1571,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 626000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "LA1033005",
@@ -1537,7 +1589,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 596844,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "groundwater"
     },
     {
       "pwsid": "AL0000738",
@@ -1554,7 +1607,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 585000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NM3510701",
@@ -1571,7 +1625,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 560326,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "MO1010415",
@@ -1588,7 +1643,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 553295,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CA1010007",
@@ -1605,7 +1661,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 545716,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "FL3480962",
@@ -1622,7 +1679,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 536466,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "groundwater"
     },
     {
       "pwsid": "CO0103005",
@@ -1639,7 +1697,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 533407,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CA3410020",
@@ -1656,7 +1715,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 527979,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NY2701047",
@@ -1673,7 +1733,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 525262,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "PA5020038",
@@ -1690,7 +1751,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 520000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "FL6521405",
@@ -1707,7 +1769,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 506353,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "KS2009110",
@@ -1724,7 +1787,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 490000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CA1910065",
@@ -1741,7 +1805,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 466772,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "AZ0407095",
@@ -1758,7 +1823,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 466000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CO0121150",
@@ -1775,7 +1841,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 464111,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "WA5386800",
@@ -1792,7 +1859,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 446170,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CA3010092",
@@ -1809,7 +1877,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 444800,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NV0000190",
@@ -1826,7 +1895,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 442000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "VA3810900",
@@ -1843,7 +1913,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 437994,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "GA1210005",
@@ -1860,7 +1931,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 434517,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "SC2310001",
@@ -1877,7 +1949,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 426057,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "MN1270024",
@@ -1894,7 +1967,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 425300,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CT0930011",
@@ -1911,7 +1985,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 418900,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "TX2200001",
@@ -1928,7 +2003,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 413955,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "OK1020418",
@@ -1945,7 +2021,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 413000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "VA3700500",
@@ -1962,7 +2039,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 407300,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "KS2017308",
@@ -1979,7 +2057,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 395699,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "MN1620026",
@@ -1997,7 +2076,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 392529,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NC0234010",
@@ -2014,7 +2094,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 391900,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CT0640011",
@@ -2031,7 +2112,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 390887,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "VA4041845",
@@ -2048,7 +2130,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 389897,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "UTAH18026",
@@ -2065,7 +2148,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 383612,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NJ1345001",
@@ -2082,7 +2166,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 377613,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NV0000175",
@@ -2099,7 +2184,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 376515,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "WA5391200",
@@ -2116,7 +2202,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 373047,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "groundwater"
     },
     {
       "pwsid": "AR0000465",
@@ -2133,7 +2220,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 368455,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "OH4801411",
@@ -2150,7 +2238,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 360000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "SC4010001",
@@ -2167,7 +2256,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 354068,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CT0150011",
@@ -2184,7 +2274,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 351756,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NY3304336",
@@ -2201,7 +2292,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 350000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "FL6521715",
@@ -2218,7 +2310,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 349979,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "CA3010001",
@@ -2235,7 +2328,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 348593,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "FL6411132",
@@ -2252,7 +2346,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 347800,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "WA5383100",
@@ -2269,7 +2364,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 346138,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "groundwater"
     },
     {
       "pwsid": "CA0110001",
@@ -2286,7 +2382,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 344000,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "NV0000076",
@@ -2303,7 +2400,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 336534,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "LA1071009",
@@ -2320,7 +2418,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 334903,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     },
     {
       "pwsid": "VA6107350",
@@ -2337,7 +2436,8 @@
       "boundaryType": "unverified_fallback",
       "basins": [],
       "populationServed": 334808,
-      "metricsCurated": false
+      "metricsCurated": false,
+      "sourceKind": "surface"
     }
   ]
 }

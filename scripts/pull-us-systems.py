@@ -390,6 +390,8 @@ def main():
             "populationServed": pop,
             "metricsCurated": curated.get("metricsCurated", False),
         }
+        gw = (s.get("gw_sw_code") or "").strip().upper()
+        entry["sourceKind"] = "groundwater" if gw == "GW" else "surface" if gw == "SW" else "unknown"
         if curated.get("utilityUrl"):
             entry["utilityUrl"] = curated["utilityUrl"]
         if curated.get("reportUrl"):

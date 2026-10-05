@@ -84,6 +84,8 @@ export interface WaterOriginSchematic {
   latestReportedMetrics: QualityMetricRecord[];
   /** Nearest OSM drinking-water points (UNKNOWN areas only, best effort). */
   nearbyDrinkingPoints?: NearbyDrinkingPoint[];
+  /** EPA source-water kind, when the system comes from the directory. */
+  sourceKind?: 'groundwater' | 'surface' | 'unknown';
   disclaimer: string;
 }
 

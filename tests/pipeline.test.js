@@ -266,6 +266,15 @@ describe('answerTapWater', () => {
     assert.ok(!res.narrative.overview.includes('basins outside'));
   });
 
+  it('tier B overview names the EPA source-water kind', async () => {
+    const res = await answerTapWater(
+      { question: 'chesterfield?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    // Missouri American St. Louis is an EPA surface-water system.
+    assert.ok(res.narrative.overview.includes('surface water system'));
+  });
+
   it('tier A directory cities narrate their curated basins', async () => {
     const res = await answerTapWater(
       { question: 'philadelphia tap water?', ...SHOWCASE_CENTER },

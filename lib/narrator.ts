@@ -45,8 +45,13 @@ export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
         `and the ${windowStart} to ${windowEnd} compliance record are detailed below.`
       : 'Lab metrics and compliance records for this system are not yet curated, ' +
         'so verify live records at the linked ECHO profile.';
+  const kindSentence =
+    schematic.sourceKind === 'groundwater' || schematic.sourceKind === 'surface'
+      ? `This is a ${schematic.sourceKind} water system. `
+      : '';
   const overview = isTierB
     ? `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}). ` +
+      kindSentence +
       'Source details for this system are not yet curated in the snapshot, ' +
       'so verify live records at the linked ECHO profile. ' +
       `${boundaryPhrase}; paths on the map are schematic approximations.`
