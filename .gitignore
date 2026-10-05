@@ -3,3 +3,8 @@ dist/
 .DS_Store
 .env
 .env.local
+
+# bulk pull artifacts (regenerable via scripts/pull-us-systems.py)
+big.json
+sdwis_drink_water_cache.sqlite
+
