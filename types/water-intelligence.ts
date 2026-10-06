@@ -60,6 +60,9 @@ export interface NearbyDrinkingPoint {
   name: string;
   distanceM: number;
   osmUrl: string;
+  /** WGS84 coordinates so the map can center on the user area, not a default. */
+  lat?: number;
+  lon?: number;
 }
 
 /** Reported treatment profile (descriptive facts only, never a grade). */

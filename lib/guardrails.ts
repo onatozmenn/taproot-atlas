@@ -218,6 +218,24 @@ export function auditLlmNarrative(
     }
   }
 
+  // PWSID check: digit runs glued to letters (e.g. NY7003493) never match
+  // the numeric extractors above, so a spoofed PWSID would otherwise pass.
+  // Any PWSID-like token must equal the Resolver PWSID exactly.
+  const pwsidPattern = /\b[A-Z]{2}\d[A-Z0-9]*\b/g;
+  const expectedPwsid = (resolverOutput.schematic.pwsid ?? '').toUpperCase();
+  const seenPwsids = new Set<string>();
+  let pwsidMatch: RegExpExecArray | null;
+  while ((pwsidMatch = pwsidPattern.exec(narrativeText)) !== null) {
+    const token = pwsidMatch[0].toUpperCase();
+    if (seenPwsids.has(token)) continue;
+    seenPwsids.add(token);
+    if (expectedPwsid === 'UNKNOWN' || token !== expectedPwsid) {
+      violations.push(
+        `Unverified water system identifier: "${pwsidMatch[0]}". Not the ground-truth PWSID ${resolverOutput.schematic.pwsid}.`
+      );
+    }
+  }
+
   const allowedEntitiesSet: Set<string> = new Set(
     resolverOutput.extractedFacts.allowedEntities.map((e: string) =>
       e.toLowerCase().trim()

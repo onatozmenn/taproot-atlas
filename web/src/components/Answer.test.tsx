@@ -56,6 +56,8 @@ describe('AnswerCard', () => {
     expect(screen.getByText(/2024 Annual/)).toBeInTheDocument();
     expect(screen.getByText('Within standard')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Verify Turbidity filing' })).toBeInTheDocument();
+    expect(screen.getByText(/nyc-2024-v1/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-01-02T00:00:00Z/)).toBeInTheDocument();
   });
 
   it('exposes the ECHO compliance proofs behind the source toggle', () => {
@@ -143,5 +145,23 @@ describe('AnswerCard', () => {
     expect(queryAllByText('Reported quality metrics')).toHaveLength(0);
     expect(queryAllByText(/Regulatory compliance/)).toHaveLength(0);
     expect(queryAllByText(/schematic overlay/i)).toHaveLength(0);
+  });
+
+  it('labels other violations separately from monitoring-only', () => {
+    const other = { ...base, recordTier: 'other' as const };
+    const { container } = render(<AnswerCard answer={other} />);
+    expect(container.textContent).toContain('Other violations on record');
+    expect(container.textContent).not.toContain('Only monitoring and reporting violations');
+  });
+
+  it('does not execute crafted markdown links', () => {
+    const evil = {
+      ...base,
+      overview: '[click](https://example.com" onclick="alert(1) data-x=")',
+    };
+    const { container } = render(<AnswerCard answer={evil} />);
+    // No link element is created for the crafted URL, and no click handler exists.
+    expect(container.querySelector('div.markdown a')).toBeNull();
+    expect(container.querySelector('[onclick]')).toBeNull();
   });
 });

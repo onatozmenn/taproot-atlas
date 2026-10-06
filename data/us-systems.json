@@ -1,7 +1,7 @@
 {
   "snapshotVersion": "us-systems-2026-10-v1",
   "captureTime": "2026-10-05T00:00:00Z",
-  "provenanceNote": "Top-100 US community water systems by population served, from EPA SDWIS (Envirofacts efservice WATER_SYSTEM: active CWS serving >100k, largest per city). Map centers geocoded via OSM Nominatim. Only the 4 curated entries ship verified basins and utility links (see verificationSources); the rest carry PWSID + city + center with pending compliance and no lab metrics. Schematic points are representative and approximate, never engineering alignments.",
+  "provenanceNote": "Top-100 US community water systems by population served, from EPA SDWIS (Envirofacts efservice WATER_SYSTEM: active CWS serving >100k, largest per city). Map centers geocoded via OSM Nominatim. 39 curated entries ship basins and utility links (see verificationSources); the rest carry PWSID + city + center with pending compliance and no lab metrics. Schematic points are representative and approximate, never engineering alignments.",
   "verificationSources": [
     "https://data.epa.gov/efservice (WATER_SYSTEM table)",
     "https://nominatim.openstreetmap.org (map centers)",

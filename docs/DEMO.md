@@ -14,9 +14,10 @@ snapshot-backed, so the demo works offline-proof on stage.
 - Click: the ECHO profile link (public EPA page).
 
 ## Q3 — click the “What did the 2024 Annual report test for Turbidity?” chip (60s)
-- Shows: MetricCard with value, threshold, test date, report period, version, source link.
+- Shows: metrics table with value, threshold, test date, report period, ingestion time, version, source link.
 - Say: “Every number traces to a dated filing. Ask in Turkish — the answer stays English and grounded.”
-- Point at: the metric cards with test date, report period, version, and source link.
+- Point at: the metric rows with test date, report period, ingestion time, version, and source link.
+- Chips render under every water answer from resolver facts (`web/src/suggest.ts`).
 
 ## Track mapping (one-pager for the jury)
 

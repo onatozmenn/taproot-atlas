@@ -68,4 +68,18 @@ describe('auditLlmNarrative', () => {
     const r = auditLlmNarrative('Su kalitesi çok iyi, Catskill havzasından geliyor.', resolverOutput);
     assert.equal(r.isValid, false);
   });
+
+  it('blocks a spoofed PWSID while allowing the ground-truth PWSID', () => {
+    const spoof = auditLlmNarrative(
+      'Water for NYC DEP Catskill-Delaware (PWSID: CA1910067) is sourced from the Catskill and Delaware basins.',
+      resolverOutput,
+    );
+    assert.equal(spoof.isValid, false);
+    assert.ok(spoof.violations.some((v) => v.includes('CA1910067') || v.includes('PWSID')));
+    const ok = auditLlmNarrative(
+      'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',
+      resolverOutput,
+    );
+    assert.equal(ok.isValid, true, JSON.stringify(ok.violations));
+  });
 });

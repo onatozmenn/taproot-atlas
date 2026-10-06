@@ -10,7 +10,11 @@ const resolverOutput = { schematic, extractedFacts: buildResolverFacts(schematic
 
 let failed = 0;
 for (const c of cases) {
-  const result = auditLlmNarrative(c.text, resolverOutput);
+  const caseSchematic = c.pwsid ? { ...schematic, pwsid: c.pwsid, systemName: c.systemName ?? schematic.systemName } : schematic;
+  const caseOutput = c.pwsid
+    ? { schematic: caseSchematic, extractedFacts: buildResolverFacts(caseSchematic) }
+    : resolverOutput;
+  const result = auditLlmNarrative(c.text, caseOutput);
   const ok = result.isValid === c.expectValid;
   if (!ok) {
     failed++;

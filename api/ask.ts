@@ -3,6 +3,9 @@
 // a model drafts the narrative (still audited; fallback on failure).
 // Without a key it serves the audited template path. Never leaks the key:
 // only the audited ValidatedApiResponse leaves this function.
+// Cost guard: in-memory sliding-window rate limit (ASK_RATE_LIMIT_MAX per
+// ASK_RATE_LIMIT_WINDOW_MS, default 30/min/IP → 429) plus scope short-circuit
+// in the pipeline (off-topic never invokes the model/JEV).
 import { answerTapWater } from '../lib/pipeline.js';
 import { narrateGroundTruth } from '../lib/narrator.js';
 import { llmNarrate } from '../lib/llm-narrator.js';
@@ -13,12 +16,57 @@ import { fetchTreatment, readTreatmentFixture } from '../lib/treatment.js';
 interface AskRequest {
   body?: { question?: unknown; lat?: unknown; lon?: unknown };
   method?: string;
+  headers?: Record<string, string | string[] | undefined>;
+  ip?: string;
+  socket?: { remoteAddress?: string };
 }
 
 interface AskResponse {
   status: (code: number) => AskResponse;
   json: (value: unknown) => void;
   setHeader?: (name: string, value: string) => void;
+}
+
+const rateBuckets = new Map<string, number[]>();
+
+export function resetAskRateLimit(): void {
+  rateBuckets.clear();
+}
+
+function rateLimitMax(): number {
+  const v = Number(process.env.ASK_RATE_LIMIT_MAX ?? '30');
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 30;
+}
+
+function rateLimitWindowMs(): number {
+  const v = Number(process.env.ASK_RATE_LIMIT_WINDOW_MS ?? '60000');
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 60000;
+}
+
+function getClientIp(req: AskRequest): string {
+  const forwarded = req.headers?.['x-forwarded-for'] ?? req.headers?.['X-Forwarded-For'];
+  const first = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  if (typeof first === 'string' && first.trim().length > 0) return first.split(',')[0].trim();
+  if (typeof req.ip === 'string' && req.ip.length > 0) return req.ip;
+  const remote = req.socket?.remoteAddress;
+  if (typeof remote === 'string' && remote.length > 0) return remote;
+  return 'unknown';
+}
+
+function isRateLimited(ip: string): { limited: boolean; retryAfterSec: number } {
+  const max = rateLimitMax();
+  const windowMs = rateLimitWindowMs();
+  const now = Date.now();
+  const hits = (rateBuckets.get(ip) ?? []).filter((t) => now - t < windowMs);
+  if (hits.length >= max) {
+    const oldest = Math.min(...hits);
+    const retryAfterSec = Math.max(1, Math.ceil((oldest + windowMs - now) / 1000));
+    rateBuckets.set(ip, hits);
+    return { limited: true, retryAfterSec };
+  }
+  hits.push(now);
+  rateBuckets.set(ip, hits);
+  return { limited: false, retryAfterSec: 0 };
 }
 
 function setCors(res: AskResponse): void {
@@ -50,9 +98,27 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
     res.status(405).json({ error: 'Method not allowed; use POST.' });
     return;
   }
+  const ip = getClientIp(req);
+  const gate = isRateLimited(ip);
+  if (gate.limited) {
+    res.setHeader?.('retry-after', String(gate.retryAfterSec));
+    res.status(429).json({ error: 'Rate limit exceeded. Retry shortly.' });
+    return;
+  }
   const body = req.body ?? {};
   const rawQuestion = typeof body.question === 'string' ? body.question : '';
   const question = rawQuestion.slice(0, 2000);
+  // Missing coordinates fall back to the showcase center inside the
+  // pipeline. Present-but-invalid coordinates are a client error, never a
+  // silent NYC fallback.
+  const hasLat = body.lat !== undefined;
+  const hasLon = body.lon !== undefined;
+  if (hasLat || hasLon) {
+    if (!isValidCoord(body.lat, body.lon)) {
+      res.status(400).json({ error: 'Invalid coordinates: lat in [-90, 90], lon in [-180, 180] as finite numbers.' });
+      return;
+    }
+  }
   const lat = typeof body.lat === 'number' ? body.lat : undefined;
   const lon = typeof body.lon === 'number' ? body.lon : undefined;
   const coords =
@@ -94,8 +160,8 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
         ...(apiKey
           ? {
               narratorKind: 'llm' as const,
-              narrate: async (schematic) => {
-                const draft = await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode });
+              narrate: async (schematic, q) => {
+                const draft = await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode }, fetch as never, 20000, q ?? question);
                 return draft ? { narrative: draft, kind: 'llm' as const } : { narrative: narrateGroundTruth(schematic), kind: 'template' as const };
               },
             }

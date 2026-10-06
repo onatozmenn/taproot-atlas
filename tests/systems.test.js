@@ -53,8 +53,22 @@ describe('systems directory', () => {
     );
     // Utility-name aliases resolve too.
     assert.equal(findSystemByText('philly water?')?.pwsid, 'PA1510001');
-    assert.equal(findSystemByText('boston tap water')?.pwsid, 'MA6000000');
+    // Same-state tie prefers the exact city (Boston proper over Chelsea/MWRA).
+    assert.equal(findSystemByText('boston tap water')?.pwsid, 'MA3035000');
     assert.equal(findSystemByText('vegas drinking water')?.pwsid, 'NV0000090');
+  });
+
+  it('ambiguous aliases stay unresolved without a state hint', () => {
+    // Cross-state ties need an explicit state.
+    assert.equal(findSystemByText('chesterfield?'), null);
+    assert.equal(findSystemByText('kansas city?'), null);
+    // Same-state ties prefer the exact city.
+    assert.equal(findSystemByText('boston?')?.pwsid, 'MA3035000');
+    assert.equal(findSystemByText('pittsburgh?')?.pwsid, 'PA5020038');
+    assert.equal(findSystemByText('kansas city, missouri water?')?.pwsid, 'MO1010415');
+    assert.equal(findSystemByText('kansas city, kansas water?')?.pwsid, 'KS2009110');
+    assert.equal(findSystemByText('chesterfield, virginia water?')?.pwsid, 'VA4041845');
+    assert.equal(findSystemByText('pittsburgh, pa water?')?.pwsid, 'PA5020038');
   });
 
   it('matches city mentions, longest alias wins', () => {

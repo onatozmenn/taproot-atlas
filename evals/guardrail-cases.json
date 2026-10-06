@@ -2,7 +2,7 @@
   "version": "v1",
   "groundTruth": "tests/fixtures.js mockSchematic (NYC DEP Catskill-Delaware, PWSID NY7003493, 2021-2026 window, Turbidity + Total Coliform 2024 Annual)",
   "notes": [
-    "PWSID strings contribute no extractable numbers, so PWSID-spoof cases are intentionally absent (known audit limitation, tracked separately).",
+    "PWSID-like tokens are checked exactly against the Resolver PWSID, so PWSID-spoof cases are covered (see F20).",
     "Bare facility/plant/reservoir/aqueduct words fail even for real feature labels: the narrator must avoid them (see E10 vs F12)."
   ],
   "cases": [
@@ -40,7 +40,9 @@
     { "id": "E13", "expectValid": true, "note": "glued but grounded value tolerated", "text": "Turbidity was 0.08NTU per the 2024 Annual report." },
     { "id": "E14", "expectValid": true, "note": "greeting redirect stays in scope", "text": "Hello! I answer questions about tap water: where it comes from, what public lab reports say, and what EPA compliance records show. Try asking where your tap water comes from, or about past violations. Every answer stays inside the public records - nothing more." },
     { "id": "E15", "expectValid": true, "note": "off-topic deflection stays in scope", "text": "I do not give opinions or commentary outside tap-water records. If you have a question about tap water - its sources, public lab reports, or EPA compliance records - ask it in plain English words. Every answer stays inside the public records - nothing more." },
-    { "id": "E16", "expectValid": true, "note": "pending-compliance note makes no violation claim", "text": "Compliance records for Los Angeles Dept. of Water and Power (PWSID: CA1910067) are not yet curated in the snapshot. Verify live records at the linked ECHO system profile for the 2021-01-01 to 2026-01-01 window." },
-    { "id": "E17", "expectValid": true, "note": "tier B overview makes no source claim", "text": "Water for public water system Miami-Dade Water System (PWSID: FL4130871). Source details for this system are not yet curated in the snapshot, so verify live records at the linked ECHO profile. Exact service-area boundaries are not shown here; paths on the map are schematic approximations." }
+    { "id": "E16", "expectValid": true, "pwsid": "CA1910067", "systemName": "Los Angeles Dept. of Water and Power", "note": "pending-compliance note makes no violation claim", "text": "Compliance records for Los Angeles Dept. of Water and Power (PWSID: CA1910067) are not yet curated in the snapshot. Verify live records at the linked ECHO system profile for the 2021-01-01 to 2026-01-01 window." },
+    { "id": "E17", "expectValid": true, "pwsid": "FL4130871", "systemName": "Miami-Dade Water System", "note": "tier B overview makes no source claim", "text": "Water for public water system Miami-Dade Water System (PWSID: FL4130871). Source details for this system are not yet curated in the snapshot, so verify live records at the linked ECHO profile. Exact service-area boundaries are not shown here; paths on the map are schematic approximations." },
+    { "id": "F20", "expectValid": false, "note": "spoofed PWSID digits", "text": "Water for NYC DEP Catskill-Delaware (PWSID: CA1910067) is sourced from the Catskill and Delaware basins." },
+    { "id": "E18", "expectValid": true, "note": "correct PWSID passes", "text": "Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins." }
   ]
 }

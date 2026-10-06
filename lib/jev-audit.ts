@@ -53,10 +53,10 @@ const QUESTIONS = {
   },
   off_topic: {
     type: 'noul',
-    instructions: 'Does the narrative answer a question outside tap-water records (sources, lab reports, EPA compliance), or give opinions or commentary unrelated to the ground-truth facts?',
+    instructions: 'The facts include the user question plus Resolver ground truth. Does the narrative answer a question outside tap-water records (sources, lab reports, EPA compliance), or give opinions or commentary unrelated to the user question and ground-truth facts?',
     criteria: {
-      true: 'The narrative goes off-topic or editorializes beyond tap-water records',
-      false: 'The narrative stays on tap-water records',
+      true: 'The narrative goes off-topic or editorializes beyond the user question and tap-water records',
+      false: 'The narrative answers the user question inside tap-water records',
     },
   },
 } as const;

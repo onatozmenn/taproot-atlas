@@ -49,6 +49,17 @@ describe('answerTapWater', () => {
     assert.equal(res.groundTruth.boundaryType, 'unverified_fallback');
   });
 
+  it('unknown areas anchor the schematic on the queried location, never NYC', async () => {
+    const res = await answerTapWater(
+      { question: 'Ankara water?', lat: 39.9, lon: 32.8 },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
+    );
+    const coords = res.groundTruth.schematicFlow.features.map((f) => f.geometry.coordinates);
+    assert.ok(coords.length >= 1);
+    assert.ok(coords.some(([lon, lat]) => Math.abs(lon - 32.8) < 0.001 && Math.abs(lat - 39.9) < 0.001));
+    assert.ok(!coords.some(([lon, lat]) => Math.abs(lon + 73.97) < 0.01 && Math.abs(lat - 40.78) < 0.01));
+  });
+
   it('attaches nearby drinking-water points for unknown areas (best effort)', async () => {
     const res = await answerTapWater(
       { question: 'Ankara water?', lat: 39.9, lon: 32.8 },
@@ -161,6 +172,58 @@ describe('answerTapWater', () => {
     assert.ok(res.narrative.overview.includes('tap-water records'));
   });
 
+  it('a JEV pass never turns greetings or off-topic into a water report', async () => {
+    let narrateCalled = 0;
+    let jevCalled = 0;
+    const llmNarrate = async (s) => {
+      narrateCalled += 1;
+      return { narrative: narrateGroundTruth(s), kind: 'llm' };
+    };
+    for (const q of ['merhaba', 'hi how are you', 'What do you think about hitler']) {
+      narrateCalled = 0;
+      jevCalled = 0;
+      const res = await answerTapWater(
+        { question: q, ...SHOWCASE_CENTER },
+        {
+          fetchEcho,
+          recordSource: 'snapshot_fixture',
+          narrate: llmNarrate,
+          jevCheck: async () => {
+            jevCalled += 1;
+            return { passed: true };
+          },
+        },
+      );
+      assert.equal(res.scope, 'redirect', q);
+      assert.ok(!res.narrative.overview.includes('NY7003493'), q);
+      assert.equal(narrateCalled, 0, `model must not run for ${q}`);
+      assert.equal(jevCalled, 0, `JEV must not run for ${q}`);
+    }
+  });
+
+  it('passes the user question to the narrator and JEV facts', async () => {
+    let seenQuestion = '';
+    let seenFacts = '';
+    const res = await answerTapWater(
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        narrate: async (s, q) => {
+          seenQuestion = q ?? '';
+          return { narrative: narrateGroundTruth(s), kind: 'llm' };
+        },
+        jevCheck: async (_n, facts) => {
+          seenFacts = facts;
+          return { passed: true };
+        },
+      },
+    );
+    assert.equal(res.scope, 'water');
+    assert.ok(seenQuestion.includes('Where does my tap water come from?'));
+    assert.ok(seenFacts.includes('Where does my tap water come from?'));
+  });
+
   it('absent JEV records skipped without blocking', async () => {
     const res = await answerTapWater({ question: 'Where does my tap water come from?', ...SHOWCASE_CENTER }, { fetchEcho });
     assert.equal(res.validationStatus.jev, 'skipped');
@@ -255,8 +318,8 @@ describe('answerTapWater', () => {
 
   it('tier B cities resolve with honest uncurated narratives', async () => {
     const res = await answerTapWater(
-      { question: 'chesterfield?', ...SHOWCASE_CENTER },
-      { fetchEcho, recordSource: 'snapshot_fixture' },
+      { question: 'chesterfield, missouri water?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
     );
     assert.equal(res.scope, 'water');
     assert.equal(res.groundTruth.pwsid, 'MO6010716');
@@ -266,10 +329,33 @@ describe('answerTapWater', () => {
     assert.ok(!res.narrative.overview.includes('basins outside'));
   });
 
-  it('tier B overview names the EPA source-water kind', async () => {
+  it('ambiguous city aliases ask for a state instead of guessing', async () => {
     const res = await answerTapWater(
       { question: 'chesterfield?', ...SHOWCASE_CENTER },
-      { fetchEcho, recordSource: 'snapshot_fixture' },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
+    );
+    assert.equal(res.scope, 'water');
+    assert.equal(res.groundTruth.pwsid, 'UNKNOWN');
+    assert.ok(res.narrative.overview.includes('Multiple water systems match'));
+    assert.ok(res.narrative.overview.includes('MO6010716'));
+    assert.ok(res.narrative.overview.includes('VA4041845'));
+    const kc = await answerTapWater(
+      { question: 'kansas city?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
+    );
+    assert.equal(kc.groundTruth.pwsid, 'UNKNOWN');
+    assert.ok(kc.narrative.overview.includes('Multiple water systems match'));
+    const kcMo = await answerTapWater(
+      { question: 'kansas city, missouri water?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
+    );
+    assert.equal(kcMo.groundTruth.pwsid, 'MO1010415');
+  });
+
+  it('tier B overview names the EPA source-water kind', async () => {
+    const res = await answerTapWater(
+      { question: 'chesterfield, missouri water?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
     );
     // Missouri American St. Louis is an EPA surface-water system.
     assert.ok(res.narrative.overview.includes('surface water system'));
@@ -282,6 +368,31 @@ describe('answerTapWater', () => {
     );
     assert.equal(res.groundTruth.pwsid, 'PA1510001');
     assert.ok(res.narrative.overview.includes('Schuylkill River'));
+  });
+
+  it('live compliance runs for directory cities, not only NYC', async () => {
+    const liveProfile = (pwsid) => ({
+      pwsid,
+      queryWindow: { startDate: '2021-01-01', endDate: '2026-01-01' },
+      totalViolationsFound: 1,
+      records: [
+        { violationCode: '50', violationType: 'other', beginDate: '2023-01-01', endDate: null, complianceAchieved: false },
+      ],
+      echoReportUrl: `https://echo.epa.gov/detailed-facility-report?fid=${pwsid}`,
+      dataCaptureTime: '2026-10-06T00:00:00Z',
+    });
+    const res = await answerTapWater(
+      { question: 'philadelphia tap water?', ...SHOWCASE_CENTER },
+      {
+        fetchEcho: async (pwsid) => liveProfile(pwsid),
+        recordSource: 'live_fetch',
+        findNearby: async () => [],
+      },
+    );
+    assert.equal(res.groundTruth.pwsid, 'PA1510001');
+    assert.equal(res.validationStatus.recordSource, 'live_fetch');
+    assert.equal(res.groundTruth.regulatoryCompliance.totalViolationsFound, 1);
+    assert.equal(res.groundTruth.regulatoryCompliance.records[0].violationType, 'other');
   });
 
   it('chicago serves curated lab metrics from its CCR snapshot', async () => {

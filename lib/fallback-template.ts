@@ -56,7 +56,9 @@ export function generateDeterministicSummary(
     ? '### Unverified Area Overview'
     : isTierB
       ? '### Water System Overview'
-      : '### Verified Water Distribution Overview';
+      : schematic.boundaryType === 'verified_agency' || schematic.boundaryType === 'modeled_epa'
+        ? '### Verified Water Distribution Overview'
+        : '### Water System Overview';
 
   const complianceBlock = schematic.regulatoryCompliance.snapshotPending    ? [
         `- **Monitored Period:** ${windowStart} to ${windowEnd}`,

@@ -58,4 +58,17 @@ describe('generateDeterministicSummary', () => {
     assert.ok(!out.includes('basins outside'));
     assert.ok(!out.includes('Verified Water Distribution'));
   });
+
+  it('tier A directory cities with unverified boundaries never claim verification', () => {
+    const la = {
+      ...mockSchematic(),
+      pwsid: 'CA1910067',
+      systemName: 'Los Angeles-City, Dept. Of Water & Power',
+      boundaryType: 'unverified_fallback',
+      primaryBasins: ['Owens Valley', 'Mono Basin'],
+    };
+    const out = generateDeterministicSummary(la);
+    assert.ok(out.includes('### Water System Overview'));
+    assert.ok(!out.includes('Verified Water Distribution'));
+  });
 });

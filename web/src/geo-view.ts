@@ -13,7 +13,10 @@ export function toLatLngs(nodes: FlowNode[]): Array<[number, number]> {
     .map((n) => [n.at[1], n.at[0]]);
 }
 
-/** Center + zoom for the current schematic; falls back to the NYC showcase view. */
+/** Center + zoom for the current schematic; falls back to the NYC showcase view.
+ * UNKNOWN areas always carry the queried location as a flow point (see
+ * pipeline unknownSchematic), so this fallback only serves the showcase
+ * default — never an out-of-coverage answer. */
 export function mapView(nodes: FlowNode[]): { center: [number, number]; zoom: number } {
   const valid = nodes.filter((n) => Number.isFinite(n.at[0]) && Number.isFinite(n.at[1]));
   if (valid.length === 0) return { center: [40.78, -73.97], zoom: 10 };

@@ -79,7 +79,11 @@ async function mountMap(
     vector = true;
   }
 
-  const { center, zoom } = mapView(answer.flow);
+  const nearbyNodes = (answer.nearbyPoints ?? [])
+    .filter((p) => typeof p.lon === 'number' && typeof p.lat === 'number' && Number.isFinite(p.lon) && Number.isFinite(p.lat))
+    .map((p) => ({ label: p.name, role: 'drinking_point', at: [p.lon as number, p.lat as number] as [number, number] }));
+  const framingNodes = [...answer.flow, ...nearbyNodes];
+  const { center, zoom } = mapView(framingNodes.length > 0 ? framingNodes : answer.flow);
   const m = new maplibregl.Map({
     container,
     style: style as never,
@@ -99,13 +103,19 @@ async function mountMap(
       geometry: { type: 'Point' as const, coordinates: [f.at[0], f.at[1]] },
       properties: { label: f.label, role: f.role },
     }));
+  const nearbyFeatures: FlowPoint[] = nearbyNodes.map((n) => ({
+    type: 'Feature' as const,
+    geometry: { type: 'Point' as const, coordinates: [n.at[0], n.at[1]] },
+    properties: { label: n.label, role: n.role },
+  }));
+  const allPoints = [...points, ...nearbyFeatures];
   const lineCoords = points.map((p) => p.geometry.coordinates);
 
   const addOverlay = () => {
     if (m.getSource('flow')) return;
     m.addSource('flow', {
       type: 'geojson',
-      data: { type: 'FeatureCollection', features: points },
+      data: { type: 'FeatureCollection', features: allPoints },
     });
     if (lineCoords.length > 1) {
       // Dashed connector between the schematic points.
@@ -177,8 +187,9 @@ async function mountMap(
     addOverlay();
     // Frame the whole schematic with breathing room instead of a
     // fixed zoom — wide spreads (e.g. LA basins) zoom out, local
-    // zones stay close.
-    const bounds = flowBounds(answer.flow);
+    // zones stay close. Nearby OSM points join the framing so
+    // out-of-coverage areas center on the user, never a default city.
+    const bounds = flowBounds(framingNodes);
     if (bounds) {
       try {
         m.fitBounds(bounds, { padding: 48, maxZoom: 10 });

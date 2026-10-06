@@ -28,8 +28,8 @@ export type LlmFetch = (url: string, init: LlmFetchInit) => Promise<{
   json: () => Promise<unknown>;
 }>;
 
-/** Ground-truth facts only. No coordinates, no PWSID digits beyond the ID itself. */
-export function buildFactsMessage(schematic: WaterOriginSchematic): string {
+/** Ground-truth facts plus the user question. No coordinates, no PWSID digits beyond the ID itself. */
+export function buildFactsMessage(schematic: WaterOriginSchematic, question = ''): string {
   const facts = {
     systemName: schematic.systemName,
     pwsid: schematic.pwsid,
@@ -51,7 +51,10 @@ export function buildFactsMessage(schematic: WaterOriginSchematic): string {
     totalViolationsFound: schematic.regulatoryCompliance.totalViolationsFound,
     dataCaptureTime: schematic.regulatoryCompliance.dataCaptureTime,
   };
+  const q = (question ?? '').slice(0, 500).trim();
+  const questionLine = q.length > 0 ? `User question (answer this, nothing else): ${q}\n\n` : '';
   return (
+    `${questionLine}` +
     `Resolver facts (sole ground truth; use nothing else):\n${JSON.stringify(facts)}\n\n` +
     `Respond ONLY with a JSON object shaped exactly like ` +
     `{"overview": string, "metricsSummary": string, "complianceNote": string, "stewardshipNote": string}.`
@@ -101,6 +104,7 @@ export async function llmNarrate(
   config: LlmConfig,
   fetchFn: LlmFetch = fetch as unknown as LlmFetch,
   timeoutMs = 20000,
+  question = '',
 ): Promise<Narrative | null> {
   if (!config.apiKey || !config.model) return null;
   const api = config.api ?? 'chat-completions';
@@ -117,7 +121,7 @@ export async function llmNarrate(
             max_output_tokens: 800,
             input: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
-              { role: 'user', content: buildFactsMessage(schematic) },
+              { role: 'user', content: buildFactsMessage(schematic, question) },
             ],
           }
         : {
@@ -126,7 +130,7 @@ export async function llmNarrate(
             max_tokens: 800,
             messages: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
-              { role: 'user', content: buildFactsMessage(schematic) },
+              { role: 'user', content: buildFactsMessage(schematic, question) },
             ],
           };
     const res = await fetchFn(url, {

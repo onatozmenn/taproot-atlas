@@ -81,4 +81,10 @@ describe('llmNarrate', () => {
     assert.ok(!msg.includes('-74') && !msg.includes('40.7'));
     assert.ok(msg.includes('NY7003493') && msg.includes('Turbidity'));
   });
+
+  it('carries the user question so answers stay question-specific', () => {
+    const msg = buildFactsMessage(schematic, 'Any violations in the last 5 years?');
+    assert.ok(msg.includes('Any violations in the last 5 years?'));
+    assert.ok(!msg.includes('-74') && !msg.includes('40.7'));
+  });
 });

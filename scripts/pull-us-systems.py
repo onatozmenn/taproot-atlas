@@ -26,6 +26,7 @@ EF = "https://data.epa.gov/efservice"
 
 # Hand-verified entries: basins checked against CA SDWIS, Chicago CCR,
 # LADWP supply page, Houston Public Works (see verificationSources).
+# 39 entries ship curated basins; the rest carry PWSID + city + center only.
 CURATED = {
     "NY7003493": {
         "city": "New York",
@@ -405,8 +406,8 @@ def main():
         "provenanceNote": (
             "Top-100 US community water systems by population served, from EPA SDWIS "
             "(Envirofacts efservice WATER_SYSTEM: active CWS serving >100k, largest per city). "
-            "Map centers geocoded via OSM Nominatim. Only the 4 curated entries ship verified "
-            "basins and utility links (see verificationSources); the rest carry PWSID + city + "
+            "Map centers geocoded via OSM Nominatim. 39 curated entries ship basins and utility links "
+            "(see verificationSources); the rest carry PWSID + city + "
             "center with pending compliance and no lab metrics. Schematic points are representative "
             "and approximate, never engineering alignments."
         ),

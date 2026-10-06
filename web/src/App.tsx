@@ -11,6 +11,7 @@ import {
   Location01Icon,
 } from '@hugeicons/core-free-icons';
 import { askTapWater, type TapAnswer } from './api';
+import { suggestFollowUps } from './suggest';
 import { AnswerCard, SourcePanel } from './components/Answer';
 import { Logo } from './components/Logo';
 
@@ -342,6 +343,17 @@ export default function App() {
 
   const submit = () => void send(input);
 
+  function chipsFor(answer: TapAnswer): string[] {
+    if (answer.scope === 'redirect') return [];
+    return suggestFollowUps({
+      violations: answer.violations,
+      windowStart: answer.windowStart,
+      windowEnd: answer.windowEnd,
+      boundaryType: answer.boundaryType,
+      metrics: answer.metrics.map((m) => ({ parameter: m.parameter, reportPeriod: m.provenance.reportPeriod })),
+    });
+  }
+
   return (
     <div className="page">
       <a className="skip-link" href="#chat">Skip to conversation</a>
@@ -402,6 +414,21 @@ export default function App() {
               ) : (
                 <div key={m.id} className="assistant-block">
                   {m.answer && <AnswerCard answer={m.answer} />}
+                  {m.answer && m.answer.scope !== 'redirect' && chipsFor(m.answer).length > 0 && (
+                    <div className="chip-row" aria-label="Suggested follow-ups">
+                      {chipsFor(m.answer).map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="chip"
+                          disabled={busy}
+                          onClick={() => void send(chip)}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div className="attrib" aria-label="Answer actions">
                     {m.answer && m.answer.scope !== 'redirect' && <SourcePanel answer={m.answer} />}
                     <button

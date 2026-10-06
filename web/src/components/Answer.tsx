@@ -52,6 +52,9 @@ function MetricsTable({ metrics }: { metrics: QualityMetricRecord[] }) {
                 <td>
                   {m.testDate}
                   <span className="cell-sub">{m.provenance.reportPeriod}</span>
+                  <span className="cell-sub">
+                    Ingested {m.provenance.captureTime} · {m.provenance.sourceVersionId}
+                  </span>
                 </td>
               </tr>
             );
@@ -106,6 +109,8 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
               `No violations found in the ${answer.windowStart} to ${answer.windowEnd} window.`}
             {answer.recordTier === 'monitoring-only' &&
               `Only monitoring and reporting violations on record in the ${answer.windowStart} to ${answer.windowEnd} window.`}
+            {answer.recordTier === 'other' &&
+              `Other violations on record in the ${answer.windowStart} to ${answer.windowEnd} window (not health-based, not monitoring-only). Check the linked ECHO profile for categories.`}
             {answer.recordTier === 'health-based' && (
               <>
                 Health-based violations on record in the {answer.windowStart} to {answer.windowEnd}{' '}

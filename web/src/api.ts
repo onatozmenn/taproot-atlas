@@ -15,11 +15,11 @@ export interface TapAnswer {
   /** True when compliance has no curated snapshot yet (verify live at ECHO). */
   compliancePending: boolean;
   /** Nearest OSM drinking-water points (UNKNOWN areas, best effort). */
-  nearbyPoints: Array<{ name: string; distanceM: number; osmUrl: string }>;
+  nearbyPoints: Array<{ name: string; distanceM: number; osmUrl: string; lat?: number; lon?: number }>;
   /** Reported treatment profile, when available. */
   treatment: { rigor: string | null; processes: string[] } | null;
   /** Compliance tier for the window (descriptive, never a verdict). */
-  recordTier: 'unknown-pending' | 'none-found' | 'monitoring-only' | 'health-based';
+  recordTier: 'unknown-pending' | 'none-found' | 'monitoring-only' | 'health-based' | 'other';
   basins: string[];
   overview: string;
   /** Redirect call-to-action lines (metricsSummary + complianceNote); empty for water scope. */
@@ -51,6 +51,7 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
       name: p.name,
       distanceM: p.distanceM,
       osmUrl: p.osmUrl,
+      ...(typeof p.lat === 'number' && typeof p.lon === 'number' ? { lat: p.lat, lon: p.lon } : {}),
     })),
     treatment: res.groundTruth.treatment
       ? { rigor: res.groundTruth.treatment.rigor, processes: res.groundTruth.treatment.processes }
@@ -61,7 +62,9 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
         ? 'none-found'
         : res.groundTruth.regulatoryCompliance.records.some((r) => r.violationType === 'health_based')
           ? 'health-based'
-          : 'monitoring-only',
+          : res.groundTruth.regulatoryCompliance.records.some((r) => r.violationType === 'other')
+            ? 'other'
+            : 'monitoring-only',
     basins: g.primaryBasins,
     overview: res.narrative.overview,
     details: [res.narrative.metricsSummary, res.narrative.complianceNote]
