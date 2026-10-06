@@ -181,6 +181,11 @@ export function RealMap({ answer }: { answer: TapAnswer }) {
 
         m.on('load', () => {
           if (cancelled) return;
+          try {
+            m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+          } catch {
+            // Zoom buttons are a convenience; the map works without them.
+          }
           addOverlay();
           // Frame the whole schematic with breathing room instead of a
           // fixed zoom — wide spreads (e.g. LA basins) zoom out, local
