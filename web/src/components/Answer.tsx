@@ -24,7 +24,6 @@ function MetricsTable({ metrics }: { metrics: QualityMetricRecord[] }) {
             <th scope="col">Standard</th>
             <th scope="col">Status</th>
             <th scope="col">Tested</th>
-            <th scope="col">Filing</th>
           </tr>
         </thead>
         <tbody>
@@ -33,7 +32,17 @@ function MetricsTable({ metrics }: { metrics: QualityMetricRecord[] }) {
             return (
               <tr key={m.parameter}>
                 <td>
-                  <strong>{m.parameter}</strong>
+                  <strong>{m.parameter}</strong>{' '}
+                  <a
+                    className="filing"
+                    href={m.provenance.sourceDocumentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Verify ${m.parameter} filing`}
+                    title={`Verify ${m.parameter} filing`}
+                  >
+                    <span className="ext" aria-hidden="true">↗</span>
+                  </a>
                 </td>
                 <td>{m.reportedValue}</td>
                 <td>{m.regulatoryThreshold}</td>
@@ -43,11 +52,6 @@ function MetricsTable({ metrics }: { metrics: QualityMetricRecord[] }) {
                 <td>
                   {m.testDate}
                   <span className="cell-sub">{m.provenance.reportPeriod}</span>
-                </td>
-                <td>
-                  <a href={m.provenance.sourceDocumentUrl} target="_blank" rel="noreferrer">
-                    Verify<span className="ext" aria-hidden="true">↗</span>
-                  </a>
                 </td>
               </tr>
             );

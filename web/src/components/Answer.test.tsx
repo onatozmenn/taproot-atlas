@@ -55,7 +55,7 @@ describe('AnswerCard', () => {
     expect(screen.getByText('Turbidity')).toBeInTheDocument();
     expect(screen.getByText(/2024 Annual/)).toBeInTheDocument();
     expect(screen.getByText('Within standard')).toBeInTheDocument();
-    expect(screen.getByText('Verify')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Verify Turbidity filing' })).toBeInTheDocument();
   });
 
   it('exposes the ECHO compliance proofs behind the source toggle', () => {
