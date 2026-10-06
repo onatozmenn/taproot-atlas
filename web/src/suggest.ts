@@ -1,5 +1,6 @@
 // Follow-up chips generated ONLY from resolver facts (supports #14).
-// Every chip references ground-truth entities; unknown areas get OSM wording.
+// Every chip references ground-truth entities; unverified areas get no
+// chips (nearest-point and boundary questions are already answered inline).
 export interface ChipFacts {
   violations: number;
   windowStart: string;
@@ -11,8 +12,6 @@ export interface ChipFacts {
 export function suggestFollowUps(facts: ChipFacts): string[] {
   const chips: string[] = [];
   if (facts.boundaryType.toLowerCase() === 'unverified_fallback') {
-    chips.push('Where is the nearest public drinking point?');
-    chips.push('Why is this boundary unverified?');
     return chips;
   }
   if (facts.violations > 0) {

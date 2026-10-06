@@ -27,7 +27,7 @@ describe('suggestFollowUps', () => {
     expect(chips[0]).toContain('violation');
   });
 
-  it('falls back to OSM wording outside coverage', () => {
+  it('shows no chips outside coverage', () => {
     const chips = suggestFollowUps({
       violations: 0,
       windowStart: '2021-01-01',
@@ -35,10 +35,7 @@ describe('suggestFollowUps', () => {
       boundaryType: 'unverified_fallback',
       metrics: [],
     });
-    expect(chips).toEqual([
-      'Where is the nearest public drinking point?',
-      'Why is this boundary unverified?',
-    ]);
+    expect(chips).toEqual([]);
   });
 
   it('handles uppercased boundary types from TapAnswer', () => {
@@ -49,9 +46,6 @@ describe('suggestFollowUps', () => {
       boundaryType: 'UNVERIFIED_FALLBACK',
       metrics: [],
     });
-    expect(chips).toEqual([
-      'Where is the nearest public drinking point?',
-      'Why is this boundary unverified?',
-    ]);
+    expect(chips).toEqual([]);
   });
 });
