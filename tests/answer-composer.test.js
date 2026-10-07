@@ -10,7 +10,9 @@ describe('answer composer', () => {
   it('answers the named parameter honestly instead of listing unrelated metrics', async () => {
     const r = await answerTapWater({ question: 'What is the lead level in Chicago tap water?' }, deps);
     assert.equal(r.groundTruth.pwsid, 'IL0316000');
-    assert.match(r.answer.markdown, /don't have a lead test result for Chicago/);
+    assert.match(r.answer.markdown, /Chicago's latest lead result is [\d.]+ ppb/);
+    assert.match(r.answer.markdown, /15 ppb action level/);
+    assert.ok(!/Turbidity|Coliform/i.test(r.answer.markdown), 'no unrelated parameters');
     assert.ok(!r.answer.followUps.some((f) => /lead/i.test(f)), 'does not re-suggest the question just asked');
   });
 
@@ -23,7 +25,7 @@ describe('answer composer', () => {
   it('a newly named city overrides the conversation context', async () => {
     const r = await answerTapWater({ question: 'Where does Los Angeles water come from?', contextPwsid: 'IL0316000' }, deps);
     assert.notEqual(r.groundTruth.pwsid, 'IL0316000');
-    assert.match(r.answer.markdown, /^Los Angeles draws its water from/);
+    assert.match(r.answer.markdown, /^\*\*Los Angeles' water comes from Owens Valley/);
   });
 
   it('pathway answers are a numbered route with cleaned treatment steps', async () => {

@@ -3,5 +3,11 @@
   "installCommand": "npm --prefix web install",
   "buildCommand": "npm --prefix web run build",
   "outputDirectory": "web/dist",
-  "framework": "vite"
+  "framework": "vite",
+  "functions": {
+    "api/ask.ts": {
+      "includeFiles": "data/national/**",
+      "maxDuration": 60
+    }
+  }
 }

@@ -30,6 +30,16 @@ import { loadUcmrMetrics, loadSyrMetrics, loadDistributionMetrics } from './occu
 import { loadWaterUse } from './water-use.js';
 import { loadConveyances } from './conveyance.js';
 import { composeAnswer } from './answer-composer.js';
+import {
+  loadProfile,
+  profileCompliance,
+  profileTreatment,
+  profileFacilities,
+  profileLeadMetrics,
+  profileLabMetrics,
+  hasProfile,
+} from './profile.js';
+import { resolveNationalSystem, indexRow, systemCenter, type NationalHit } from './national.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -216,6 +226,22 @@ async function answerCore(
       ? getDirectorySystem(input.contextPwsid)
       : null;
   const dirHit = namedHit ?? contextHit;
+  // Nationwide fallback: any US place or ZIP served by one of ~9,700
+  // community systems (3,300+ people). Curated directory cities win.
+  let nationalHit: NationalHit | null =
+    !dirHit && candidates.length === 0 ? resolveNationalSystem(question) : null;
+  if (
+    !dirHit &&
+    !nationalHit &&
+    candidates.length === 0 &&
+    input.lat === undefined &&
+    typeof input.contextPwsid === 'string' &&
+    !detectPlaceQuery(question) &&
+    hasProfile(input.contextPwsid)
+  ) {
+    const row = indexRow(input.contextPwsid);
+    if (row) nationalHit = { row, label: row.citiesServed[0] ?? row.name, center: systemCenter(row), alternatives: [] };
+  }
   // Ambiguous city alias (boston/kansas city/pittsburgh/chesterfield in two
   // systems): never guess a PWSID. Ask for a state instead.
   if (candidates.length > 1 && !dirHit) {
@@ -264,7 +290,7 @@ async function answerCore(
   // A supported place outside the directory ("Flint, MI") is a water
   // question with an honest empty state, never a silent NYC default and
   // never an off-topic deflection. Directory hits always win.
-  const placeQuery = !dirHit ? detectPlaceQuery(question) : null;
+  const placeQuery = !dirHit && !nationalHit ? detectPlaceQuery(question) : null;
   // A named city wins over the coordinate polygon: the web chat sends no
   // location, so coords are usually just the NYC default. An explicit city
   // mention is the stronger signal of user intent.
@@ -273,15 +299,36 @@ async function answerCore(
   // Effective system: named directory city first, else polygon, else unknown.
   // An unsupported place forces the unknown path even when the default
   // coordinates would otherwise resolve to the showcase system.
-  const effectivePwsid = placeQuery && !dirSystem ? 'UNKNOWN' : dirSystem ? dirSystem.pwsid : resolved.pwsid;
+  const effectivePwsid = placeQuery && !dirSystem
+    ? 'UNKNOWN'
+    : dirSystem
+      ? dirSystem.pwsid
+      : nationalHit
+        ? nationalHit.row.pwsid
+        : resolved.pwsid;
   // Compliance fetch with honest degradation: a failed live/source fetch
   // never 502s — NYC degrades to its snapshot, others to pending.
   let effectiveRecordSource = recordSource;
   async function loadCompliance(pwsid: string): Promise<SdwisComplianceProfile> {
+    // The vendored SDWIS profile (quarterly ECHO bulk, decoded) is the
+    // primary record for every curated system: richer than the live row
+    // feed and instant. Live efservice only covers systems without one.
+    // Injected source first (live efservice in production, fixtures in
+    // tests); the vendored SDWIS profile is the fallback, then pending.
+    const fromProfile = () => profileCompliance(pwsid, auditTimestamp);
+    if (!deps.fetchEcho && pwsid !== 'NY7003493') {
+      const p = fromProfile();
+      if (p) {
+        effectiveRecordSource = 'snapshot_fixture';
+        return p;
+      }
+    }
     try {
       return await fetchEcho(pwsid);
     } catch {
       effectiveRecordSource = 'snapshot_fixture';
+      const p = fromProfile();
+      if (p) return p;
       return pwsid === 'NY7003493'
         ? readSnapshotCompliance(pwsid, undefined, auditTimestamp)
         : pendingCompliance(pwsid, auditTimestamp);
@@ -357,7 +404,32 @@ async function answerCore(
     // configured (recordSource live_fetch), otherwise pending — never a
     // zero-violations claim.
     const dir = dirSystem ?? getDirectorySystem(effectivePwsid);
-    if (!dir) {
+    if (!dir && nationalHit) {
+      const row = nationalHit.row;
+      const center = nationalHit.center ?? systemCenter(row);
+      const nodes: Array<{ label: string; role: 'treatment_facility' | 'distribution_zone'; at: [number, number] }> = center
+        ? [
+            { label: 'Treatment Facility', role: 'treatment_facility', at: [center[0] + 0.07, center[1] + 0.12] },
+            { label: 'Distribution Zone', role: 'distribution_zone', at: center },
+          ]
+        : [];
+      schematic = {
+        pwsid: row.pwsid,
+        systemName: row.name,
+        displayName: nationalHit.label.startsWith('ZIP ') ? row.name : nationalHit.label,
+        alternatives: nationalHit.alternatives.length > 0 ? nationalHit.alternatives : undefined,
+        boundaryType: 'unverified_fallback',
+        primaryBasins: [],
+        sourceKind: /^(SW|SWP|GU|GUP)$/.test(row.source) ? 'surface' : /^GW/.test(row.source) ? 'groundwater' : 'unknown',
+        schematicFlow: buildSchematicFlow(nodes),
+        regulatoryCompliance:
+          recordSource === 'live_fetch'
+            ? await loadCompliance(row.pwsid)
+            : (profileCompliance(row.pwsid, auditTimestamp) ?? pendingCompliance(row.pwsid, auditTimestamp)),
+        latestReportedMetrics: [],
+        disclaimer: `${PUBLIC_HEALTH_NOTICE} ${SCHEMATIC_DISCLAIMER}`,
+      };
+    } else if (!dir) {
       // Polygon hit outside the curated directory: answer from the resolved
       // location with pending compliance and location-anchored schematic
       // points (approximate, as always).
@@ -384,7 +456,7 @@ async function answerCore(
     const compliance =
       recordSource === 'live_fetch'
         ? await loadCompliance(dir.pwsid)
-        : pendingCompliance(dir.pwsid, auditTimestamp);
+        : (profileCompliance(dir.pwsid, auditTimestamp) ?? pendingCompliance(dir.pwsid, auditTimestamp));
     if (recordSource !== 'live_fetch') effectiveRecordSource = 'snapshot_fixture';
     schematic = {
       pwsid: dir.pwsid,
@@ -418,12 +490,21 @@ async function answerCore(
         return null;
       }
     };
+    // Vendored EPA profile first (instant, decoded, provenance-stamped);
+    // injected/live loaders only fill what the profile lacks.
+    const rich = loadProfile(effectivePwsid);
+    if (rich) schematic.profile = rich;
+    const pick = async <T>(fromProfile: T | null | undefined, f: () => Promise<T>): Promise<T | null> => {
+      const ok = Array.isArray(fromProfile) ? fromProfile.length > 0 : Boolean(fromProfile);
+      return ok ? (fromProfile as T) : settle(f);
+    };
+    const curated = effectivePwsid === 'NY7003493';
     const [profile, fac, lcr, ucmr, syr, dist] = await Promise.all([
-      settle(() => fetchTreatmentProfile(effectivePwsid)),
-      settle(() => fetchFacilitiesProfile(effectivePwsid)),
-      settle(() => fetchLcrMetrics(effectivePwsid)),
-      settle(() => fetchUcmrMetrics(effectivePwsid)),
-      settle(() => fetchSyrMetrics(effectivePwsid)),
+      pick(rich ? profileTreatment(effectivePwsid) : null, () => fetchTreatmentProfile(effectivePwsid)),
+      pick(rich && !curated ? profileFacilities(effectivePwsid) : null, () => fetchFacilitiesProfile(effectivePwsid)),
+      pick(rich ? profileLeadMetrics(effectivePwsid) : null, () => fetchLcrMetrics(effectivePwsid)),
+      pick(rich ? profileLabMetrics(effectivePwsid, 'UCMR5') : null, () => fetchUcmrMetrics(effectivePwsid)),
+      pick(rich ? profileLabMetrics(effectivePwsid, 'SYR4') : null, () => fetchSyrMetrics(effectivePwsid)),
       settle(() => fetchDistributionMetrics(effectivePwsid)),
     ]);
     if (profile) {
@@ -464,7 +545,7 @@ async function answerCore(
   // water, everything else follows the deterministic classifier. Off-topic
   // and greeting questions return the redirect without invoking the model,
   // so "merhaba" can never become a water report and no model cost is spent.
-  const scope = namedHit ? 'water' : classifyScope(question);
+  const scope = namedHit || (nationalHit && !input.contextPwsid) || (nationalHit && classifyScope(question) !== 'greeting') ? 'water' : classifyScope(question);
   if (scope !== 'water') {
     const redirect = scope === 'greeting' ? greetingNarrative() : offTopicNarrative();
     return {

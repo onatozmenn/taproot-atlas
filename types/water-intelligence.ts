@@ -23,7 +23,14 @@ export interface QualityMetricRecord {
   parameter: string;
   reportedValue: string;
   regulatoryThreshold: string;
-  complianceStatus: 'within_standard' | 'exceeds_standard' | 'monitoring_violation';
+  /**
+   * within_standard / exceeds_standard: a compliance determination.
+   * monitoring_violation: flagged monitoring record.
+   * sample_above_benchmark: one or more lab samples above an MCL/action-level
+   * value; NOT a violation (compliance is averaged or 90th-percentile).
+   * occurrence_only: detected/monitored with no federal limit to compare.
+   */
+  complianceStatus: 'within_standard' | 'exceeds_standard' | 'monitoring_violation' | 'sample_above_benchmark' | 'occurrence_only';
   testDate: string;
   provenance: DataProvenance;
 }
@@ -123,9 +130,107 @@ export interface ConveyanceRecord {
   confidence: 'schematic';
 }
 
+
+/** One analyte summarized across a monitoring dataset (SYR4 or UCMR5). */
+export interface LabAnalyteSummary {
+  name: string;
+  /** Plain display label (benchmark label when known). */
+  label: string;
+  group: 'pfas' | 'metals' | 'metals_inorganics' | 'nutrients_inorganics' | 'disinfection_byproducts' | 'disinfectant_residual' | 'radionuclides' | 'organic_chemicals';
+  dataset: 'SYR4' | 'UCMR5';
+  samples: number;
+  detects: number;
+  /** Display unit (µg/L, ng/L, pCi/L). */
+  unit: string | null;
+  maxValue?: number;
+  medianDetect?: number;
+  firstDate: string | null;
+  lastDate: string | null;
+  benchmark?: { value: number; unit: string; kind: 'mcl' | 'action_level' | 'mrdl' | 'pfas_mcl_2024'; note?: string; health?: string };
+  /** Highest sample relative to benchmark (values in benchmark unit). */
+  maxInBenchmarkUnit?: number;
+  medianInBenchmarkUnit?: number;
+  /** Detects above the benchmark value (exact up to 5; `atLeast` when more). */
+  aboveBenchmark?: { count: number; atLeast: boolean; shareOfDetectsPct?: number };
+  /** Highest value >20x the limit, treated as a likely unit-entry error and left out of max/counts. */
+  outlierExcluded?: { value: number; date: string | null };
+  /** Highest detects in benchmark unit (or dataset unit), newest-first ties. */
+  top?: Array<{ value: number; date: string | null }>;
+  /**
+   * not_detected | detected (no benchmark) | below_benchmark | max_above_benchmark
+   * (a single sample above the MCL level is not a violation; compliance is averaged).
+   */
+  status: 'not_detected' | 'detected' | 'below_benchmark' | 'max_above_benchmark';
+}
+
+export interface ProfileViolation {
+  id: string;
+  name: string | null;
+  category: string | null;
+  contaminant: string | null;
+  rule: string | null;
+  healthBased: boolean;
+  begin: string | null;
+  end: string | null;
+  returnedToCompliance: string | null;
+  status: string | null;
+  facility: string | null;
+  measure: string | null;
+  unit: string | null;
+  enforcement: Array<{ date: string | null; action: string | null }>;
+}
+
+/** Rich per-system profile from EPA SDWIS + SYR4 + UCMR5 (build-time snapshot). */
+export interface WaterSystemProfile {
+  pwsid: string;
+  name: string;
+  state: string | null;
+  population: number | null;
+  connections: number | null;
+  owner: string | null;
+  primarySource: string | null;
+  wholesaler: boolean;
+  utilityPhone: string | null;
+  utilityAddress: string | null;
+  sourceWaterProtection: boolean;
+  counties: string[];
+  citiesServed: string[];
+  facilityCounts: Record<string, number>;
+  sources: Array<{ name: string; type: string | null; water: string | null; availability: string | null }>;
+  sourceCount: number;
+  plants: string[];
+  purchasedFrom: Array<{ pwsid: string; name: string; treated: string | null; population?: number | null; primarySource?: string | null }>;
+  treatment: Array<{ process: string; objective: string | null }>;
+  lead: Array<{ start: string | null; end: string | null; ppb: number }>;
+  copper: Array<{ start: string | null; end: string | null; ppb: number }>;
+  leadSummary?: { latestPpb: number; latestPeriodEnd: string | null; maxPpb: number; maxPeriodEnd: string | null; periods: number; periodsAboveActionLevel: number; actionLevelPpb: 15 };
+  copperSummary?: { latestPpb: number; latestPeriodEnd: string | null; maxPpb: number; periods: number; periodsAboveActionLevel: number; actionLevelPpb: 1300 };
+  violationSummary: {
+    total: number;
+    since2016: number;
+    last5Years: number;
+    healthBased5Years: number;
+    healthBasedAllTime: number;
+    unresolved: number;
+    byRule5Years: Array<{ rule: string; count: number }>;
+  };
+  violations: ProfileViolation[];
+  lastSanitarySurvey: { date: string | null; reason: string | null; findings: string[] } | null;
+  siteVisitCount: number;
+  lab: LabAnalyteSummary[];
+  pfas: { tested: boolean; samples: number; compoundsDetected: string[]; aboveMcl: Array<{ name: string; maxNgL: number; mclNgL: number }>; window: string | null };
+  /** Deterministic key findings, most important first. */
+  highlights: string[];
+  provenance: { sdwisQuarter: string | null; sdwisUrl: string; syr4Url: string; ucmr5Url: string; captureTime: string; echoReportUrl: string };
+}
+
 export interface WaterOriginSchematic {
   pwsid: string;
   systemName: string;
+  /** Place the user asked about ("Phoenix") when resolved nationwide. */
+  displayName?: string;
+  /** Same-named places in other states the user may have meant. */
+  alternatives?: string[];
   boundaryType: BoundaryConfidence;
   primaryBasins: string[];
   schematicFlow: {
@@ -165,6 +270,8 @@ export interface WaterOriginSchematic {
   waterUse?: WaterUseSplit;
   /** Vendored large conveyances (schematic, best effort). */
   conveyances?: ConveyanceRecord[];
+  /** Rich EPA profile (SDWIS + SYR4 + UCMR5), best effort. */
+  profile?: WaterSystemProfile;
   /** Normalized "City, ST" asked for but outside the snapshot (empty-state path). */
   placeQuery?: string;
   disclaimer: string;
