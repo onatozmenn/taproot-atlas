@@ -1,0 +1,7 @@
+{
+  "snapshotVersion": "water-use-2026-10-v1",
+  "captureTime": "2026-10-07T00:00:00Z",
+  "provenanceNote": "USGS public-supply water-use placeholder (2000-2020 HUC12 monthly SW/GW). Ratios are modeled from county/HUC withdrawals, never meter readings. Label Modeled. Source: USGS ScienceBase data release.",
+  "sourceUrl": "https://www.sciencebase.gov/",
+  "systems": {}
+}

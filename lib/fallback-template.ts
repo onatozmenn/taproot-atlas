@@ -20,9 +20,16 @@ export function generateDeterministicSummary(
   const violationsCount = schematic.regulatoryCompliance.totalViolationsFound;
   const windowStart = schematic.regulatoryCompliance.queryWindow.startDate;
   const windowEnd = schematic.regulatoryCompliance.queryWindow.endDate;
+  const allMetrics = [
+    ...schematic.latestReportedMetrics,
+    ...(schematic.lcrMetrics ?? []),
+    ...(schematic.ucmrMetrics ?? []),
+    ...(schematic.syrMetrics ?? []),
+    ...(schematic.distributionMetrics ?? []),
+  ];
   const detailSentence =
-    schematic.latestReportedMetrics.length > 0
-      ? `The ${schematic.latestReportedMetrics[0].provenance.reportPeriod} report's lab metrics ` +
+    allMetrics.length > 0
+      ? `The ${allMetrics[0].provenance.reportPeriod} report's lab metrics ` +
         `and the ${windowStart} to ${windowEnd} compliance record are detailed below.`
       : 'Lab metrics and compliance records for this system are not yet curated, ' +
         'so verify live records at the linked ECHO profile.';
@@ -38,8 +45,8 @@ export function generateDeterministicSummary(
       : schematic.boundaryType === 'modeled_epa'
         ? 'The service area shown is modeled from EPA geography.'
         : 'Exact service-area boundaries are not shown here.';
-  const metricsList = schematic.latestReportedMetrics.length > 0
-    ? schematic.latestReportedMetrics
+  const metricsList = allMetrics.length > 0
+    ? allMetrics
         .map((m: QualityMetricRecord) => {
           return [
             `- **${m.parameter}**: ${m.reportedValue}`,
@@ -52,6 +59,11 @@ export function generateDeterministicSummary(
         .join('\n\n')
     : 'No reported lab metrics are available for this system in the current snapshot.';
 
+  const occurrenceNote =
+    (schematic.ucmrMetrics ?? []).length > 0
+      ? 'UCMR rows are occurrence findings, not federal MCL violations unless the threshold column names an MCL.'
+      : null;
+
   const heading = isUnknown
     ? '### Unverified Area Overview'
     : isTierB
@@ -59,6 +71,52 @@ export function generateDeterministicSummary(
       : schematic.boundaryType === 'verified_agency' || schematic.boundaryType === 'modeled_epa'
         ? '### Verified Water Distribution Overview'
         : '### Water System Overview';
+
+  const pathwayLabels = schematic.schematicFlow.features
+    .map((f) => f.properties.label)
+    .filter((l) => typeof l === 'string' && l.length > 0)
+    .slice(0, 6);
+  const pathwayBlock =
+    pathwayLabels.length > 0
+      ? `Reported pathway (schematic, in order): ${pathwayLabels.join(' to ')}.`
+      : 'No curated pathway is available for this system in the current snapshot.';
+  const treatmentBlock = schematic.treatment
+    ? schematic.treatment.rigor
+      ? `Reported treatment: ${schematic.treatment.rigor}.`
+      : schematic.treatment.processes.length > 0
+        ? `Reported treatment processes: ${schematic.treatment.processes.join(', ')}.`
+        : 'No treatment profile is available for this system in the current snapshot.'
+    : 'No treatment profile is available for this system in the current snapshot.';
+
+  const facilityBlock = schematic.sourceFacilities
+    ? [
+        schematic.sourceFacilities.facilities.slice(0, 6).map((f) => `- **${f.facilityName}** (${f.facilityType}${f.waterType ? `, ${f.waterType}` : ''})`).join('\n') ||
+          'No reported facilities in snapshot.',
+        schematic.sourceFacilities.sellerChain.length > 0
+          ? `Purchased-water chain: ${schematic.sourceFacilities.sellerChain.map((s) => `${s.systemName} (${s.pwsid})`).join('; ')}.`
+          : 'No purchased-water chain reported.',
+        `Provenance: [SDWIS facility extract](${schematic.sourceFacilities.provenanceUrl}) | Version \`${schematic.sourceFacilities.sourceVersionId}\` | Captured ${schematic.sourceFacilities.dataCaptureTime}`,
+      ].join('\n')
+    : 'No facility extract is available for this system in the current snapshot. Verify live SDWIS facility rows at the linked efservice query.';
+
+  const upstreamBlock = schematic.upstream
+    ? [
+        `- Outlet context: ${schematic.upstream.outletLabel} (representative point, never an intake coordinate).`,
+        `- Upstream flowlines in range: ${schematic.upstream.upstreamCount}; pre-treatment monitoring stations in range: ${schematic.upstream.stationCount}.`,
+        schematic.upstream.characteristics.length > 0
+          ? `- Station characteristics observed upstream: ${schematic.upstream.characteristics.join(', ')}. Pre-treatment context only, never tap results.`
+          : '- No upstream characteristic names summarized.',
+        `- Provenance: [USGS NLDI](${schematic.upstream.sourceUrl}) | Captured ${schematic.upstream.dataCaptureTime} | Confidence: schematic.`,
+      ].join('\n')
+    : 'No upstream summary is available. USGS intake coordinates are not published; routes stay schematic.';
+
+  const conveyanceBlock = (schematic.conveyances ?? []).length > 0
+    ? (schematic.conveyances ?? []).map((c) => `- **${c.name}** (schematic conveyance)`).join('\n')
+    : 'No vendored conveyances for this system.';
+
+  const useBlock = schematic.waterUse
+    ? `Modeled public-supply split for ${schematic.waterUse.referencePeriod}: about ${schematic.waterUse.surfacePct} percent surface water and ${schematic.waterUse.groundPct} percent groundwater. Source: [USGS water use](${schematic.waterUse.sourceUrl}), captured ${schematic.waterUse.dataCaptureTime}. Modeled, never a meter reading.`
+    : 'No modeled water-use split is vendored for this system.';
 
   const complianceBlock = schematic.regulatoryCompliance.snapshotPending    ? [
         `- **Monitored Period:** ${windowStart} to ${windowEnd}`,
@@ -81,6 +139,24 @@ ${sourceSentence}
 
 ### Reported Water Quality Metrics & Audit Provenance
 ${metricsList}
+${occurrenceNote ? `\n\n*${occurrenceNote}*` : ''}
+
+### Source Facilities & Purchased-Water Chain (SDWIS)
+${facilityBlock}
+
+### Source to Tap Pathway (Schematic)
+${pathwayBlock}
+
+${treatmentBlock}
+
+Large conveyances (schematic):
+${conveyanceBlock}
+
+Upstream + pre-treatment context (USGS NLDI + WQP):
+${upstreamBlock}
+
+Modeled supply split (USGS):
+${useBlock}
 
 ### Regulatory Compliance Record (EPA SDWIS)
 ${complianceBlock}

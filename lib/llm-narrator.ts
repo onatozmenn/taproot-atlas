@@ -30,23 +30,51 @@ export type LlmFetch = (url: string, init: LlmFetchInit) => Promise<{
 
 /** Ground-truth facts plus the user question. No coordinates, no PWSID digits beyond the ID itself. */
 export function buildFactsMessage(schematic: WaterOriginSchematic, question = ''): string {
+  const slim = (m: { parameter: string; reportedValue: string; regulatoryThreshold: string; complianceStatus: string; testDate: string; provenance: { reportPeriod: string } }) => ({
+    parameter: m.parameter,
+    reportedValue: m.reportedValue,
+    regulatoryThreshold: m.regulatoryThreshold,
+    complianceStatus: m.complianceStatus,
+    testDate: m.testDate,
+    reportPeriod: m.provenance.reportPeriod,
+  });
   const facts = {
     systemName: schematic.systemName,
     pwsid: schematic.pwsid,
     boundaryType: schematic.boundaryType,
     primaryBasins: schematic.primaryBasins,
+    sourceKind: schematic.sourceKind ?? null,
     flowLabels: schematic.schematicFlow.features.map((f) => ({
       label: f.properties.label,
       role: f.properties.role,
     })),
-    metrics: schematic.latestReportedMetrics.map((m) => ({
-      parameter: m.parameter,
-      reportedValue: m.reportedValue,
-      regulatoryThreshold: m.regulatoryThreshold,
-      complianceStatus: m.complianceStatus,
-      testDate: m.testDate,
-      reportPeriod: m.provenance.reportPeriod,
+    facilities: (schematic.sourceFacilities?.facilities ?? []).map((f) => ({
+      facilityName: f.facilityName,
+      facilityType: f.facilityType,
+      waterType: f.waterType ?? null,
     })),
+    sellerChain: schematic.sourceFacilities?.sellerChain ?? [],
+    conveyances: (schematic.conveyances ?? []).map((c) => c.name),
+    metrics: schematic.latestReportedMetrics.map(slim),
+    lcr: (schematic.lcrMetrics ?? []).map(slim),
+    ucmr: (schematic.ucmrMetrics ?? []).map(slim),
+    syr: (schematic.syrMetrics ?? []).map(slim),
+    distribution: (schematic.distributionMetrics ?? []).map(slim),
+    upstream: schematic.upstream
+      ? {
+          outletLabel: schematic.upstream.outletLabel,
+          upstreamCount: schematic.upstream.upstreamCount,
+          stationCount: schematic.upstream.stationCount,
+          characteristics: schematic.upstream.characteristics,
+        }
+      : null,
+    waterUse: schematic.waterUse
+      ? {
+          surfacePct: schematic.waterUse.surfacePct,
+          groundPct: schematic.waterUse.groundPct,
+          referencePeriod: schematic.waterUse.referencePeriod,
+        }
+      : null,
     queryWindow: schematic.regulatoryCompliance.queryWindow,
     totalViolationsFound: schematic.regulatoryCompliance.totalViolationsFound,
     dataCaptureTime: schematic.regulatoryCompliance.dataCaptureTime,

@@ -75,19 +75,97 @@ export function AnswerCard({ answer }: { answer: TapAnswer }) {
       </div>
     );
   }
+  const facilities = answer.facilities ?? [];
+  const sellerChain = answer.sellerChain ?? [];
+  const lcr = answer.lcr ?? [];
+  const ucmr = answer.ucmr ?? [];
+  const syr = answer.syr ?? [];
+  const distribution = answer.distribution ?? [];
+  const conveyances = answer.conveyances ?? [];
+  const upstream = answer.upstream ?? null;
+  const waterUse = answer.waterUse ?? null;
+  const extraMetrics = [...lcr, ...ucmr, ...syr, ...distribution];
   return (
     <div className="answer">
       <div className="markdown">{renderMarkdown(answer.overview)}</div>
-      <RealMap answer={answer} />
+      <h4>1. Where it comes from</h4>
+      <p className="source-line">
+        {answer.basins.length > 0
+          ? `Source basins: ${answer.basins.join(' and ')}.`
+          : 'Source basins are not yet curated for this system in the snapshot.'}{' '}
+        {answer.pwsid !== 'UNKNOWN' && (
+          <>
+            System: {answer.systemName} · {answer.pwsid}.
+          </>
+        )}
+      </p>
+      {facilities.length > 0 && (
+        <>
+          <h4>Reported facilities (SDWIS)</h4>
+          <ul className="nearby-list">
+            {facilities.slice(0, 6).map((f) => (
+              <li key={f.facilityName}>
+                {f.facilityName} · {f.facilityType}
+                {f.waterType ? ` · ${f.waterType}` : ''}
+              </li>
+            ))}
+          </ul>
+          <p className="fine">Schematic labels only; intake coordinates are never published.</p>
+        </>
+      )}
+      {sellerChain.length > 0 && (
+        <p className="tier-line">
+          Purchased-water chain: {sellerChain.map((s) => `${s.systemName} (${s.pwsid})`).join('; ')}.
+        </p>
+      )}
+      {answer.facilityProvenanceUrl && (
+        <p className="fine">
+          <a href={answer.facilityProvenanceUrl} target="_blank" rel="noreferrer">
+            Verify facility rows at EPA efservice<span className="ext" aria-hidden="true">↗</span>
+          </a>
+        </p>
+      )}
       {answer.metrics.length > 0 && (
         <>
-          <h4>Reported quality metrics</h4>
+          <h4>2. What is in it: reported quality</h4>
           <MetricsTable metrics={answer.metrics} />
         </>
       )}
+      {extraMetrics.length > 0 && (
+        <>
+          <h4>More monitoring extracts (LCR / UCMR / SYR / distribution)</h4>
+          <MetricsTable metrics={extraMetrics} />
+          {ucmr.length > 0 && (
+            <p className="fine">UCMR rows are occurrence findings, not federal MCL violations unless the threshold names an MCL.</p>
+          )}
+        </>
+      )}
+      <h4>3. How it reaches you: source-to-tap pathway</h4>
+      <RealMap answer={answer} />
+      {answer.flow.length > 0 && (
+        <p className="fine">
+          Schematic pathway: {answer.flow.map((f) => f.label).join(' to ')}. Approximations only.
+        </p>
+      )}
+      {conveyances.length > 0 && (
+        <p className="tier-line">Large conveyances (schematic): {conveyances.map((c) => c.name).join('; ')}.</p>
+      )}
+      {upstream && (
+        <p className="tier-line">
+          Upstream context near {upstream.outletLabel}: {upstream.upstreamCount} flowlines and {upstream.stationCount} pre-treatment
+          monitoring stations in range
+          {upstream.characteristics.length > 0 ? ` (${upstream.characteristics.join(', ')})` : ''}. Pre-treatment context only.
+        </p>
+      )}
+      {waterUse && (
+        <p className="tier-line">
+          Modeled supply split for {waterUse.referencePeriod}: about {waterUse.surfacePct} percent surface water and {waterUse.groundPct} percent
+          groundwater. Modeled, never a meter reading.
+        </p>
+      )}
       {(answer.treatment || answer.recordTier !== 'unknown-pending') && (
         <>
-          <h4>Treatment and compliance record</h4>
+          <h4>Treatment and compliance record (pathway detail)</h4>
           {answer.treatment?.rigor ? (
             <p className="rigor-line">{answer.treatment.rigor}.</p>
           ) : (

@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "npm run build && node --test tests/guardrails.test.js tests/fallback.test.js tests/geo.test.js tests/echo.test.js tests/nyc.test.js tests/osm.test.js tests/schematic.test.js tests/pipeline.test.js tests/adversarial.test.js tests/llm-narrator.test.js tests/jev-audit.test.js tests/scope.test.js tests/systems.test.js tests/echo-live.test.js tests/city-metrics.test.js tests/treatment.test.js",
+    "test": "npm run build && node --test tests/guardrails.test.js tests/fallback.test.js tests/geo.test.js tests/echo.test.js tests/nyc.test.js tests/osm.test.js tests/schematic.test.js tests/pipeline.test.js tests/adversarial.test.js tests/llm-narrator.test.js tests/jev-audit.test.js tests/scope.test.js tests/systems.test.js tests/echo-live.test.js tests/city-metrics.test.js tests/treatment.test.js tests/new-sources.test.js",
     "eval": "npm run build && node scripts/eval.mjs",
     "test:web": "npm --prefix web run build"
   },

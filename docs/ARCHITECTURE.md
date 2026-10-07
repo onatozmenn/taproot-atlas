@@ -1,5 +1,10 @@
 # Architecture — taproot-atlas
 
+Product scope (three pillars, in order): where tap water comes from (system +
+PWSID + basins + source kind), what is in it (reported lab metrics + dated
+SDWIS compliance, Xylem Water Quality track), how it reaches the tap
+(schematic watershed → treatment → distribution pathway + reported treatment).
+
 ```
 user question (America.gov-style chat, web/)
   -> Resolver (single authority; owns PWSID, basins, metrics, SDWIS window, GeoJSON)

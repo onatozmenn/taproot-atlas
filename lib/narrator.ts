@@ -39,31 +39,56 @@ export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
         ? 'The service area shown is modeled from EPA geography'
         : 'Exact service-area boundaries are not shown here';
   const { startDate: windowStart, endDate: windowEnd } = schematic.regulatoryCompliance.queryWindow;
+  const pathwayPhrase =
+    'The schematic map traces the reported route from source areas to the tap area in order.';
+  const allReported = [
+    ...schematic.latestReportedMetrics,
+    ...(schematic.lcrMetrics ?? []),
+    ...(schematic.ucmrMetrics ?? []),
+    ...(schematic.syrMetrics ?? []),
+    ...(schematic.distributionMetrics ?? []),
+  ];
   const detailPhrase =
-    schematic.latestReportedMetrics.length > 0
-      ? `The ${schematic.latestReportedMetrics[0].provenance.reportPeriod} report's lab metrics ` +
-        `and the ${windowStart} to ${windowEnd} compliance record are detailed below.`
+    allReported.length > 0
+      ? `The ${allReported[0].provenance.reportPeriod} report's lab metrics ` +
+        `and the ${windowStart} to ${windowEnd} compliance record are detailed below. ` +
+        `${pathwayPhrase}`
       : 'Lab metrics and compliance records for this system are not yet curated, ' +
-        'so verify live records at the linked ECHO profile.';
+        'so verify live records at the linked ECHO profile. ' +
+        `${pathwayPhrase}`;
   const kindSentence =
     schematic.sourceKind === 'groundwater' || schematic.sourceKind === 'surface'
       ? `This is a ${schematic.sourceKind} water system. `
       : '';
+  const hasFacilities = (schematic.sourceFacilities?.facilities.length ?? 0) > 0;
+  const facilitySentence = hasFacilities ? 'Reported source rows are listed below. ' : '';
+  const conveyanceSentence =
+    (schematic.conveyances?.length ?? 0) > 0 ? 'Large conveyances are shown schematically on the map. ' : '';
+  const useSentence = schematic.waterUse
+    ? `Modeled public-supply split for ${schematic.waterUse.referencePeriod} is about ${schematic.waterUse.surfacePct} percent surface water and ${schematic.waterUse.groundPct} percent groundwater. `
+    : '';
+  const upstreamSentence = schematic.upstream
+    ? `Upstream context lists ${schematic.upstream.upstreamCount} flowlines and ${schematic.upstream.stationCount} pre-treatment monitoring stations in range. `
+    : '';
   const overview = isTierB
     ? `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}). ` +
       kindSentence +
       'Source details for this system are not yet curated in the snapshot, ' +
       'so verify live records at the linked ECHO profile. ' +
-      `${boundaryPhrase}; paths on the map are schematic approximations.`
+      `${boundaryPhrase}; paths on the map are schematic approximations. ` +
+      `${pathwayPhrase}`
     : `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}) ` +
       `is sourced from ${basinPhrase}. ` +
+      `${kindSentence}${facilitySentence}${conveyanceSentence}${useSentence}${upstreamSentence}` +
       `${detailPhrase} ` +
       `${boundaryPhrase}; paths on the map are schematic approximations.`;
 
   const metricsSummary =
     schematic.latestReportedMetrics.length > 0
-      ? schematic.latestReportedMetrics.map(metricSentence).join(' ')
-      : 'No reported lab metrics are available for this system in the current snapshot.';
+      ? [...schematic.latestReportedMetrics, ...(schematic.lcrMetrics ?? []), ...(schematic.ucmrMetrics ?? []), ...(schematic.syrMetrics ?? []), ...(schematic.distributionMetrics ?? [])].map(metricSentence).join(' ')
+      : (schematic.lcrMetrics ?? []).length + (schematic.ucmrMetrics ?? []).length + (schematic.syrMetrics ?? []).length + (schematic.distributionMetrics ?? []).length > 0
+        ? [...(schematic.lcrMetrics ?? []), ...(schematic.ucmrMetrics ?? []), ...(schematic.syrMetrics ?? []), ...(schematic.distributionMetrics ?? [])].map(metricSentence).join(' ')
+        : 'No reported lab metrics are available for this system in the current snapshot.';
 
   const violations = schematic.regulatoryCompliance.totalViolationsFound;
   const { startDate, endDate } = schematic.regulatoryCompliance.queryWindow;

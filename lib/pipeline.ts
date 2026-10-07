@@ -8,6 +8,9 @@ import type {
   WaterOriginSchematic,
   SdwisComplianceProfile,
   TreatmentProfile,
+  SourceFacilitiesProfile,
+  QualityMetricRecord,
+  UpstreamSummary,
 } from '../types/water-intelligence.js';
 import { resolveSystem } from './geo.js';
 import { readSnapshotCompliance, pendingCompliance } from './echo.js';
@@ -21,6 +24,11 @@ import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js'
 import { findSystemByText, findSystemCandidates, getDirectorySystem } from './systems.js';
 import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
 import { fetchTreatment, describeTreatment, readTreatmentFixture } from './treatment.js';
+import { readFacilityFixture } from './facility.js';
+import { loadLcrMetrics } from './lcr.js';
+import { loadUcmrMetrics, loadSyrMetrics, loadDistributionMetrics } from './occurrence.js';
+import { loadWaterUse } from './water-use.js';
+import { loadConveyances } from './conveyance.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -57,6 +65,18 @@ export interface PipelineDeps {
    * live callers wrap fetchTreatment with fixture fallback. Fail-soft.
    */
   fetchTreatmentProfile?: (pwsid: string) => Promise<TreatmentProfile | null>;
+  /** SDWIS facility + seller chain. Defaults to fixture only. Fail-soft. */
+  fetchFacilitiesProfile?: (pwsid: string) => Promise<SourceFacilitiesProfile | null>;
+  /** LCR 90th-percentile rows. Defaults to snapshot (empty until vendored). */
+  fetchLcrMetrics?: (pwsid: string) => Promise<QualityMetricRecord[]>;
+  /** UCMR occurrence rows. Defaults to snapshot (empty until vendored). */
+  fetchUcmrMetrics?: (pwsid: string) => Promise<QualityMetricRecord[]>;
+  /** SYR4 extracts. Defaults to snapshot (empty until vendored). */
+  fetchSyrMetrics?: (pwsid: string) => Promise<QualityMetricRecord[]>;
+  /** Distribution-monitoring rows. Defaults to snapshot (empty until vendored). */
+  fetchDistributionMetrics?: (pwsid: string) => Promise<QualityMetricRecord[]>;
+  /** NLDI upstream + WQP summary. Defaults to null (live only). Fail-soft. */
+  fetchUpstream?: (lon: number, lat: number, label: string) => Promise<UpstreamSummary | null>;
   now?: () => string;
 }
 
@@ -123,6 +143,12 @@ export async function answerTapWater(
     narratorKind = deps.narrate ? 'llm' : 'template',
     findNearby = (aLat: number, aLon: number) => findDrinkingPoints(aLat, aLon, { timeoutMs: 8000 }),
     fetchTreatmentProfile = async (pwsid: string) => readTreatmentFixture(pwsid),
+    fetchFacilitiesProfile = async (pwsid: string) => readFacilityFixture(pwsid),
+    fetchLcrMetrics = async (pwsid: string) => loadLcrMetrics(pwsid),
+    fetchUcmrMetrics = async (pwsid: string) => loadUcmrMetrics(pwsid),
+    fetchSyrMetrics = async (pwsid: string) => loadSyrMetrics(pwsid),
+    fetchDistributionMetrics = async (pwsid: string) => loadDistributionMetrics(pwsid),
+    fetchUpstream = async () => null,
   } = deps;
   const question = (input.question ?? '').slice(0, 2000);  const rawLat = input.lat ?? SHOWCASE_CENTER.lat;
   const rawLon = input.lon ?? SHOWCASE_CENTER.lon;
@@ -296,6 +322,54 @@ export async function answerTapWater(
       }
     } catch {
       // Omit the section; honesty over completeness.
+    }
+    // Best-effort source facilities + seller chain. Never blocks.
+    try {
+      const fac = await fetchFacilitiesProfile(effectivePwsid);
+      if (fac) schematic.sourceFacilities = fac;
+    } catch {
+      // Omit; honesty over completeness.
+    }
+    // Best-effort occurrence / monitoring extracts. Never blocks.
+    try {
+      const lcr = await fetchLcrMetrics(effectivePwsid);
+      if (Array.isArray(lcr) && lcr.length > 0) schematic.lcrMetrics = lcr.slice(0, 4);
+    } catch { /* omit */ }
+    try {
+      const ucmr = await fetchUcmrMetrics(effectivePwsid);
+      if (Array.isArray(ucmr) && ucmr.length > 0) schematic.ucmrMetrics = ucmr.slice(0, 6);
+    } catch { /* omit */ }
+    try {
+      const syr = await fetchSyrMetrics(effectivePwsid);
+      if (Array.isArray(syr) && syr.length > 0) schematic.syrMetrics = syr.slice(0, 6);
+    } catch { /* omit */ }
+    try {
+      const dist = await fetchDistributionMetrics(effectivePwsid);
+      if (Array.isArray(dist) && dist.length > 0) schematic.distributionMetrics = dist.slice(0, 4);
+    } catch { /* omit */ }
+    // Vendored modeled/schematic context (no network, never blocks).
+    try {
+      const wu = loadWaterUse(effectivePwsid);
+      if (wu) schematic.waterUse = wu;
+    } catch { /* omit */ }
+    try {
+      const conv = loadConveyances(effectivePwsid);
+      if (conv.length > 0) schematic.conveyances = conv;
+    } catch { /* omit */ }
+    // Best-effort NLDI upstream (live only, schematic, never blocks).
+    try {
+      const outlet = schematic.primaryBasins.length > 0
+        ? schematic.schematicFlow.features.find((f) => f.properties.role === 'watershed')
+        : schematic.schematicFlow.features[0];
+      const geom = outlet?.geometry;
+      if (geom && geom.type === 'Point') {
+        const [olon, olat] = geom.coordinates;
+        const label = outlet?.properties.label ?? schematic.primaryBasins[0] ?? schematic.systemName;
+        const up = await fetchUpstream(olon, olat, label);
+        if (up) schematic.upstream = up;
+      }
+    } catch {
+      // Omit; routes stay schematic without upstream counts.
     }
   }
 

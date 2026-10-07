@@ -1,7 +1,19 @@
 # Taproot Atlas
 
 Source-to-tap water intelligence for the Xylem Global Student Innovation Challenge
-(Water Quality track, Access fallback, Quantity context).
+(Water Quality track).
+
+Product scope — three questions for any city or region:
+
+1. **Where does tap water come from?** System name + PWSID, source basins
+   (e.g. Catskill and Delaware for NYC), groundwater vs surface-water kind.
+2. **What is in it, and what do records say?** Reported lab metrics with value,
+   threshold, test date, report period, and source filing; plus the dated EPA
+   SDWIS compliance window. No `safe` / `drinkable` / `pure` verdicts, only
+   compliance framing.
+3. **How does it reach the tap?** Schematic watershed → treatment facility →
+   distribution zone pathway on a real basemap, with reported treatment
+   processes. All geometries are approximate, never engineering alignments.
 
 Ask in everyday words where tap water comes from. A deterministic Resolver owns all
 facts (PWSID, basins, lab metrics, SDWIS window); a guarded LLM only narrates; a
@@ -57,23 +69,30 @@ Local check without deploying: `npm --prefix web run test` covers the handler
    resolves PWSID via point-in-polygon or the curated city directory, classifies boundary confidence
    (`verified_agency` / `modeled_epa` / `unverified_fallback`), loads reported lab
    metrics + SDWIS compliance window, builds schematic GeoJSON (approximate only).
+   Output always covers the three scope pillars: source basins, reported
+   quality + compliance, schematic watershed → treatment → distribution pathway.
 2. **JEV gate** (`lib/jev-audit.ts`): the model draft is judged on grounding,
    health-certification, coordinate leaks, and off-topic answers. Pass exits;
    flag or no verdict falls back. Deterministic template output skips the
    judge (nothing to judge). Regex guardrails (`lib/guardrails.ts`) are
    advisory telemetry only — logged, never blocking.
-3. **LLM narrator** (English only, `prompts/system.ts`): summarizes Resolver facts.
+3. **LLM narrator** (English only, `prompts/system.ts`): summarizes Resolver facts
+   in source / contents / pathway order.
    Adds no numbers, coordinates, or verdicts.
 4. **Deterministic fallback** (`lib/fallback-template.ts`): provenance-first summary
    rendered directly from ground truth when audit fails.
-5. **Web** (`web/`, Vite + React + TS): America.gov-style chat + schematic SVG map +
-   report cards. Every metric shows test date, report period, capture time, source link.
+5. **Web** (`web/`, Vite + React + TS): America.gov-style chat + schematic map on a
+   real basemap + three-section report cards (source, quality, pathway).
+   Every metric shows test date, report period, capture time, source link.
 
 ## Data layers
 
-- Service boundary + origin: EPA Service Area Boundaries (PWSID) + NYC DEP watershed
-  schematic. Labeled Verified vs Modeled.
-- Compliance: EPA SDWIS / ECHO (`https://echo.epa.gov/`), explicit 5-year window.
+- Source + pathway: EPA Service Area Boundaries (PWSID) + NYC DEP watershed
+  schematic (watershed → treatment facility → distribution zone).
+  Labeled Verified vs Modeled.
+- Quality + compliance (Xylem Water Quality track): EPA SDWIS / ECHO
+  (`https://echo.epa.gov/`), explicit 5-year window, plus reported treatment
+  processes (SDWIS TREATMENT, descriptive only, never a grade).
 - Tap quality: NYC distribution monitoring + Annual Drinking Water Supply and Quality
   Report (`https://www.nyc.gov/site/dep/water/drinking-water.page`). Reported lab
   tests only. No real-time safety guarantee.

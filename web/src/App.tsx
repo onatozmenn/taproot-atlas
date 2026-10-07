@@ -383,8 +383,8 @@ export default function App() {
       <main className="chat" ref={boxRef} id="chat" aria-live="polite">
         {empty ? (
           <div className="hero">
-            <h1>Hello, where does your tap water come from?</h1>
-            <p className="lede">Whatever you need to know about your water, start here.</p>
+            <h1>Where does your tap water come from, what's in it, how does it reach you?</h1>
+            <p className="lede">Source basins, reported lab results with EPA compliance, and the schematic source-to-tap pathway. Start here.</p>
             <div className="hero-composer">
               <Composer
                 value={input}
@@ -398,7 +398,7 @@ export default function App() {
                 onLocate={toggleLocate}
                 locating={locating}
                 coordsActive={coords !== null}
-                placeholder="Ask anything…"
+                placeholder="Ask where it comes from, what's in it, or how it reaches you…"
                 inputRef={inputRef}
                 label="Ask about your tap water"
               />
@@ -469,7 +469,7 @@ export default function App() {
                 onLocate={toggleLocate}
                 locating={locating}
                 coordsActive={coords !== null}
-            placeholder="Ask anything…"
+            placeholder="Ask where it comes from, what's in it, or how it reaches you…"
             label="Ask a follow-up"
           />
           <p className="foot-note">

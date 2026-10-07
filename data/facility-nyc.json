@@ -1,0 +1,22 @@
+{
+  "snapshotVersion": "facility-nyc-2026-10-v1",
+  "captureTime": "2026-10-07T00:00:00Z",
+  "provenanceNote": "Curated extract shape of EPA SDWIS WATER_SYSTEM_FACILITY via Envirofacts efservice for NY7003493. Facility names are intake/reservoir labels as reported; coordinates are never published by EPA and never stored here. Verify live at https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PWSID/=/NY7003493/JSON",
+  "provenanceUrl": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PWSID/=/NY7003493/JSON",
+  "pwsid": "NY7003493",
+  "facilities": [
+    {
+      "facilityName": "WEST BRANCH RESERVOIR DEL9",
+      "facilityType": "reservoir",
+      "waterType": "surface",
+      "isSource": true
+    },
+    {
+      "facilityName": "CATSKILL INTAKE",
+      "facilityType": "intake",
+      "waterType": "surface",
+      "isSource": true
+    }
+  ],
+  "sellerChain": []
+}

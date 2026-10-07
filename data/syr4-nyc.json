@@ -1,0 +1,9 @@
+{
+  "snapshotVersion": "syr4-nyc-2026-10-v1",
+  "captureTime": "2026-10-07T00:00:00Z",
+  "provenanceNote": "SYR4 compliance-monitoring placeholder for NY7003493 (2012-2019 six-year review extracts). No curated rows yet; run scripts/pull-syr4.py to vendor PWSID-filtered summaries. Source: EPA Six-Year Review 4 data.",
+  "sourceDocumentUrl": "https://www.epa.gov/dwsixyearreview",
+  "reportPeriod": "SYR4 2012-2019",
+  "pwsid": "NY7003493",
+  "metrics": []
+}

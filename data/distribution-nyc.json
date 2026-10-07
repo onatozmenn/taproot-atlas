@@ -1,0 +1,9 @@
+{
+  "snapshotVersion": "distribution-nyc-2026-10-v1",
+  "captureTime": "2026-10-07T00:00:00Z",
+  "provenanceNote": "NYC distribution-monitoring placeholder (Socrata dataset bkwf-xfky on data.cityofnewyork.us). No curated rows yet; live /resource/bkwf-xfky.json fills this when enabled. Chlorine, turbidity, coliform, E. coli only as reported.",
+  "sourceDocumentUrl": "https://data.cityofnewyork.us/resource/bkwf-xfky.json",
+  "reportPeriod": "Distribution monitoring",
+  "pwsid": "NY7003493",
+  "metrics": []
+}

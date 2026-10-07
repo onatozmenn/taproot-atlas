@@ -1,0 +1,274 @@
+{
+  "NY7003493": {
+    "snapshotVersion": "ucmr5-ny7003493-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "NY7003493",
+    "metrics": []
+  },
+  "CA1910067": {
+    "snapshotVersion": "ucmr5-ca1910067-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "CA1910067",
+    "metrics": [
+      {
+        "parameter": "lithium",
+        "reportedValue": "100 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-12-27"
+      }
+    ]
+  },
+  "TX1010013": {
+    "snapshotVersion": "ucmr5-tx1010013-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "TX1010013",
+    "metrics": [
+      {
+        "parameter": "lithium",
+        "reportedValue": "11 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-08-28"
+      },
+      {
+        "parameter": "6:2 FTS",
+        "reportedValue": "0.0056 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-03-06"
+      },
+      {
+        "parameter": "PFBA",
+        "reportedValue": "0.0058 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-11-14"
+      },
+      {
+        "parameter": "PFHxA",
+        "reportedValue": "0.0031 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-08-31"
+      },
+      {
+        "parameter": "PFPeA",
+        "reportedValue": "0.0037 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-02-13"
+      }
+    ]
+  },
+  "IL0316000": {
+    "snapshotVersion": "ucmr5-il0316000-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "IL0316000",
+    "metrics": []
+  },
+  "TX0150018": {
+    "snapshotVersion": "ucmr5-tx0150018-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "TX0150018",
+    "metrics": [
+      {
+        "parameter": "PFBS",
+        "reportedValue": "0.0037 ug/L (occurrence)",
+        "regulatoryThreshold": "Hazard Index component (NPDWR)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-05-21"
+      },
+      {
+        "parameter": "lithium",
+        "reportedValue": "14.5 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-05-08"
+      },
+      {
+        "parameter": "PFBA",
+        "reportedValue": "0.0092 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-05-08"
+      },
+      {
+        "parameter": "PFPeA",
+        "reportedValue": "0.0032 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-05-08"
+      }
+    ]
+  },
+  "MA6000000": {
+    "snapshotVersion": "ucmr5-ma6000000-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "MA6000000",
+    "metrics": []
+  },
+  "FL4130871": {
+    "snapshotVersion": "ucmr5-fl4130871-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "FL4130871",
+    "metrics": [
+      {
+        "parameter": "PFOA",
+        "reportedValue": "0.0049 ug/L (occurrence)",
+        "regulatoryThreshold": "0.004 ug/L MCL (NPDWR)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-12-20"
+      },
+      {
+        "parameter": "PFOS",
+        "reportedValue": "0.012 ug/L (occurrence)",
+        "regulatoryThreshold": "0.004 ug/L MCL (NPDWR)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-12-20"
+      },
+      {
+        "parameter": "PFHxS",
+        "reportedValue": "0.0030 ug/L (occurrence)",
+        "regulatoryThreshold": "0.01 ug/L MCL (NPDWR, proposed rescind)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-05-15"
+      },
+      {
+        "parameter": "PFNA",
+        "reportedValue": "0.0065 ug/L (occurrence)",
+        "regulatoryThreshold": "0.01 ug/L MCL (NPDWR, proposed rescind)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-12-20"
+      },
+      {
+        "parameter": "PFBS",
+        "reportedValue": "0.0041 ug/L (occurrence)",
+        "regulatoryThreshold": "Hazard Index component (NPDWR)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-12-20"
+      },
+      {
+        "parameter": "6:2 FTS",
+        "reportedValue": "0.0079 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-05-15"
+      }
+    ]
+  },
+  "MD0150005": {
+    "snapshotVersion": "ucmr5-md0150005-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "MD0150005",
+    "metrics": [
+      {
+        "parameter": "PFHxA",
+        "reportedValue": "0.0048 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-06-21"
+      },
+      {
+        "parameter": "PFPeA",
+        "reportedValue": "0.0067 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2023-06-21"
+      }
+    ]
+  },
+  "MD0300002": {
+    "snapshotVersion": "ucmr5-md0300002-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "MD0300002",
+    "metrics": [
+      {
+        "parameter": "PFPeA",
+        "reportedValue": "0.0030 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-11-13"
+      }
+    ]
+  },
+  "PA1510001": {
+    "snapshotVersion": "ucmr5-pa1510001-2026-10-v1",
+    "captureTime": "2026-10-07T00:00:00Z",
+    "provenanceNote": "PWSID-filtered UCMR5 occurrence extract (29 PFAS + lithium, 2023-2025). Occurrence is not an MCL compliance finding.",
+    "sourceDocumentUrl": "https://www.epa.gov/dwucmr/occurrence-data-unregulated-contaminant-monitoring-rule",
+    "reportPeriod": "UCMR5 2023-2025",
+    "pwsid": "PA1510001",
+    "metrics": [
+      {
+        "parameter": "PFOA",
+        "reportedValue": "0.0050 ug/L (occurrence)",
+        "regulatoryThreshold": "0.004 ug/L MCL (NPDWR)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-01-08"
+      },
+      {
+        "parameter": "PFOS",
+        "reportedValue": "0.0052 ug/L (occurrence)",
+        "regulatoryThreshold": "0.004 ug/L MCL (NPDWR)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-08-05"
+      },
+      {
+        "parameter": "PFNA",
+        "reportedValue": "0.0045 ug/L (occurrence)",
+        "regulatoryThreshold": "0.01 ug/L MCL (NPDWR, proposed rescind)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-08-05"
+      },
+      {
+        "parameter": "PFBS",
+        "reportedValue": "0.0039 ug/L (occurrence)",
+        "regulatoryThreshold": "Hazard Index component (NPDWR)",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-01-08"
+      },
+      {
+        "parameter": "PFBA",
+        "reportedValue": "0.0062 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-08-05"
+      },
+      {
+        "parameter": "PFHpA",
+        "reportedValue": "0.0030 ug/L (occurrence)",
+        "regulatoryThreshold": "no federal MCL established",
+        "complianceStatus": "monitoring_violation",
+        "testDate": "2024-08-05"
+      }
+    ]
+  }
+}

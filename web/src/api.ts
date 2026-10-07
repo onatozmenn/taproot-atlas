@@ -18,6 +18,25 @@ export interface TapAnswer {
   nearbyPoints: Array<{ name: string; distanceM: number; osmUrl: string; lat?: number; lon?: number }>;
   /** Reported treatment profile, when available. */
   treatment: { rigor: string | null; processes: string[] } | null;
+  /** SDWIS facilities + purchased-water chain (best effort). */
+  facilities: Array<{ facilityName: string; facilityType: string; waterType?: string }>;
+  sellerChain: Array<{ pwsid: string; systemName: string }>;
+  facilityProvenanceUrl: string | null;
+  /** Extra monitoring extracts (LCR / UCMR / SYR / distribution). */
+  lcr: QualityMetricRecord[];
+  ucmr: QualityMetricRecord[];
+  syr: QualityMetricRecord[];
+  distribution: QualityMetricRecord[];
+  /** NLDI upstream pre-treatment context (schematic). */
+  upstream: {
+    outletLabel: string;
+    upstreamCount: number;
+    stationCount: number;
+    characteristics: string[];
+    sourceUrl: string;
+  } | null;
+  waterUse: { surfacePct: number; groundPct: number; referencePeriod: string; sourceUrl: string } | null;
+  conveyances: Array<{ name: string }>;
   /** Compliance tier for the window (descriptive, never a verdict). */
   recordTier: 'unknown-pending' | 'none-found' | 'monitoring-only' | 'health-based' | 'other';
   basins: string[];
@@ -56,6 +75,35 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     treatment: res.groundTruth.treatment
       ? { rigor: res.groundTruth.treatment.rigor, processes: res.groundTruth.treatment.processes }
       : null,
+    facilities: (res.groundTruth.sourceFacilities?.facilities ?? []).map((f) => ({
+      facilityName: f.facilityName,
+      facilityType: f.facilityType,
+      ...(f.waterType ? { waterType: f.waterType } : {}),
+    })),
+    sellerChain: res.groundTruth.sourceFacilities?.sellerChain ?? [],
+    facilityProvenanceUrl: res.groundTruth.sourceFacilities?.provenanceUrl ?? null,
+    lcr: res.groundTruth.lcrMetrics ?? [],
+    ucmr: res.groundTruth.ucmrMetrics ?? [],
+    syr: res.groundTruth.syrMetrics ?? [],
+    distribution: res.groundTruth.distributionMetrics ?? [],
+    upstream: res.groundTruth.upstream
+      ? {
+          outletLabel: res.groundTruth.upstream.outletLabel,
+          upstreamCount: res.groundTruth.upstream.upstreamCount,
+          stationCount: res.groundTruth.upstream.stationCount,
+          characteristics: res.groundTruth.upstream.characteristics,
+          sourceUrl: res.groundTruth.upstream.sourceUrl,
+        }
+      : null,
+    waterUse: res.groundTruth.waterUse
+      ? {
+          surfacePct: res.groundTruth.waterUse.surfacePct,
+          groundPct: res.groundTruth.waterUse.groundPct,
+          referencePeriod: res.groundTruth.waterUse.referencePeriod,
+          sourceUrl: res.groundTruth.waterUse.sourceUrl,
+        }
+      : null,
+    conveyances: (res.groundTruth.conveyances ?? []).map((c) => ({ name: c.name })),
     recordTier: res.groundTruth.regulatoryCompliance.snapshotPending
       ? 'unknown-pending'
       : res.groundTruth.regulatoryCompliance.totalViolationsFound === 0

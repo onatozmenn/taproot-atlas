@@ -12,6 +12,10 @@ import { llmNarrate } from '../lib/llm-narrator.js';
 import { jevCheckNarrative } from '../lib/jev-audit.js';
 import { fetchLiveCompliance } from '../lib/echo-live.js';
 import { fetchTreatment, readTreatmentFixture } from '../lib/treatment.js';
+import { fetchFacilities, readFacilityFixture } from '../lib/facility.js';
+import { fetchLcrMetrics, loadLcrMetrics } from '../lib/lcr.js';
+import { fetchDistributionMetrics } from '../lib/distribution.js';
+import { fetchUpstreamSummary } from '../lib/nldi.js';
 
 interface AskRequest {
   body?: { question?: unknown; lat?: unknown; lon?: unknown };
@@ -153,6 +157,35 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
                   return await fetchTreatment(pwsid, { timeoutMs: 8000 });
                 } catch {
                   return readTreatmentFixture(pwsid);
+                }
+              },
+              fetchFacilitiesProfile: async (pwsid: string) => {
+                try {
+                  return await fetchFacilities(pwsid, { timeoutMs: 8000 });
+                } catch {
+                  return readFacilityFixture(pwsid);
+                }
+              },
+              fetchLcrMetrics: async (pwsid: string) => {
+                try {
+                  const live = await fetchLcrMetrics(pwsid, { timeoutMs: 8000 });
+                  return live.length > 0 ? live : loadLcrMetrics(pwsid);
+                } catch {
+                  return loadLcrMetrics(pwsid);
+                }
+              },
+              fetchDistributionMetrics: async (pwsid: string) => {
+                try {
+                  return await fetchDistributionMetrics(pwsid, { timeoutMs: 8000 });
+                } catch {
+                  return [];
+                }
+              },
+              fetchUpstream: async (lon: number, lat: number, label: string) => {
+                try {
+                  return await fetchUpstreamSummary(lon, lat, label, { timeoutMs: 8000 });
+                } catch {
+                  return null;
                 }
               },
             }

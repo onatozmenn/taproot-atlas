@@ -74,6 +74,55 @@ export interface TreatmentProfile {
   dataCaptureTime: string;
 }
 
+/** SDWIS facility row: intake / well / reservoir / treatment / purchased. */
+export interface SourceFacilityRecord {
+  facilityName: string;
+  facilityType: 'intake' | 'well' | 'reservoir' | 'treatment_plant' | 'purchased' | 'other';
+  waterType?: 'surface' | 'ground' | 'unknown';
+  isSource?: boolean;
+  sellerPwsid?: string;
+  sellerName?: string;
+}
+
+export interface SourceFacilitiesProfile {
+  pwsid: string;
+  facilities: SourceFacilityRecord[];
+  /** Recursive seller chain, depth-capped by the loader. */
+  sellerChain: Array<{ pwsid: string; systemName: string }>;
+  dataCaptureTime: string;
+  sourceVersionId: string;
+  provenanceUrl: string;
+}
+
+/** NLDI upstream + Water Quality Portal summary (pre-treatment context only). */
+export interface UpstreamSummary {
+  outletLabel: string;
+  upstreamCount: number;
+  stationCount: number;
+  characteristics: string[];
+  dataCaptureTime: string;
+  sourceUrl: string;
+  /** Always schematic: intake coordinates are never published. */
+  confidence: 'schematic';
+}
+
+/** Modeled public-supply SW/GW split (USGS water-use, never a meter reading). */
+export interface WaterUseSplit {
+  surfacePct: number;
+  groundPct: number;
+  referencePeriod: string;
+  dataCaptureTime: string;
+  sourceUrl: string;
+  confidence: 'modeled';
+}
+
+/** Vendored conveyance (aqueduct / canal / pipeline), schematic only. */
+export interface ConveyanceRecord {
+  name: string;
+  substance: string;
+  confidence: 'schematic';
+}
+
 export interface WaterOriginSchematic {
   pwsid: string;
   systemName: string;
@@ -100,6 +149,22 @@ export interface WaterOriginSchematic {
   sourceKind?: 'groundwater' | 'surface' | 'unknown';
   /** Reported treatment profile (fixture or live, best effort). */
   treatment?: TreatmentProfile;
+  /** SDWIS facility + seller chain (fixture or live, best effort, depth-capped). */
+  sourceFacilities?: SourceFacilitiesProfile;
+  /** Lead/copper 90th-percentile snapshots (LCR, best effort). */
+  lcrMetrics?: QualityMetricRecord[];
+  /** UCMR occurrence snapshots, e.g. PFAS + lithium (best effort, no MCL verdict). */
+  ucmrMetrics?: QualityMetricRecord[];
+  /** Six-Year Review compliance-monitoring extracts (best effort). */
+  syrMetrics?: QualityMetricRecord[];
+  /** NYC distribution-monitoring extracts via Socrata (best effort). */
+  distributionMetrics?: QualityMetricRecord[];
+  /** NLDI upstream + WQP pre-treatment context (schematic, best effort). */
+  upstream?: UpstreamSummary;
+  /** Modeled public-supply SW/GW split (best effort). */
+  waterUse?: WaterUseSplit;
+  /** Vendored large conveyances (schematic, best effort). */
+  conveyances?: ConveyanceRecord[];
   disclaimer: string;
 }
 

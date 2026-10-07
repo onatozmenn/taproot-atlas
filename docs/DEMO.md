@@ -4,9 +4,13 @@ Run on the preview URL (see README “Preview deploys”). All answers are
 snapshot-backed, so the demo works offline-proof on stage.
 
 ## Q1 — “Where does my tap water come from?” (60s)
-- Shows: system name + PWSID, Catskill and Delaware basins, Modeled boundary badge.
-- Say: “The Resolver owns every fact; the chat only narrates.”
-- Point at: schematic overlay on real OSM tiles + attribution corner.
+- Shows: system name + PWSID, Catskill and Delaware basins, source kind, Modeled boundary badge.
+- Say: “The Resolver owns every fact; the chat only narrates source, contents, pathway.”
+- Point at: “1. Where it comes from” + schematic overlay on real OSM tiles + attribution corner.
+
+## Q1b — “How does it reach my tap?” (30s)
+- Shows: “3. How it reaches you” pathway (watershed to treatment facility to distribution zone) + reported treatment rigor.
+- Say: “Schematic map, not engineering.”
 
 ## Q2 — “Any violations in the last 5 years?” (60s)
 - Shows: 2021-01-01 → 2026-01-01 window, “0 violation(s) found”, ECHO link, capture time.
@@ -23,7 +27,7 @@ snapshot-backed, so the demo works offline-proof on stage.
 
 | Xylem track | Where it lives in this repo |
 | ----------- | --------------------------- |
-| Water Quality (main) | PWSID resolver, NYC lab metrics with provenance, SDWIS 5-year window, guarded narrator |
+| Water Quality (main) | PWSID resolver, NYC lab metrics with provenance, SDWIS 5-year window, reported treatment profile, guarded narrator in source / contents / pathway order |
 | Water Access (fallback) | OSM `amenity=drinking_water` lookup, always `unverified_fallback`, never a Verified badge |
 | Water Quantity (context) | Watershed sourcing story + reservoir levels linked from NYC DEP pages; ECHO pollutant-loading links in `docs/DATA.md` scope |
 

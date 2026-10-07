@@ -1,0 +1,9 @@
+{
+  "snapshotVersion": "lcr-nyc-2026-10-v1",
+  "captureTime": "2026-10-07T00:00:00Z",
+  "provenanceNote": "LCR placeholder for NY7003493. No curated 90th-percentile values yet; live SDWIS LCR_SAMPLE_RESULT pull fills this when enabled. Verify live at https://data.epa.gov/efservice/LCR_SAMPLE_RESULT/PWSID/=/NY7003493/JSON",
+  "sourceDocumentUrl": "https://data.epa.gov/efservice/LCR_SAMPLE_RESULT/PWSID/=/NY7003493/JSON",
+  "reportPeriod": "LCR monitoring",
+  "pwsid": "NY7003493",
+  "metrics": []
+}

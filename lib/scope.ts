@@ -36,8 +36,8 @@ export function greetingNarrative(): {
 } {
   return {
     overview:
-      'Hello! I answer questions about tap water: where it comes from, what public lab reports say, and what EPA compliance records show.',
-    metricsSummary: 'Try asking where your tap water comes from, or about past violations.',
+      'Hello! I answer tap water questions in three parts: where it comes from, what public lab reports say is in it, and how it reaches your tap.',
+    metricsSummary: 'Try asking where your tap water comes from, what was reported in it, or how it reaches your tap.',
     complianceNote: 'Every answer stays inside the public records - nothing more.',
   };
 }
@@ -50,7 +50,7 @@ export function offTopicNarrative(): {
   return {
     overview: 'I do not give opinions or commentary outside tap-water records.',
     metricsSummary:
-      'If you have a question about tap water - its sources, public lab reports, or EPA compliance records - ask it in plain English words.',
+      'If you have a tap-water question, ask where it comes from, what public lab reports say is in it, or how it reaches your tap, in plain English words.',
     complianceNote: 'Every answer stays inside the public records - nothing more.',
   };
 }

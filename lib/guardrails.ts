@@ -65,9 +65,50 @@ export function buildResolverFacts(
     allowedEntities.push(m.parameter.toLowerCase());
   }
 
+  for (const group of [
+    schematic.lcrMetrics ?? [],
+    schematic.ucmrMetrics ?? [],
+    schematic.syrMetrics ?? [],
+    schematic.distributionMetrics ?? [],
+  ]) {
+    for (const m of group) {
+      rawSources.push(m.reportedValue);
+      rawSources.push(m.regulatoryThreshold);
+      rawSources.push(m.testDate);
+      rawSources.push(m.provenance.reportPeriod);
+      rawSources.push(m.provenance.captureTime);
+      rawSources.push(m.provenance.sourceVersionId);
+      allowedEntities.push(m.parameter.toLowerCase());
+    }
+  }
+
   for (const f of schematic.schematicFlow.features) {
     allowedEntities.push(f.properties.label.toLowerCase());
   }
+
+  if (schematic.sourceFacilities) {
+    rawSources.push(schematic.sourceFacilities.dataCaptureTime);
+    for (const f of schematic.sourceFacilities.facilities) {
+      allowedEntities.push(f.facilityName.toLowerCase());
+    }
+    for (const s of schematic.sourceFacilities.sellerChain) {
+      allowedEntities.push(s.systemName.toLowerCase());
+      allowedEntities.push(s.pwsid.toLowerCase());
+    }
+  }
+  if (schematic.upstream) {
+    rawSources.push(String(schematic.upstream.upstreamCount));
+    rawSources.push(String(schematic.upstream.stationCount));
+    rawSources.push(schematic.upstream.dataCaptureTime);
+    allowedEntities.push(schematic.upstream.outletLabel.toLowerCase());
+    for (const c of schematic.upstream.characteristics) allowedEntities.push(c.toLowerCase());
+  }
+  if (schematic.waterUse) {
+    rawSources.push(String(schematic.waterUse.surfacePct));
+    rawSources.push(String(schematic.waterUse.groundPct));
+    rawSources.push(schematic.waterUse.referencePeriod);
+  }
+  for (const c of schematic.conveyances ?? []) allowedEntities.push(c.name.toLowerCase());
 
   const allowedNumbers = Array.from(
     new Set(rawSources.flatMap((text) => extractNormalizedNumbers(text)).map(normalizeNumericToken))

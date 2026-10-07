@@ -1,0 +1,9 @@
+{
+  "snapshotVersion": "ucmr5-nyc-2026-10-v1",
+  "captureTime": "2026-10-07T00:00:00Z",
+  "provenanceNote": "UCMR5 occurrence placeholder for NY7003493 (29 PFAS + lithium, 2023-2025). No curated occurrence values yet; run scripts/pull-ucmr5.py to vendor PWSID-filtered occurrence rows. Occurrence is not an MCL violation. Source: UCMR occurrence data.",
+  "sourceDocumentUrl": "https://www.epa.gov/dwsixyearreview",
+  "reportPeriod": "UCMR5 2023-2025",
+  "pwsid": "NY7003493",
+  "metrics": []
+}

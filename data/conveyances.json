@@ -1,0 +1,12 @@
+{
+  "snapshotVersion": "conveyances-2026-10-v1",
+  "captureTime": "2026-10-07T00:00:00Z",
+  "provenanceNote": "Vendored large conveyances (aqueduct/canal/pipeline), schematic only. OSM Overpass is unreliable live, so these representative labels are vendored and never engineering alignments. Sources: utility pages + OSM tags man_made=pipeline, waterway=canal.",
+  "sourceUrl": "https://www.openstreetmap.org/",
+  "systems": {
+    "NY7003493": [
+      { "name": "Catskill Aqueduct", "substance": "water", "confidence": "schematic" },
+      { "name": "Delaware Aqueduct", "substance": "water", "confidence": "schematic" }
+    ]
+  }
+}
