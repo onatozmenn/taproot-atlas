@@ -339,6 +339,27 @@ describe('answerTapWater', () => {
     assert.equal(res.groundTruth.pwsid, 'TX1010013');
   });
 
+  it('an unsupported place gets a clear empty state, never a silent NYC default', async () => {
+    const res = await answerTapWater(
+      { question: 'Flint, MI', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
+    );
+    assert.equal(res.scope, 'water');
+    assert.equal(res.groundTruth.pwsid, 'UNKNOWN');
+    assert.equal(res.groundTruth.placeQuery, 'Flint, MI');
+    assert.ok(res.narrative.overview.includes('not in the current snapshot'));
+    assert.ok(!res.narrative.overview.includes('NY7003493'));
+  });
+
+  it('a place with trailing water words still resolves to the empty state', async () => {
+    const res = await answerTapWater(
+      { question: 'flint, mi water quality?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
+    );
+    assert.equal(res.scope, 'water');
+    assert.equal(res.groundTruth.placeQuery, 'flint, MI');
+  });
+
   it('tier B cities resolve with honest uncurated narratives', async () => {
     const res = await answerTapWater(
       { question: 'chesterfield, missouri water?', ...SHOWCASE_CENTER },

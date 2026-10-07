@@ -23,6 +23,8 @@ const base: TapAnswer = {
   upstream: null,
   waterUse: null,
   conveyances: [],
+  place: null,
+  coverage: [],
   recordTier: 'none-found',
   basins: ['Catskill', 'Delaware'],
   overview: 'Water for NYC DEP Catskill-Delaware (PWSID: NY7003493) is sourced from the Catskill and Delaware basins.',

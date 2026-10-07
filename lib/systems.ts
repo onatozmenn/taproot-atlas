@@ -183,3 +183,40 @@ function disambiguateSameState(
   if (exact.length === 1) return exact[0];
   return null;
 }
+
+/**
+ * Detect a "City, ST" / "City, State" place query for locations outside the
+ * curated directory. Returns the normalized place ("Flint, MI") or null.
+ * Bare place names without a state stay off-topic: without a state there is
+ * no honest way to tell a place from smalltalk. Directory hits always win,
+ * so this never shadows a supported city.
+ */
+export function detectPlaceQuery(question: string): string | null {
+  const q = (question ?? '').trim();
+  if (!q) return null;
+  const m = q.match(/^(.+?),\s*([A-Za-z][A-Za-z .'\-]*?)\s*[?.!.]*$/);
+  if (!m) return null;
+  let city = m[1].trim().replace(/\s+/g, ' ');
+  const rest = m[2].trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!city || !rest) return null;
+  // First token of the tail must be a US state code or full state name, so
+  // trailing water words ("flint, mi water?") still resolve to the state.
+  const tailFirst = rest.split(' ')[0];
+  let state: string | null = null;
+  if (/^[a-z]{2}$/.test(tailFirst) && tailFirst in STATE_NAMES) {
+    state = tailFirst.toUpperCase();
+  } else {
+    for (const [code, name] of Object.entries(STATE_NAMES)) {
+      if (rest === name || rest.startsWith(`${name} `)) {
+        state = code.toUpperCase();
+        break;
+      }
+    }
+  }
+  if (!state) return null;
+  // Strip leading question framing ("where is flint" -> "flint").
+  city = city.replace(/^(where is|where's|what about|tell me about|how about|how's)\s+/i, '').trim();
+  if (!city || /^(what|who|when|why|how|write|come)\b/i.test(city)) return null;
+  if (city.length > 48) return null;
+  return `${city}, ${state}`;
+}

@@ -21,7 +21,7 @@ import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
-import { findSystemByText, findSystemCandidates, getDirectorySystem } from './systems.js';
+import { findSystemByText, findSystemCandidates, getDirectorySystem, detectPlaceQuery, listDirectorySystems } from './systems.js';
 import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
 import { fetchTreatment, describeTreatment, readTreatmentFixture } from './treatment.js';
 import { readFacilityFixture } from './facility.js';
@@ -204,13 +204,19 @@ export async function answerTapWater(
       },
     };
   }
+  // A supported place outside the directory ("Flint, MI") is a water
+  // question with an honest empty state, never a silent NYC default and
+  // never an off-topic deflection. Directory hits always win.
+  const placeQuery = !dirHit ? detectPlaceQuery(question) : null;
   // A named city wins over the coordinate polygon: the web chat sends no
   // location, so coords are usually just the NYC default. An explicit city
   // mention is the stronger signal of user intent.
   const dirSystem =
     dirHit && (resolved.pwsid === 'UNKNOWN' || dirHit.pwsid !== resolved.pwsid) ? dirHit : null;
   // Effective system: named directory city first, else polygon, else unknown.
-  const effectivePwsid = dirSystem ? dirSystem.pwsid : resolved.pwsid;
+  // An unsupported place forces the unknown path even when the default
+  // coordinates would otherwise resolve to the showcase system.
+  const effectivePwsid = placeQuery && !dirSystem ? 'UNKNOWN' : dirSystem ? dirSystem.pwsid : resolved.pwsid;
   // Compliance fetch with honest degradation: a failed live/source fetch
   // never 502s — NYC degrades to its snapshot, others to pending.
   let effectiveRecordSource = recordSource;
@@ -226,7 +232,13 @@ export async function answerTapWater(
   }
   let schematic: WaterOriginSchematic;
   if (effectivePwsid === 'UNKNOWN') {
-    schematic = unknownSchematic(auditTimestamp, lat, lon);
+    // Without user-supplied coordinates the map stays unanchored: the
+    // default showcase center is not the user's location, so pointing at it
+    // would be dishonest. Explicit coordinates still anchor the view.
+    const hasUserCoords = input.lat !== undefined && input.lon !== undefined;
+    schematic = hasUserCoords
+      ? unknownSchematic(auditTimestamp, lat, lon)
+      : unknownSchematic(auditTimestamp);
     // Best-effort nearby points for uncovered areas. Failure (offline,
     // rate-limited) only omits the list — the answer still returns.
     try {
@@ -235,6 +247,35 @@ export async function answerTapWater(
       if (nearest.length > 0) schematic.nearbyDrinkingPoints = nearest;
     } catch {
       // Omit the list; honesty over completeness.
+    }
+    // Unsupported place: clear empty state with coverage, never a silent
+    // showcase default. Bypasses the narrator (nothing to narrate).
+    if (placeQuery) {
+      schematic.placeQuery = placeQuery;
+      const sample = listDirectorySystems()
+        .filter((s) => s.basins.length > 0)
+        .sort((a, b) => (b.populationServed ?? 0) - (a.populationServed ?? 0))
+        .slice(0, 8)
+        .map((s) => s.city);
+      return {
+        narrative: {
+          overview:
+            `"${placeQuery}" is not in the current snapshot. The snapshot covers major United States community water systems, ` +
+            `including ${sample.join(', ')}. Ask about one of these cities in plain words.`,
+          metricsSummary: 'No lab metrics are shown for areas outside the snapshot.',
+          complianceNote: 'Verify live records at the linked ECHO system profile.',
+          stewardshipNote: schematic.disclaimer,
+        },
+        groundTruth: schematic,
+        scope: 'water' as const,
+        validationStatus: {
+          passedLlmAudit: true,
+          auditTimestamp,
+          recordSource: effectiveRecordSource,
+          narrator: 'template' as const,
+          jev: 'skipped' as const,
+        },
+      };
     }
   } else if (effectivePwsid === 'NY7003493') {
     const basins = resolved.pwsid !== 'UNKNOWN' ? resolved.primaryBasins : (dirSystem?.basins.map((b) => b.name) ?? []);

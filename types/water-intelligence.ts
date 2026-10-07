@@ -165,6 +165,8 @@ export interface WaterOriginSchematic {
   waterUse?: WaterUseSplit;
   /** Vendored large conveyances (schematic, best effort). */
   conveyances?: ConveyanceRecord[];
+  /** Normalized "City, ST" asked for but outside the snapshot (empty-state path). */
+  placeQuery?: string;
   disclaimer: string;
 }
 
