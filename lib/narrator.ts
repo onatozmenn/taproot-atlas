@@ -22,7 +22,42 @@ function metricSentence(m: QualityMetricRecord): string {
   );
 }
 
-export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
+export type AnswerIntent = 'source' | 'quality' | 'pathway' | 'compliance' | 'general';
+
+/**
+ * Lightweight intent read for conversational answers. Keyword-only, no
+ * network, no LLM: it only decides which Resolver facts lead the overview.
+ * The full report (metrics, compliance, map) always stays in the cards.
+ */
+export function detectIntent(question: string): AnswerIntent {
+  const q = (question ?? '').toLowerCase();
+  const has = (...words: string[]) => words.some((w) => q.includes(w));
+  if (has('violation', 'compliance', 'echo', 'sdwis', 'mcl', 'exceed', 'within standard')) return 'compliance';
+  if (
+    has(
+      'lead', 'pfas', 'fluoride', 'chlorine', 'turbidity', 'coliform', 'copper',
+      'nitrate', 'arsenic', 'lithium', 'contain', 'what is in', "what's in",
+      'whats in', 'quality', 'healthy', 'safe to drink', 'drinkable',
+      'test', 'report', 'result',
+    )
+  ) {
+    return 'quality';
+  }
+  if (
+    has(
+      'how does', 'how do', 'reach', 'route', 'pathway', 'treatment',
+      'plant', 'pipe', 'aqueduct', 'flow', 'travel', 'journey',
+    )
+  ) {
+    return 'pathway';
+  }
+  if (has('where', 'come from', 'comes from', 'source', 'basin', 'watershed', 'reservoir', 'origin', 'map')) {
+    return 'source';
+  }
+  return 'general';
+}
+
+export function narrateGroundTruth(schematic: WaterOriginSchematic, question = ''): Narrative {
   const basins = schematic.primaryBasins;
   // Tier B directory entry: verified PWSID + city, basins not yet curated.
   const isTierB = schematic.pwsid !== 'UNKNOWN' && basins.length === 0;
@@ -60,28 +95,86 @@ export function narrateGroundTruth(schematic: WaterOriginSchematic): Narrative {
     schematic.sourceKind === 'groundwater' || schematic.sourceKind === 'surface'
       ? `This is a ${schematic.sourceKind} water system. `
       : '';
-  const hasFacilities = (schematic.sourceFacilities?.facilities.length ?? 0) > 0;
-  const facilitySentence = hasFacilities ? 'Reported source rows are listed below. ' : '';
-  const conveyanceSentence =
-    (schematic.conveyances?.length ?? 0) > 0 ? 'Large conveyances are shown schematically on the map. ' : '';
-  const useSentence = schematic.waterUse
-    ? `Modeled public-supply split for ${schematic.waterUse.referencePeriod} is about ${schematic.waterUse.surfacePct} percent surface water and ${schematic.waterUse.groundPct} percent groundwater. `
-    : '';
-  const upstreamSentence = schematic.upstream
-    ? `Upstream context lists ${schematic.upstream.upstreamCount} flowlines and ${schematic.upstream.stationCount} pre-treatment monitoring stations in range. `
-    : '';
-  const overview = isTierB
-    ? `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}). ` +
-      kindSentence +
-      'Source details for this system are not yet curated in the snapshot, ' +
-      'so verify live records at the linked ECHO profile. ' +
-      `${boundaryPhrase}; paths on the map are schematic approximations. ` +
-      `${pathwayPhrase}`
-    : `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}) ` +
-      `is sourced from ${basinPhrase}. ` +
-      `${kindSentence}${facilitySentence}${conveyanceSentence}${useSentence}${upstreamSentence}` +
-      `${detailPhrase} ` +
-      `${boundaryPhrase}; paths on the map are schematic approximations.`;
+  const overview = buildOverview();
+
+  function buildOverview(): string {
+    // Unknown areas and Tier B entries keep the honest legacy framing
+    // (tests and the ECHO pointer depend on it).
+    if (schematic.pwsid === 'UNKNOWN') {
+      return (
+        `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}) ` +
+        `is sourced from ${basinPhrase}. ` +
+        `${detailPhrase} ` +
+        `${boundaryPhrase}; paths on the map are schematic approximations.`
+      );
+    }
+    if (isTierB) {
+      return (
+        `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid}). ` +
+        kindSentence +
+        'Source details for this system are not yet curated in the snapshot, ' +
+        'so verify live records at the linked ECHO profile. ' +
+        `${boundaryPhrase}; paths on the map are schematic approximations. ` +
+        `${pathwayPhrase}`
+      );
+    }
+    // Known system with basins: answer the asked question first, like a
+    // normal chat turn, then point at the evidence cards below.
+    const head = `Water for public water system ${schematic.systemName} (PWSID: ${schematic.pwsid})`;
+    const tail = `${boundaryPhrase}; paths on the map are schematic approximations.`;
+    switch (detectIntent(question)) {
+      case 'source':
+        return (
+          `${head} comes from ${basinPhrase}. ` +
+          `${kindSentence}Full lab values and the compliance record are in the cards below. ` +
+          tail
+        );
+      case 'quality': {
+        if (allReported.length === 0) {
+          return (
+            `${head} has no curated lab metrics in the snapshot yet. ` +
+            'Verify live records at the linked ECHO profile. ' +
+            tail
+          );
+        }
+        const params = [...new Set(allReported.map((m) => m.parameter))].slice(0, 3).join(', ');
+        return (
+          `${head}: the ${allReported[0].provenance.reportPeriod} report lists ${params}. ` +
+          'Full values with thresholds and test dates are in the table below. ' +
+          tail
+        );
+      }
+      case 'pathway':
+        return (
+          `${head} travels a schematic route from source areas to the tap area, traced on the map below. ` +
+          tail
+        );
+      case 'compliance': {
+        if (schematic.regulatoryCompliance.snapshotPending) {
+          return (
+            `${head}: compliance records are not yet curated in the snapshot. ` +
+            `Verify live records at the linked ECHO system profile for the ${windowStart} to ${windowEnd} window. ` +
+            tail
+          );
+        }
+        return (
+          `${head} shows ${violationsText()} violations recorded from ${windowStart} to ${windowEnd}. ` +
+          'Details are linked below. ' +
+          tail
+        );
+      }
+      default:
+        return (
+          `${head} is sourced from ${basinPhrase}. ` +
+          `${kindSentence}Details on lab results, compliance, and the schematic route are in the cards below. ` +
+          tail
+        );
+    }
+  }
+
+  function violationsText(): number {
+    return schematic.regulatoryCompliance.totalViolationsFound;
+  }
 
   const metricsSummary =
     schematic.latestReportedMetrics.length > 0

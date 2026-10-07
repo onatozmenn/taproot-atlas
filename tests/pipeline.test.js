@@ -249,9 +249,32 @@ describe('answerTapWater', () => {
       { fetchEcho, recordSource: 'snapshot_fixture' },
     );
     assert.equal(res.scope, 'water');
+    // Source intent: the overview answers the asked question first...
     assert.ok(res.narrative.overview.includes('NY7003493'));
-    assert.ok(res.narrative.overview.includes('2024 Annual'));
+    assert.ok(res.narrative.overview.includes('Catskill'));
     assert.ok(!res.narrative.overview.includes('—'));
+    // ...while the full evidence stays in the report (cards + summaries).
+    assert.ok(res.narrative.metricsSummary.includes('2024 Annual'));
+    assert.ok(res.groundTruth.latestReportedMetrics.length >= 1);
+  });
+
+  it('quality questions lead with the report, not the basins', async () => {
+    const res = await answerTapWater(
+      { question: 'What is in my tap water?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'water');
+    assert.ok(res.narrative.overview.includes('2024 Annual'));
+    assert.ok(res.narrative.overview.includes('Turbidity'));
+  });
+
+  it('compliance questions lead with the violation window', async () => {
+    const res = await answerTapWater(
+      { question: 'Any violations in the last 5 years?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture' },
+    );
+    assert.equal(res.scope, 'water');
+    assert.ok(res.narrative.overview.includes('2021-01-01'));
   });
 
   it('unknown areas get pending compliance, never a zero-violations claim', async () => {

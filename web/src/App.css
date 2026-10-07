@@ -71,7 +71,7 @@ body { margin: 0; font-family: var(--font-body); color: var(--ink); background: 
   resize: none; overflow: hidden; line-height: 1.5;
   padding: 12px 0; margin: 0;
 }
-.composer textarea::placeholder { color: var(--faint); }
+.composer textarea::placeholder { color: var(--faint); user-select: none; -webkit-user-select: none; }
 /* No rectangular ring on the textbox itself (see SS): the pill carries focus. */
 .composer input:focus { outline: none; box-shadow: none; }
 .composer textarea:focus { outline: none; box-shadow: none; }

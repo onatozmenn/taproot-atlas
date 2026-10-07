@@ -398,7 +398,7 @@ export default function App() {
                 onLocate={toggleLocate}
                 locating={locating}
                 coordsActive={coords !== null}
-                placeholder="Ask where it comes from, what's in it, or how it reaches you…"
+                placeholder="Ask Taproot"
                 inputRef={inputRef}
                 label="Ask about your tap water"
               />
@@ -469,7 +469,7 @@ export default function App() {
                 onLocate={toggleLocate}
                 locating={locating}
                 coordsActive={coords !== null}
-            placeholder="Ask where it comes from, what's in it, or how it reaches you…"
+            placeholder="Ask Taproot"
             label="Ask a follow-up"
           />
           <p className="foot-note">
