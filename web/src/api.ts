@@ -1,6 +1,7 @@
 // Live data-service: calls the deterministic core pipeline (snapshot-backed,
 // no network) and shapes ValidatedApiResponse for the chat UI.
 import { answerTapWater } from '../../lib/pipeline';
+import { listDirectorySystems } from '../../lib/systems';
 import type {
   QualityMetricRecord,
   ValidatedApiResponse,
@@ -37,6 +38,10 @@ export interface TapAnswer {
   } | null;
   waterUse: { surfacePct: number; groundPct: number; referencePeriod: string; sourceUrl: string } | null;
   conveyances: Array<{ name: string }>;
+  /** Normalized "City, ST" for unsupported-place empty states; null otherwise. */
+  place: string | null;
+  /** Sample of supported city names for the empty state (client-side). */
+  coverage: string[];
   /** Compliance tier for the window (descriptive, never a verdict). */
   recordTier: 'unknown-pending' | 'none-found' | 'monitoring-only' | 'health-based' | 'other';
   basins: string[];
@@ -104,6 +109,15 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
         }
       : null,
     conveyances: (res.groundTruth.conveyances ?? []).map((c) => ({ name: c.name })),
+    place: res.groundTruth.placeQuery ?? null,
+    coverage:
+      res.groundTruth.pwsid === 'UNKNOWN'
+        ? listDirectorySystems()
+            .slice()
+            .sort((a, b) => (b.populationServed ?? 0) - (a.populationServed ?? 0))
+            .slice(0, 12)
+            .map((s) => `${s.city}, ${s.state}`)
+        : [],
     recordTier: res.groundTruth.regulatoryCompliance.snapshotPending
       ? 'unknown-pending'
       : res.groundTruth.regulatoryCompliance.totalViolationsFound === 0

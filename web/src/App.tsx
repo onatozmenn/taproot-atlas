@@ -1,227 +1,91 @@
+import { Map as MapIcon, MoonIcon, SunIcon } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  ArrowUp01Icon,
-  Attachment01Icon,
-  Copy01Icon,
-  Mic01Icon,
-  Refresh01Icon,
-  StopIcon,
-  Tick02Icon,
-  Location01Icon,
-} from '@hugeicons/core-free-icons';
+import { useTheme } from 'next-themes';
+import { toast } from 'sonner';
 import { askTapWater, type TapAnswer } from './api';
 import { suggestFollowUps } from './suggest';
-import { AnswerCard, SourcePanel } from './components/Answer';
-import { Logo } from './components/Logo';
-
-interface Msg {
-  id: number;
-  role: 'user' | 'assistant';
-  text?: string;
-  answer?: TapAnswer;
-}
+import { AppSidebar } from './components/app-sidebar';
+import { AtlasPanel, type AtlasTab } from './components/atlas/atlas-panel';
+import { ChatPane, type ChatMsg } from './components/chat-pane';
+import { CommandPalette, CommandPaletteButton, useCommandPalette } from './components/command-palette';
+import { Composer } from './components/composer';
+import { Suggestion, Suggestions } from './components/ai-elements/suggestion';
+import { Button } from './components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from './components/ui/sidebar';
+import { useIsMobile } from './hooks/use-mobile';
 
 let nextId = 1;
 
-/* ---- inline stroke icons (no emoji) ---- */
-/**
- * America.gov-style thinking indicator: "Thinking..." and
- * "Working through your request..." alternate while one word at a time
- * turns bold/dark, sweeping left to right in a loop.
- */
-const THINKING_PHRASES = ['Thinking...', 'Working through your request...'];
+const LANDING_EXAMPLES = [
+  'Where does Chicago tap water come from?',
+  'Any violations in the last 5 years?',
+  'Los Angeles water?',
+  'How does my water reach my tap?',
+];
 
-// Flattened animation steps: [phraseIndex, wordIndex]. Boundary steps are
-// repeated so each phrase holds briefly before switching.
-const THINKING_STEPS: Array<[number, number]> = (() => {
-  const steps: Array<[number, number]> = [];
-  THINKING_PHRASES.forEach((phrase, p) => {
-    const n = phrase.split(' ').length;
-    for (let w = 0; w < n; w++) {
-      steps.push([p, w]);
-      if (w === 0 || w === n - 1) steps.push([p, w]);
-    }
-  });
-  return steps;
-})();
+const HISTORY_KEY = 'taproot-history';
 
-function WorkingIndicator() {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    ) {
-      return;
-    }
-    const t = setInterval(() => setTick((x) => x + 1), 300);
-    return () => clearInterval(t);
-  }, []);
-  const [pi, wi] = THINKING_STEPS[tick % THINKING_STEPS.length];
-  const words = THINKING_PHRASES[pi].split(' ');
-  return (
-    <div className="working" role="status" aria-label={THINKING_PHRASES[pi]}>
-      {words.map((w, i) => (
-        <span key={`${pi}-${i}`} className={i === wi ? 'w on' : 'w'}>
-          {w}
-          {i < words.length - 1 ? ' ' : ''}
-        </span>
-      ))}
-    </div>
-  );
+function loadHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const arr: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter((q): q is string => typeof q === 'string').slice(0, 10) : [];
+  } catch {
+    return [];
+  }
 }
 
-interface ComposerProps {
-  value: string;
-  onChange: (v: string) => void;
-  onSubmit: () => void;
-  busy: boolean;
-  onStop: () => void;
-  onVoice: () => void;
-  listening: boolean;
-  onAttach: (file: File) => void;
-  onLocate: () => void;
-  locating: boolean;
-  coordsActive: boolean;
-  placeholder: string;
-  inputRef?: { current: HTMLTextAreaElement | null };
-  label: string;
+function tabHintForChip(chip: string): AtlasTab | null {
+  const c = chip.toLowerCase();
+  if (c.includes('watershed map') || c.includes('map')) return 'pathway';
+  if (c.includes('violation')) return 'compliance';
+  if (c.includes('report') || c.includes('test')) return 'quality';
+  return null;
 }
 
-const COMPOSER_MAX_HEIGHT = 160;
-
-function Composer(p: ComposerProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const areaRef = useRef<HTMLTextAreaElement | null>(null);
-  const [multiline, setMultiline] = useState(false);
-  const hasText = p.value.trim().length > 0;
-
-  const autosize = (el: HTMLTextAreaElement | null) => {
-    if (!el) return;
-    el.style.height = 'auto';
-    const grown = Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT);
-    el.style.height = `${grown}px`;
-    el.style.overflowY = el.scrollHeight > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden';
-    setMultiline(grown > el.clientHeight + 4 || el.value.includes('\n'));
-  };
-
-  // Shrink back after send clears the value.
-  useEffect(() => {
-    if (p.value === '') {
-      setMultiline(false);
-      if (areaRef.current) {
-        areaRef.current.style.height = 'auto';
-        areaRef.current.style.overflowY = 'hidden';
-      }
-    }
-  }, [p.value]);
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = resolvedTheme === 'dark';
   return (
-    <form
-      className={`composer${multiline ? ' multiline' : ''}`}
-      role="search"
-      aria-label={p.label}
-      onSubmit={(e) => {
-        e.preventDefault();
-        p.onSubmit();
-      }}
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(dark ? 'light' : 'dark')}
+      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={dark ? 'Light theme' : 'Dark theme'}
     >
-      <textarea
-        ref={(el) => {
-          areaRef.current = el;
-          if (p.inputRef) p.inputRef.current = el;
-        }}
-        rows={1}
-        value={p.value}
-        onChange={(e) => {
-          p.onChange(e.target.value);
-          autosize(e.target);
-        }}
-        onKeyDown={(e) => {
-          // Enter sends, Shift+Enter breaks the line (desktop).
-          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-            e.preventDefault();
-            p.onSubmit();
-          }
-        }}
-        placeholder={p.placeholder}
-        aria-label={p.label}
-        maxLength={2000}
-      />
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".txt,.md,.csv,.json"
-        hidden
-        aria-hidden="true"
-        tabIndex={-1}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) p.onAttach(f);
-          e.target.value = '';
-        }}
-      />
-      <button
-        type="button"
-        className="tool-btn"
-        aria-label="Attach a text file"
-        title="Attach a text file (.txt, .md, .csv, .json)"
-        onClick={() => fileRef.current?.click()}
-      >
-        <HugeiconsIcon icon={Attachment01Icon} size={21} />
-      </button>
-      <button
-        type="button"
-        className={`tool-btn${p.listening ? ' live' : ''}`}
-        aria-label={p.listening ? 'Listening…' : 'Ask by voice'}
-        title="Ask by voice"
-        onClick={p.onVoice}
-      >
-        <HugeiconsIcon icon={Mic01Icon} size={21} />
-      </button>
-      <button
-        type="button"
-        className={`tool-btn${p.coordsActive ? ' live' : ''}`}
-        aria-label={p.coordsActive ? 'Location on — tap to turn off' : 'Use my location'}
-        title={p.coordsActive ? 'Location on — tap to turn off' : 'Use my location'}
-        aria-pressed={p.coordsActive}
-        onClick={p.onLocate}
-        disabled={p.locating}
-      >
-        <HugeiconsIcon icon={Location01Icon} size={21} />
-      </button>
-      {p.busy ? (
-        <button type="button" className="send-btn working" aria-label="Stop" title="Stop" onClick={p.onStop}>
-          <HugeiconsIcon icon={StopIcon} size={15} />
-        </button>
-      ) : (
-        <button
-          type="submit"
-          className={`send-btn${hasText ? ' ready' : ''}`}
-          disabled={!hasText}
-          aria-label="Send"
-          title="Send"
-        >
-          <HugeiconsIcon icon={ArrowUp01Icon} size={20} />
-        </button>
-      )}
-    </form>
+      {dark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+    </Button>
   );
 }
 
 export default function App() {
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [locating, setLocating] = useState(false);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const [history, setHistory] = useState<string[]>(loadHistory);
+  const [atlasTab, setAtlasTab] = useState<AtlasTab>('source');
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useCommandPalette();
+  const isMobile = useIsMobile();
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestion = useRef('');
+  const tabHint = useRef<AtlasTab | null>(null);
+
+  const empty = messages.length === 0;
+  const latestAnswer = [...messages].reverse().find((m) => m.role === 'assistant' && m.answer)?.answer ?? null;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch {
+      // Private mode: history stays in memory only.
+    }
+  }, [history]);
 
   async function send(question: string) {
     const q = question.trim().slice(0, 2000);
@@ -229,28 +93,29 @@ export default function App() {
     const controller = new AbortController();
     abortRef.current = controller;
     setBusy(true);
-    setError(null);
     lastQuestion.current = q;
     setMessages((m) => [...m, { id: nextId++, role: 'user', text: q }]);
     setInput('');
+    setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 10));
     try {
       const answer = await askTapWater(q, {
         signal: controller.signal,
         ...(coords ? { lat: coords.lat, lon: coords.lon } : {}),
       });
       setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer }]);
+      setAtlasTab(tabHint.current ?? 'source');
+      if (isMobile) setSheetOpen(true);
     } catch (e) {
       if (controller.signal.aborted) {
         // User pressed Stop: silently drop the pending turn.
       } else {
-        setError(e instanceof Error ? e.message : 'Lookup failed. Check your connection and retry.');
+        const msg = e instanceof Error ? e.message : 'Lookup failed. Check your connection and retry.';
+        toast.error(msg, { action: { label: 'Retry', onClick: () => void send(lastQuestion.current) } });
       }
     } finally {
+      tabHint.current = null;
       abortRef.current = null;
       setBusy(false);
-      requestAnimationFrame(() =>
-        boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight, behavior: 'smooth' }),
-      );
     }
   }
 
@@ -258,16 +123,33 @@ export default function App() {
     abortRef.current?.abort();
   }
 
-  const empty = messages.length === 0;
+  function newQuery() {
+    stop();
+    setMessages([]);
+    setInput('');
+  }
 
-  async function copyAnswer(id: number, text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(id);
-      setTimeout(() => setCopied((c) => (c === id ? null : c)), 1500);
-    } catch {
-      setCopied(null);
+  function onChip(chip: string) {
+    // The watershed-map chip only switches the Atlas panel to the Pathway
+    // tab: re-asking would just re-append a full copy of the previous answer.
+    if (chip.toLowerCase().includes('watershed map')) {
+      setAtlasTab('pathway');
+      if (isMobile) setSheetOpen(true);
+      return;
     }
+    tabHint.current = tabHintForChip(chip);
+    void send(chip);
+  }
+
+  function chipsFor(answer: TapAnswer): string[] {
+    if (answer.scope === 'redirect') return [];
+    return suggestFollowUps({
+      violations: answer.violations,
+      windowStart: answer.windowStart,
+      windowEnd: answer.windowEnd,
+      boundaryType: answer.boundaryType,
+      metrics: answer.metrics.map((m) => ({ parameter: m.parameter, reportPeriod: m.provenance.reportPeriod })),
+    });
   }
 
   function toggleLocate() {
@@ -276,7 +158,7 @@ export default function App() {
       return;
     }
     if (!('geolocation' in navigator)) {
-      setError('Geolocation is not available in this browser.');
+      toast.error('Geolocation is not available in this browser.');
       return;
     }
     setLocating(true);
@@ -284,11 +166,11 @@ export default function App() {
       (pos) => {
         setLocating(false);
         setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        inputRef.current?.focus();
+        toast.success('Location on. It will be sent with your next question.');
       },
       () => {
         setLocating(false);
-        setError('Could not read your location. Check the browser permission and retry.');
+        toast.error('Could not read your location. Check the browser permission and retry.');
       },
       { timeout: 10000, maximumAge: 300000 },
     );
@@ -299,7 +181,7 @@ export default function App() {
       (window as unknown as Record<string, unknown>).SpeechRecognition ??
       (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
     if (typeof SR !== 'function') {
-      inputRef.current?.focus();
+      toast.error('Voice input is not available in this browser.');
       return;
     }
     try {
@@ -329,155 +211,106 @@ export default function App() {
 
   async function attachFile(file: File) {
     if (file.size > 200 * 1024) {
-      setError('File is too large. Attach a text file under 200 KB.');
+      toast.error('File is too large. Attach a text file under 200 KB.');
       return;
     }
     try {
       const text = (await file.text()).slice(0, 2000);
       setInput((cur) => `${cur}${cur && !cur.endsWith(' ') ? ' ' : ''}${text}`.slice(0, 2000));
-      inputRef.current?.focus();
     } catch {
-      setError('Could not read that file. Try a .txt, .md, .csv or .json file.');
+      toast.error('Could not read that file. Try a .txt, .md, .csv or .json file.');
     }
   }
 
-  const submit = () => void send(input);
-
-  function chipsFor(answer: TapAnswer): string[] {
-    if (answer.scope === 'redirect') return [];
-    return suggestFollowUps({
-      violations: answer.violations,
-      windowStart: answer.windowStart,
-      windowEnd: answer.windowEnd,
-      boundaryType: answer.boundaryType,
-      metrics: answer.metrics.map((m) => ({ parameter: m.parameter, reportPeriod: m.provenance.reportPeriod })),
-    });
-  }
+  const composerProps = {
+    input,
+    onInputChange: setInput,
+    onSend: (t: string) => void send(t),
+    busy,
+    onStop: stop,
+    onAttachFile: attachFile,
+    onVoice: toggleVoice,
+    listening,
+    onLocate: toggleLocate,
+    locating,
+    coordsActive: coords !== null,
+  };
 
   return (
-    <div className="page">
-      <a className="skip-link" href="#chat">Skip to conversation</a>
-
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="Taproot Atlas, reload homepage">
-          <Logo size={26} />
-          <span className="wordmark">Taproot Atlas</span>
+    <SidebarProvider>
+      <AppSidebar history={history} onNewQuery={newQuery} onHistorySelect={(q) => void send(q)} />
+      <SidebarInset>
+        <a className="sr-only focus:not-sr-only" href="#chat">
+          Skip to conversation
         </a>
-        {!empty && (
-          <button
-            className="restart-btn"
-            type="button"
-            aria-label="Start over"
-            title="Start over"
-            onClick={() => {
-              stop();
-              setMessages([]);
-              setError(null);
-            }}
-          >
-            <HugeiconsIcon icon={Refresh01Icon} size={28} strokeWidth={2.2} />
-          </button>
-        )}
-      </header>
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur">
+          <SidebarTrigger aria-label="Toggle sidebar" />
+          <span className="font-display text-lg font-medium md:hidden">Taproot Atlas</span>
+          <div className="ml-auto flex items-center gap-1.5">
+            {latestAnswer && isMobile && (
+              <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
+                <MapIcon className="mr-1 size-4" /> Atlas
+              </Button>
+            )}
+            <span className="hidden sm:block">
+              <CommandPaletteButton onClick={() => setPaletteOpen(true)} />
+            </span>
+            <ThemeToggle />
+          </div>
+        </header>
 
-      <main className="chat" ref={boxRef} id="chat" aria-live="polite">
         {empty ? (
-          <div className="hero">
-            <h1>Where does your tap water come from, what's in it, how does it reach you?</h1>
-            <p className="lede">Source basins, reported lab results with EPA compliance, and the schematic source-to-tap pathway. Start here.</p>
-            <div className="hero-composer">
-              <Composer
-                value={input}
-                onChange={setInput}
-                onSubmit={submit}
-                busy={false}
-                onStop={stop}
-                onVoice={toggleVoice}
-                listening={listening}
-                onAttach={attachFile}
-                onLocate={toggleLocate}
-                locating={locating}
-                coordsActive={coords !== null}
-                placeholder="Ask Taproot"
-                inputRef={inputRef}
-                label="Ask about your tap water"
+          <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-10">
+            <div className="text-center">
+              <h1 className="font-display text-4xl font-medium tracking-tight sm:text-5xl">
+                Where does your tap water come from, what&apos;s in it, how does it reach you?
+              </h1>
+              <p className="mt-3 text-muted-foreground">
+                Source basins, reported lab results with EPA compliance, and the schematic source-to-tap
+                pathway. Start here.
+              </p>
+            </div>
+            <div className="w-full">
+              <Composer {...composerProps} label="Ask about your tap water" />
+            </div>
+            <Suggestions aria-label="Example questions">
+              {LANDING_EXAMPLES.map((q) => (
+                <Suggestion key={q} suggestion={q} disabled={busy} onClick={(s) => void send(s)} />
+              ))}
+            </Suggestions>
+          </main>
+        ) : (
+          <main id="chat" aria-live="polite" className="flex min-h-0 flex-1 gap-0">
+            <div className="flex min-h-0 min-w-0 flex-1 basis-[40%] flex-col">
+              <ChatPane
+                messages={messages}
+                {...composerProps}
+                label="Ask a follow-up"
+                chipsFor={chipsFor}
+                onChip={(chip) => onChip(chip)}
               />
             </div>
-          </div>
-        ) : (
-          <>
-            {messages.map((m) =>
-              m.role === 'user' ? (
-                <div key={m.id} className="bubble-row user-row">
-                  <div className="bubble user-bubble">{m.text}</div>
-                </div>
-              ) : (
-                <div key={m.id} className="assistant-block">
-                  {m.answer && <AnswerCard answer={m.answer} />}
-                  {m.answer && m.answer.scope !== 'redirect' && chipsFor(m.answer).length > 0 && (
-                    <div className="chip-row" aria-label="Suggested follow-ups">
-                      {chipsFor(m.answer).map((chip) => (
-                        <button
-                          key={chip}
-                          type="button"
-                          className="chip"
-                          disabled={busy}
-                          onClick={() => void send(chip)}
-                        >
-                          {chip}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <div className="attrib" aria-label="Answer actions">
-                    {m.answer && m.answer.scope !== 'redirect' && <SourcePanel answer={m.answer} />}
-                    <button
-                      type="button"
-                      className="icon-pill solo"
-                      aria-label="Copy"
-                      title={copied === m.id ? 'Copied' : 'Copy answer'}
-                      onClick={() => m.answer && void copyAnswer(m.id, m.answer.overview)}
-                    >
-                      {copied === m.id ? <HugeiconsIcon icon={Tick02Icon} size={17} /> : <HugeiconsIcon icon={Copy01Icon} size={17} />}
-                    </button>
-                  </div>
-                </div>
-              ),
-            )}
-            {busy && <WorkingIndicator />}
-          </>
+            <aside className="hidden min-h-0 w-[60%] min-w-0 flex-col border-l md:flex" aria-label="Atlas panel">
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                <AtlasPanel answer={latestAnswer} tab={atlasTab} onTabChange={setAtlasTab} loading={busy} />
+              </div>
+            </aside>
+          </main>
         )}
-        {error && (
-          <div className="error-box" role="alert">
-            <p>{error}</p>
-            <button type="button" onClick={() => void send(lastQuestion.current)}>Retry</button>
-          </div>
-        )}
-      </main>
 
-      {!empty && (
-        <footer className="composer-wrap">
-          <Composer
-            value={input}
-            onChange={setInput}
-            onSubmit={submit}
-            busy={busy}
-            onStop={stop}
-            onVoice={toggleVoice}
-            listening={listening}
-            onAttach={attachFile}
-                onLocate={toggleLocate}
-                locating={locating}
-                coordsActive={coords !== null}
-            placeholder="Ask Taproot"
-            label="Ask a follow-up"
-          />
-          <p className="foot-note">
-            Demonstration snapshot · EPA / NYC open data · Reports only. Never a safety verdict. Verify at the
-            official source.
-          </p>
-        </footer>
-      )}
-    </div>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto" aria-label="Atlas panel">
+            <SheetHeader>
+              <SheetTitle className="font-display">Atlas</SheetTitle>
+            </SheetHeader>
+            <div className="mt-3">
+              <AtlasPanel answer={latestAnswer} tab={atlasTab} onTabChange={setAtlasTab} loading={busy} />
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={(q) => void send(q)} />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

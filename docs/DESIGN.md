@@ -121,7 +121,7 @@ Same skeleton, water content, custom brand. AI screen only — no landing.
 | `Whatever you need from government, start here.` | `Whatever you need to know about your water, start here.` |
 | Placeholder `Help me find a new job` | Rotating water prompts (`Where does my tap water come from?` …) |
 | Sources = .gov links | Sources = ECHO profile + DEP filing + versioned snapshot |
-| Next steps = agency tasks | No next-step chips; the user just asks |
+| Next steps = agency tasks | Scoped follow-up Suggestion chips (map chip switches Atlas tab, others re-ask) |
 | Map: none | Schematic map card (our domain addition, same card language) |
 | Flag / eagle brand | Custom droplet logo (no flag) — `web/src/components/Logo.tsx` |
 
@@ -142,7 +142,7 @@ framing, never `safe/drinkable/pure` (`lib/guardrails.ts`).
 - `web/src/components/Answer.tsx` — answer card with markdown overview,
   Protomaps/MapLibre schematic, metric cards, and the EPA compliance block
   (internal audit lines are never rendered; provenance lives on the links).
-- `web/src/suggest.ts` — not rendered in the UI (kept + tested as a fact-only chip contract for possible future use).
+- `web/src/suggest.ts` — fact-only follow-up chip contract (rendered as AI Elements `Suggestion` pills; `unverified_fallback` gets none).
 
 ## 5. Screenshot audit (2026-10-05, user-provided SS ×3) — applied pixel notes
 
@@ -164,8 +164,10 @@ Thread + working + done states of the campsite conversation:
   + `[copy pill]`, all `#f1f5f9` radius 999. → Ours: same row with
   `systemName · PWSID` source pill; icon-only rate/copy buttons (aria
   labels kept, so existing tests hold).
-- Follow-ups: omitted in our build - no chips anywhere (see above).
-  (`#e2e8f0` border, radius 20, 17×26px, 16.5px slate text).
+- Follow-ups: AI Elements `Suggestion` chips under each water answer
+  (`outline`, `rounded-full`). The watershed-map chip switches the Atlas panel
+  to the Pathway tab without re-asking; violation/metric chips send scoped
+  follow-ups that render only the new answer.
 - Composer (all states): 2px near-black (`#101828`) pill, min-height 76,
   30px left padding, `Ask anything…` `#94a3b8` placeholder; right cluster
   clip + mic (ink) + 48px send circle. Idle: `#f1f5f9` fill, faint arrow,
@@ -197,7 +199,7 @@ Thread + working + done states of the campsite conversation:
 - [ ] Header: logo left, subtle Start over right (in thread only), 68–76px, no menu.
 - [ ] Hero centered, H1 clamp(40–56px), sub muted, spacing per §1.3.
 - [ ] Search pill w/ shadow, mic + navy send inside, focus ring.
-- [ ] No chips anywhere (hero starters and follow-ups both omitted per product request).
+- [ ] Landing hero + example Suggestion chips; thread follow-up chips switch tabs or re-ask (never duplicate answers).
 - [ ] Privacy microcopy under composer.
 - [ ] Thread: right gray user bubble, full-width assistant, source + next-step
       anatomy, typing pulse, Start over, feedback/copy.
