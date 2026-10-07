@@ -1,14 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-display);
-    --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
-    --font-sans: 'Geist Variable', system-ui, sans-serif;
+    --font-display: 'Newsreader', 'Times New Roman', Times, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif;
+    --ease-out-quint: cubic-bezier(.22, 1, .36, 1);
+    --ease-out-cubic: cubic-bezier(.215, .61, .355, 1);
+    --ease-standard: cubic-bezier(.4, 0, .2, 1);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,84 +51,169 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* America.gov-parity tokens: white page, deep navy ink (#000c1f) with
+   alpha steps for secondary text and hairlines, navy primary, link blue. */
 :root {
-    --background: oklch(0.99 0.005 240);
-    --foreground: oklch(0.22 0.03 250);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.22 0.03 250);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.22 0.03 250);
-    /* Deep navy primary, teal accent. */
-    --primary: oklch(0.32 0.1 255);
-    --primary-foreground: oklch(0.98 0.01 240);
-    --secondary: oklch(0.94 0.02 240);
-    --secondary-foreground: oklch(0.32 0.1 255);
-    --muted: oklch(0.94 0.02 240);
-    --muted-foreground: oklch(0.5 0.04 250);
-    --accent: oklch(0.9 0.05 200);
-    --accent-foreground: oklch(0.28 0.09 240);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.9 0.02 240);
-    --input: oklch(0.9 0.02 240);
-    --ring: oklch(0.6 0.12 230);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.96 0.015 245);
-    --sidebar-foreground: oklch(0.25 0.05 250);
-    --sidebar-primary: oklch(0.32 0.1 255);
-    --sidebar-primary-foreground: oklch(0.98 0.01 240);
-    --sidebar-accent: oklch(0.9 0.05 200);
-    --sidebar-accent-foreground: oklch(0.28 0.09 240);
-    --sidebar-border: oklch(0.9 0.02 240);
-    --sidebar-ring: oklch(0.6 0.12 230);
+    --background: #ffffff;
+    --foreground: #000c1f;
+    --card: #ffffff;
+    --card-foreground: #000c1f;
+    --popover: #ffffff;
+    --popover-foreground: #000c1f;
+    --primary: #000c1f;
+    --primary-foreground: #ffffff;
+    --secondary: #0026640d;
+    --secondary-foreground: #000c1f;
+    --muted: #f7f7f7;
+    --muted-foreground: #000c1fa6;
+    --accent: #0026640d;
+    --accent-foreground: #000c1f;
+    --destructive: #d80007;
+    --border: #000c1f1a;
+    --input: #000c1f1a;
+    --ring: #0066c5;
+    --link: #0066c5;
+    --tertiary: #000c1f73;
+    --chart-1: #002664;
+    --chart-2: #0066c5;
+    --chart-3: #007f26;
+    --chart-4: #000c1f73;
+    --chart-5: #d80007;
+    --radius: 1rem;
+    --shadow-elevation-1: 0 10px 40px 0 #010e2414;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #000c1f;
+    --sidebar-primary: #000c1f;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #0026640d;
+    --sidebar-accent-foreground: #000c1f;
+    --sidebar-border: #000c1f1a;
+    --sidebar-ring: #0066c5;
 }
 
 .dark {
-    --background: oklch(0.19 0.03 255);
-    --foreground: oklch(0.94 0.015 240);
-    --card: oklch(0.23 0.035 255);
-    --card-foreground: oklch(0.94 0.015 240);
-    --popover: oklch(0.23 0.035 255);
-    --popover-foreground: oklch(0.94 0.015 240);
-    --primary: oklch(0.75 0.1 230);
-    --primary-foreground: oklch(0.2 0.04 255);
-    --secondary: oklch(0.28 0.05 255);
-    --secondary-foreground: oklch(0.94 0.015 240);
-    --muted: oklch(0.28 0.05 255);
-    --muted-foreground: oklch(0.7 0.04 240);
-    --accent: oklch(0.32 0.07 220);
-    --accent-foreground: oklch(0.94 0.015 240);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.6 0.12 230);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --background: #050b16;
+    --foreground: #eef2f8;
+    --card: #0b1424;
+    --card-foreground: #eef2f8;
+    --popover: #0b1424;
+    --popover-foreground: #eef2f8;
+    --primary: #eef2f8;
+    --primary-foreground: #050b16;
+    --secondary: #ffffff12;
+    --secondary-foreground: #eef2f8;
+    --muted: #ffffff0d;
+    --muted-foreground: #eef2f8a6;
+    --accent: #ffffff12;
+    --accent-foreground: #eef2f8;
+    --destructive: #ff5a5f;
+    --border: #ffffff1a;
+    --input: #ffffff26;
+    --ring: #5aa9ff;
+    --link: #7cb8ff;
+    --tertiary: #eef2f873;
+    --chart-1: #7cb8ff;
+    --chart-2: #5aa9ff;
+    --chart-3: #4ed08a;
+    --chart-4: #eef2f873;
+    --chart-5: #ff5a5f;
+    --shadow-elevation-1: 0 10px 40px 0 #00000066;
+    --sidebar: #050b16;
+    --sidebar-foreground: #eef2f8;
+    --sidebar-primary: #eef2f8;
+    --sidebar-primary-foreground: #050b16;
+    --sidebar-accent: #ffffff12;
+    --sidebar-accent-foreground: #eef2f8;
+    --sidebar-border: #ffffff1a;
+    --sidebar-ring: #5aa9ff;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
-    @apply bg-background text-foreground;
-    }
+    @apply bg-background text-foreground antialiased;
+    font-size: 16px;
+    line-height: 1.5;
+  }
   html {
     @apply font-sans;
-    }
+  }
 }
+
+/* ---------- Motion (values mirror america.gov's chat stylesheet) ---------- */
+@keyframes text-shimmer { from { background-position: 100% } to { background-position: 0% } }
+@keyframes dot-pulse { 0%, 100% { opacity: .2 } 50% { opacity: 1 } }
+@keyframes option-pill-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes message-action-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes rich-content-in { from { opacity: 0; filter: blur(6px); transform: translateY(10px) scale(.99) } to { opacity: 1; filter: none; transform: none } }
+@keyframes message-in-rise { from { transform: translate3d(0, 20px, 0) scale(.96) } to { transform: none } }
+@keyframes message-in-sharpen { from { opacity: 0; filter: blur(10px) } to { opacity: 1; filter: none } }
+@keyframes word-blur-in { from { opacity: 0; filter: blur(4px) } to { opacity: 1; filter: none } }
+@keyframes chat-surface-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes stagger-entrance-in {
+  0% { opacity: 0; filter: blur(12px); transform: translateY(24px) scale(.97) }
+  35% { opacity: 1 }
+  100% { opacity: 1; filter: none; transform: none }
+}
+@keyframes feedback-popover-in { from { opacity: .35; scale: .8 } to { opacity: 1; scale: 1 } }
+
+.text-shimmer {
+  --spread: 1.75em;
+  background-image:
+    linear-gradient(90deg, transparent calc(50% - var(--spread)), var(--foreground), transparent calc(50% + var(--spread))),
+    linear-gradient(var(--tertiary), var(--tertiary));
+  background-size: 250% 100%, auto;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 2s linear infinite;
+}
+.animate-message-in {
+  animation:
+    message-in-rise .44s var(--ease-standard) backwards,
+    message-in-sharpen .44s var(--ease-standard) backwards;
+}
+.animate-rich-content-in { transform-origin: top; animation: rich-content-in .46s var(--ease-out-quint) both; }
+.animate-option-pill-in { animation: option-pill-in .28s var(--ease-out-quint) both; }
+.animate-message-action-in { animation: message-action-in .3s linear both; }
+.animate-chat-surface-in { animation: chat-surface-in .26s var(--ease-out-cubic) .14s backwards; }
+.animate-feedback-popover-in { animation: feedback-popover-in .18s var(--ease-out-quint) both; }
+.word-in { animation: word-blur-in .32s ease both; }
+.stagger-entrance > * {
+  animation: stagger-entrance-in .9s cubic-bezier(.16, 1, .3, 1) both;
+  animation-delay: calc(var(--stagger-index, 0) * .12s);
+}
+.dot-pulse { animation: dot-pulse 1.2s ease-in-out infinite; }
+.press { transition: color .2s var(--ease-out-quint), background-color .2s var(--ease-out-quint), border-color .2s var(--ease-out-quint), box-shadow .2s var(--ease-out-quint), scale .2s var(--ease-out-quint), opacity .2s var(--ease-out-quint); }
+.press:active:not(:disabled) { scale: .97; }
+
+@media (prefers-reduced-motion: reduce) {
+  .text-shimmer, .animate-message-in, .animate-rich-content-in, .animate-option-pill-in,
+  .animate-message-action-in, .animate-chat-surface-in, .word-in, .stagger-entrance > *,
+  .dot-pulse, .animate-feedback-popover-in { animation: none !important; }
+}
+
+/* ---------- Answer prose ---------- */
+.answer-prose { font-size: 17px; line-height: 1.6; color: var(--foreground); }
+.answer-prose p { margin: 0 0 .85em; }
+.answer-prose p:last-child { margin-bottom: 0; }
+.answer-prose h4 { font-size: 17px; font-weight: 700; margin: 1.3em 0 .5em; }
+.answer-prose strong { font-weight: 650; }
+.answer-prose ul, .answer-prose ol { margin: .4em 0 1em; padding-left: 1.3em; }
+.answer-prose ul { list-style: disc; }
+.answer-prose ol { list-style: decimal; }
+.answer-prose li { margin: .35em 0; padding-left: .2em; }
+.answer-prose li::marker { color: var(--tertiary); }
+.answer-prose a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+.answer-prose code { background: var(--muted); padding: 1px 5px; border-radius: 6px; font-size: .9em; }
+
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+@keyframes landing-dissolve-out { from { opacity: 1; transform: scale(1) } to { opacity: 0; transform: scale(.985) } }
+.landing-dissolve-out { will-change: opacity, transform; animation: landing-dissolve-out .24s var(--ease-out-cubic) forwards; }
+
+/* Records card: the atlas cards sit flush inside the rich content card. */
+.evidence [data-slot='card'] { border: 0; box-shadow: none; background: transparent; padding-top: .25rem; padding-bottom: .25rem; }

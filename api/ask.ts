@@ -18,7 +18,7 @@ import { fetchDistributionMetrics } from '../lib/distribution.js';
 import { fetchUpstreamSummary } from '../lib/nldi.js';
 
 interface AskRequest {
-  body?: { question?: unknown; lat?: unknown; lon?: unknown };
+  body?: { question?: unknown; lat?: unknown; lon?: unknown; contextPwsid?: unknown };
   method?: string;
   headers?: Record<string, string | string[] | undefined>;
   ip?: string;
@@ -135,14 +135,16 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
   const jevKey = process.env.JEV_API_KEY ?? '';
   const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://opencode.ai/zen';
   const jevModel = process.env.JEV_MODEL ?? 'jev-1.13-free';
-  // Live SDWIS compliance (Envirofacts efservice, no key). Off by default so
-  // previews and tests stay hermetic; the pipeline degrades to snapshot
-  // records on any live failure.
-  const liveEcho = process.env.ECHO_LIVE_SOURCE === 'efservice';
+    // Live EPA sources are ON by default in production (they are keyless,
+  // fast, and fail soft to the snapshot); set ECHO_LIVE_SOURCE=off to keep
+  // a deployment fully hermetic.
+  const liveEcho = (process.env.ECHO_LIVE_SOURCE ?? 'efservice') !== 'off';
+  const contextPwsid =
+    typeof body.contextPwsid === 'string' && /^[A-Z]{2}[0-9]{7}$/.test(body.contextPwsid) ? body.contextPwsid : undefined;
 
   try {
     const out = await answerTapWater(
-      { question, ...coords },
+      { question, ...coords, ...(contextPwsid ? { contextPwsid } : {}) },
       {
         ...(liveEcho
           ? {
@@ -194,7 +196,7 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
           ? {
               narratorKind: 'llm' as const,
               narrate: async (schematic, q) => {
-                const draft = await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode }, fetch as never, 20000, q ?? question);
+                const draft = await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode }, fetch as never, 25000, q ?? question);
                 return draft ? { narrative: draft, kind: 'llm' as const } : { narrative: narrateGroundTruth(schematic), kind: 'template' as const };
               },
             }

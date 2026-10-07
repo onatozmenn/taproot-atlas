@@ -188,6 +188,17 @@ export interface ValidatedApiResponse {
   };
   groundTruth: WaterOriginSchematic;
   /**
+   * The chat answer: short question-focused markdown (America.gov style)
+   * plus context-aware follow-up questions. Written by the audited model
+   * narrator when configured, otherwise by the deterministic composer.
+   */
+  answer?: {
+    markdown: string;
+    followUps: string[];
+    focus: 'source' | 'quality' | 'pathway' | 'compliance' | 'general';
+    author: 'llm' | 'template';
+  };
+  /**
    * water = full Resolver report; redirect = off-topic/smalltalk deflection
    * (America.gov-style: no opinions, back to tap-water records; the UI
    * renders a slim text card with no map or metric cards).

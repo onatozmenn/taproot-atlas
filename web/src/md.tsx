@@ -74,10 +74,11 @@ export function renderMarkdown(text: string): React.ReactNode[] {
   const lines = (text ?? '').split('\n');
   const out: React.ReactNode[] = [];
   let list: string[] = [];
+  let ordered = false;
   const flushList = (keyBase: string) => {
     if (list.length > 0) {
       const items = list.map((li, i) => <li key={i}>{parseInline(li)}</li>);
-      out.push(<ul key={`${keyBase}-ul`}>{items}</ul>);
+      out.push(ordered ? <ol key={`${keyBase}-ol`}>{items}</ol> : <ul key={`${keyBase}-ul`}>{items}</ul>);
       list = [];
     }
   };
@@ -87,7 +88,13 @@ export function renderMarkdown(text: string): React.ReactNode[] {
       flushList(`l${idx}`);
       out.push(<h4 key={idx}>{parseInline(trimmed.slice(4))}</h4>);
     } else if (trimmed.startsWith('- ')) {
+      if (list.length > 0 && ordered) flushList(`l${idx}`);
+      ordered = false;
       list.push(trimmed.slice(2));
+    } else if (/^\d+\.\s/.test(trimmed)) {
+      if (list.length > 0 && !ordered) flushList(`l${idx}`);
+      ordered = true;
+      list.push(trimmed.replace(/^\d+\.\s/, ''));
     } else if (trimmed === '---' || trimmed === '') {
       flushList(`l${idx}`);
       if (trimmed === '---') out.push(<hr key={idx} />);
