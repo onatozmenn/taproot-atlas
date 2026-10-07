@@ -56,6 +56,11 @@ export interface TapAnswer {
   echoUrl: string;
   verifiedAt: string;
   disclaimer: string;
+  /** Question-focused chat answer (markdown) and context-aware follow-ups. */
+  markdown: string;
+  followUps: string[];
+  focus: 'source' | 'quality' | 'pathway' | 'compliance' | 'general';
+  answerAuthor: 'llm' | 'template';
   passedAudit: boolean;
   auditTimestamp: string;
   recordSource: 'snapshot_fixture' | 'live_fetch';
@@ -145,6 +150,10 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
     echoUrl: g.regulatoryCompliance.echoReportUrl,
     verifiedAt: g.regulatoryCompliance.dataCaptureTime,
     disclaimer: g.disclaimer,
+    markdown: res.answer?.markdown ?? res.narrative.overview,
+    followUps: res.answer?.followUps ?? [],
+    focus: res.answer?.focus ?? 'general',
+    answerAuthor: res.answer?.author ?? res.validationStatus.narrator,
     passedAudit: res.validationStatus.passedLlmAudit,
     auditTimestamp: res.validationStatus.auditTimestamp,
     recordSource: res.validationStatus.recordSource,
@@ -155,7 +164,7 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
 
 export async function askTapWater(
   question: string,
-  opts: { lat?: number; lon?: number; signal?: AbortSignal } = {},
+  opts: { lat?: number; lon?: number; signal?: AbortSignal; contextPwsid?: string } = {},
 ): Promise<TapAnswer> {
   const q = question.slice(0, 2000);
   const hasCoords =
@@ -165,14 +174,21 @@ export async function askTapWater(
     Number.isFinite(opts.lon);
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
+    // Live EPA lookups plus an audited model draft can take a while; a short
+    // client timeout used to cut real answers off and fall back to the
+    // offline template. 45 s matches the server-side budget.
+    const timer = setTimeout(() => controller.abort(), 45000);
     const onExternalAbort = () => controller.abort();
     opts.signal?.addEventListener('abort', onExternalAbort);
     try {
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question: q, ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}) }),
+        body: JSON.stringify({
+          question: q,
+          ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}),
+          ...(opts.contextPwsid ? { contextPwsid: opts.contextPwsid } : {}),
+        }),
         signal: controller.signal,
       });
       if (res.ok) return toTapAnswer((await res.json()) as ValidatedApiResponse);
@@ -185,5 +201,11 @@ export async function askTapWater(
     opts.signal?.throwIfAborted();
   }
   opts.signal?.throwIfAborted();
-  return toTapAnswer(await answerTapWater({ question: q, ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}) }));
+  return toTapAnswer(
+    await answerTapWater({
+      question: q,
+      ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}),
+      ...(opts.contextPwsid ? { contextPwsid: opts.contextPwsid } : {}),
+    }),
+  );
 }

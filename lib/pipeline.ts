@@ -29,6 +29,7 @@ import { loadLcrMetrics } from './lcr.js';
 import { loadUcmrMetrics, loadSyrMetrics, loadDistributionMetrics } from './occurrence.js';
 import { loadWaterUse } from './water-use.js';
 import { loadConveyances } from './conveyance.js';
+import { composeAnswer } from './answer-composer.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -36,6 +37,12 @@ export interface AskInput {
   question: string;
   lat?: number;
   lon?: number;
+  /**
+   * PWSID the previous answer in this conversation was about. A follow-up
+   * that names no place ("what about lead?") stays on that system instead of
+   * snapping back to the NYC showcase default.
+   */
+  contextPwsid?: string;
 }
 
 export interface NarrateResult {
@@ -130,7 +137,45 @@ function unknownSchematic(now: string, lat?: number, lon?: number): WaterOriginS
   };
 }
 
+const EXAMPLE_FOLLOW_UPS = [
+  'Where does Chicago tap water come from?',
+  'Is there lead in New York City water?',
+  'How does Los Angeles water reach my tap?',
+];
+
+/**
+ * Public entry: runs the Resolver pipeline, then guarantees a chat answer
+ * (question-focused markdown + follow-ups) on every response.
+ */
 export async function answerTapWater(
+  input: AskInput,
+  deps: PipelineDeps = {},
+): Promise<ValidatedApiResponse> {
+  const out = await answerCore(input, deps);
+  if (out.answer) return out;
+  const question = (input.question ?? '').slice(0, 2000);
+  if (out.scope === 'redirect') {
+    out.answer = {
+      markdown: [out.narrative.overview, out.narrative.metricsSummary].filter(Boolean).join('\n\n'),
+      followUps: EXAMPLE_FOLLOW_UPS,
+      focus: 'general',
+      author: 'template',
+    };
+  } else if (out.groundTruth.pwsid === 'UNKNOWN') {
+    out.answer = {
+      markdown: out.narrative.overview,
+      followUps: EXAMPLE_FOLLOW_UPS,
+      focus: 'general',
+      author: 'template',
+    };
+  } else {
+    const c = composeAnswer(out.groundTruth, question);
+    out.answer = { markdown: c.markdown, followUps: c.followUps, focus: c.focus, author: 'template' };
+  }
+  return out;
+}
+
+async function answerCore(
   input: AskInput,
   deps: PipelineDeps = {},
 ): Promise<ValidatedApiResponse> {
@@ -157,8 +202,20 @@ export async function answerTapWater(
 
   const resolved = resolveSystem(lat, lon);
   // Directory match upgrades off-topic-looking questions ("houston?") to water.
-  const dirHit = findSystemByText(question);
+  const namedHit = findSystemByText(question);
   const candidates = findSystemCandidates(question);
+  // Conversation context: no city named, no coordinates, no other place ->
+  // keep talking about the system from the previous turn.
+  const contextHit =
+    !namedHit &&
+    candidates.length === 0 &&
+    input.lat === undefined &&
+    typeof input.contextPwsid === 'string' &&
+    input.contextPwsid !== 'UNKNOWN' &&
+    !detectPlaceQuery(question)
+      ? getDirectorySystem(input.contextPwsid)
+      : null;
+  const dirHit = namedHit ?? contextHit;
   // Ambiguous city alias (boston/kansas city/pittsburgh/chesterfield in two
   // systems): never guess a PWSID. Ask for a state instead.
   if (candidates.length > 1 && !dirHit) {
@@ -351,43 +408,32 @@ export async function answerTapWater(
     }
   }
 
-  // Best-effort treatment profile (fixture or live delegate). Never blocks.
   if (effectivePwsid !== 'UNKNOWN') {
-    try {
-      const profile = await fetchTreatmentProfile(effectivePwsid);
-      if (profile) {
-        schematic.treatment = {
-          ...profile,
-          rigor: describeTreatment(profile.processes, schematic.sourceKind),
-        };
+    // Best-effort enrichment, fetched in parallel (each live call has its own
+    // timeout; any failure only omits that section). Never blocks.
+    const settle = async <T>(f: () => Promise<T>): Promise<T | null> => {
+      try {
+        return await f();
+      } catch {
+        return null;
       }
-    } catch {
-      // Omit the section; honesty over completeness.
+    };
+    const [profile, fac, lcr, ucmr, syr, dist] = await Promise.all([
+      settle(() => fetchTreatmentProfile(effectivePwsid)),
+      settle(() => fetchFacilitiesProfile(effectivePwsid)),
+      settle(() => fetchLcrMetrics(effectivePwsid)),
+      settle(() => fetchUcmrMetrics(effectivePwsid)),
+      settle(() => fetchSyrMetrics(effectivePwsid)),
+      settle(() => fetchDistributionMetrics(effectivePwsid)),
+    ]);
+    if (profile) {
+      schematic.treatment = { ...profile, rigor: describeTreatment(profile.processes, schematic.sourceKind) };
     }
-    // Best-effort source facilities + seller chain. Never blocks.
-    try {
-      const fac = await fetchFacilitiesProfile(effectivePwsid);
-      if (fac) schematic.sourceFacilities = fac;
-    } catch {
-      // Omit; honesty over completeness.
-    }
-    // Best-effort occurrence / monitoring extracts. Never blocks.
-    try {
-      const lcr = await fetchLcrMetrics(effectivePwsid);
-      if (Array.isArray(lcr) && lcr.length > 0) schematic.lcrMetrics = lcr.slice(0, 4);
-    } catch { /* omit */ }
-    try {
-      const ucmr = await fetchUcmrMetrics(effectivePwsid);
-      if (Array.isArray(ucmr) && ucmr.length > 0) schematic.ucmrMetrics = ucmr.slice(0, 6);
-    } catch { /* omit */ }
-    try {
-      const syr = await fetchSyrMetrics(effectivePwsid);
-      if (Array.isArray(syr) && syr.length > 0) schematic.syrMetrics = syr.slice(0, 6);
-    } catch { /* omit */ }
-    try {
-      const dist = await fetchDistributionMetrics(effectivePwsid);
-      if (Array.isArray(dist) && dist.length > 0) schematic.distributionMetrics = dist.slice(0, 4);
-    } catch { /* omit */ }
+    if (fac) schematic.sourceFacilities = fac;
+    if (Array.isArray(lcr) && lcr.length > 0) schematic.lcrMetrics = lcr.slice(0, 4);
+    if (Array.isArray(ucmr) && ucmr.length > 0) schematic.ucmrMetrics = ucmr.slice(0, 6);
+    if (Array.isArray(syr) && syr.length > 0) schematic.syrMetrics = syr.slice(0, 6);
+    if (Array.isArray(dist) && dist.length > 0) schematic.distributionMetrics = dist.slice(0, 4);
     // Vendored modeled/schematic context (no network, never blocks).
     try {
       const wu = loadWaterUse(effectivePwsid);
@@ -418,7 +464,7 @@ export async function answerTapWater(
   // water, everything else follows the deterministic classifier. Off-topic
   // and greeting questions return the redirect without invoking the model,
   // so "merhaba" can never become a water report and no model cost is spent.
-  const scope = dirHit ? 'water' : classifyScope(question);
+  const scope = namedHit ? 'water' : classifyScope(question);
   if (scope !== 'water') {
     const redirect = scope === 'greeting' ? greetingNarrative() : offTopicNarrative();
     return {
@@ -481,9 +527,10 @@ export async function answerTapWater(
       valid = false;
     }
   } else {
-    // A model narrator without a judge: fail closed.
-    console.error('[pipeline] model narrator without a JEV gate; using template fallback');
-    valid = false;
+    // No JEV configured: the deterministic grounding audit becomes the gate
+    // (numbers, entities, health verdicts, coordinates). Any violation falls
+    // back to the composed template answer, so no unaudited text exits.
+    valid = advisory.isValid;
   }
   const validationStatus = { passedLlmAudit: valid, auditTimestamp, recordSource: effectiveRecordSource, narrator: usedKind, jev };
   if (valid) {
@@ -499,7 +546,20 @@ export async function answerTapWater(
         validationStatus: { ...validationStatus, passedLlmAudit: false },
       };
     }
-    return { narrative, groundTruth: schematic, scope: 'water' as const, validationStatus };
+    const composed = composeAnswer(schematic, question);
+    const modelAnswer = typeof narrative.answer === 'string' && narrative.answer.trim().length > 0 ? narrative.answer.trim() : null;
+    return {
+      narrative,
+      groundTruth: schematic,
+      scope: 'water' as const,
+      validationStatus,
+      answer: {
+        markdown: modelAnswer ?? narrative.overview,
+        followUps: composed.followUps,
+        focus: composed.focus,
+        author: 'llm' as const,
+      },
+    };
   }
   // Fallback: scope already guarantees water here, so always the
   // deterministic water summary.

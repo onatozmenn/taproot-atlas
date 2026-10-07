@@ -2,6 +2,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import handler, { resetAskRateLimit } from '../../api/ask';
 
+// Keep the handler hermetic: live EPA sources are on by default in production.
+process.env.ECHO_LIVE_SOURCE = 'off';
+
 function res() {
   let code = 0;
   let payload: unknown;

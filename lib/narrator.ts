@@ -13,6 +13,8 @@ export interface Narrative {
   metricsSummary: string;
   complianceNote: string;
   stewardshipNote: string;
+  /** Optional model-written markdown answer focused on the question. */
+  answer?: string;
 }
 
 function metricSentence(m: QualityMetricRecord): string {
@@ -200,5 +202,5 @@ export function narrateGroundTruth(schematic: WaterOriginSchematic, question = '
 }
 
 export function joinNarrative(n: Narrative): string {
-  return [n.overview, n.metricsSummary, n.complianceNote, n.stewardshipNote].join(' ');
+  return [n.answer ?? '', n.overview, n.metricsSummary, n.complianceNote, n.stewardshipNote].filter((x) => x.length > 0).join(' ');
 }

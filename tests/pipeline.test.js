@@ -144,7 +144,7 @@ describe('answerTapWater', () => {
     assert.equal(res.validationStatus.passedLlmAudit, true);
   });
 
-  it('model output without a JEV gate falls back (fail closed)', async () => {
+  it('model output without a JEV gate is gated by the deterministic audit (grounded draft passes)', async () => {
     const res = await answerTapWater(
       { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
       {
@@ -154,8 +154,25 @@ describe('answerTapWater', () => {
       },
     );
     assert.equal(res.validationStatus.jev, 'skipped');
+    assert.equal(res.validationStatus.passedLlmAudit, true);
+    assert.equal(res.answer.author, 'llm');
+  });
+
+  it('model output without a JEV gate falls back when it invents numbers (fail closed)', async () => {
+    const res = await answerTapWater(
+      { question: 'Where does my tap water come from?', ...SHOWCASE_CENTER },
+      {
+        fetchEcho,
+        recordSource: 'snapshot_fixture',
+        narrate: async (s) => ({
+          narrative: { ...narrateGroundTruth(s), answer: 'Lead was measured at 987.6 ppb last week and the water is safe.' },
+          kind: 'llm',
+        }),
+      },
+    );
     assert.equal(res.validationStatus.passedLlmAudit, false);
     assert.ok(res.narrative.overview.includes('Verified Water Distribution Overview'));
+    assert.equal(res.answer.author, 'template');
   });
 
   it('model output on an off-topic question falls back to the redirect', async () => {

@@ -1,27 +1,23 @@
-import { Map as MapIcon, MoonIcon, SunIcon } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import { HistoryIcon, MenuIcon, MoonIcon, SquarePenIcon, SunIcon, Trash2Icon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
-import { askTapWater, type TapAnswer } from './api';
-import { suggestFollowUps } from './suggest';
-import { AppSidebar } from './components/app-sidebar';
-import { AtlasPanel, type AtlasTab } from './components/atlas/atlas-panel';
+import { askTapWater } from './api';
 import { ChatPane, type ChatMsg } from './components/chat-pane';
-import { CommandPalette, CommandPaletteButton, useCommandPalette } from './components/command-palette';
+import { InfoDialogs, type InfoDialogKind } from './components/chat/info-dialogs';
+import { CommandPalette, useCommandPalette } from './components/command-palette';
 import { Composer } from './components/composer';
-import { Suggestion, Suggestions } from './components/ai-elements/suggestion';
-import { Button } from './components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from './components/ui/sidebar';
-import { useIsMobile } from './hooks/use-mobile';
+import { Logo } from './components/Logo';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './components/ui/sheet';
+import { cn } from './lib/utils';
 
 let nextId = 1;
 
-const LANDING_EXAMPLES = [
+const EXAMPLES = [
   'Where does Chicago tap water come from?',
-  'Any violations in the last 5 years?',
-  'Los Angeles water?',
-  'How does my water reach my tap?',
+  'Is there lead in New York City water?',
+  'How does Los Angeles water reach my tap?',
+  'Any violations in Houston in the last 5 years?',
 ];
 
 const HISTORY_KEY = 'taproot-history';
@@ -36,27 +32,24 @@ function loadHistory(): string[] {
   }
 }
 
-function tabHintForChip(chip: string): AtlasTab | null {
-  const c = chip.toLowerCase();
-  if (c.includes('watershed map') || c.includes('map')) return 'pathway';
-  if (c.includes('violation')) return 'compliance';
-  if (c.includes('report') || c.includes('test')) return 'quality';
-  return null;
-}
-
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const dark = resolvedTheme === 'dark';
+function HeaderButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => setTheme(dark ? 'light' : 'dark')}
-      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-      title={dark ? 'Light theme' : 'Dark theme'}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="press inline-flex h-10 items-center gap-2 rounded-full px-3 text-[15px] font-medium hover:bg-secondary"
     >
-      {dark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-    </Button>
+      {children}
+    </button>
   );
 }
 
@@ -64,20 +57,22 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [listening, setListening] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [history, setHistory] = useState<string[]>(loadHistory);
-  const [atlasTab, setAtlasTab] = useState<AtlasTab>('source');
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [info, setInfo] = useState<InfoDialogKind>(null);
   const [paletteOpen, setPaletteOpen] = useCommandPalette();
-  const isMobile = useIsMobile();
+  const { resolvedTheme, setTheme } = useTheme();
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestion = useRef('');
-  const tabHint = useRef<AtlasTab | null>(null);
 
   const empty = messages.length === 0;
-  const latestAnswer = [...messages].reverse().find((m) => m.role === 'assistant' && m.answer)?.answer ?? null;
+  const contextPwsid =
+    [...messages].reverse().find((m) => m.role === 'assistant' && m.answer && m.answer.pwsid !== 'UNKNOWN')?.answer
+      ?.pwsid ?? undefined;
 
   useEffect(() => {
     try {
@@ -87,69 +82,57 @@ export default function App() {
     }
   }, [history]);
 
-  async function send(question: string) {
-    const q = question.trim().slice(0, 2000);
-    if (!q || busy) return;
+  async function run(q: string) {
     const controller = new AbortController();
     abortRef.current = controller;
     setBusy(true);
     lastQuestion.current = q;
-    setMessages((m) => [...m, { id: nextId++, role: 'user', text: q }]);
+    setMessages((m) => [...m.map((x) => ({ ...x, fresh: false })), { id: nextId++, role: 'user', text: q }]);
     setInput('');
     setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 10));
     try {
       const answer = await askTapWater(q, {
         signal: controller.signal,
         ...(coords ? { lat: coords.lat, lon: coords.lon } : {}),
+        ...(contextPwsid ? { contextPwsid } : {}),
       });
-      setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer }]);
-      setAtlasTab(tabHint.current ?? 'source');
-      if (isMobile) setSheetOpen(true);
+      setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer, fresh: true }]);
     } catch (e) {
-      if (controller.signal.aborted) {
-        // User pressed Stop: silently drop the pending turn.
-      } else {
+      if (!controller.signal.aborted) {
         const msg = e instanceof Error ? e.message : 'Lookup failed. Check your connection and retry.';
         toast.error(msg, { action: { label: 'Retry', onClick: () => void send(lastQuestion.current) } });
       }
     } finally {
-      tabHint.current = null;
       abortRef.current = null;
       setBusy(false);
     }
+  }
+
+  function send(question: string) {
+    const q = question.trim().slice(0, 2000);
+    if (!q || busy) return;
+    if (empty) {
+      // America.gov-style hand-off: the start view dissolves, then the
+      // conversation surface fades in with the question already placed.
+      setLeaving(true);
+      window.setTimeout(() => {
+        setLeaving(false);
+        void run(q);
+      }, 220);
+      return;
+    }
+    void run(q);
   }
 
   function stop() {
     abortRef.current?.abort();
   }
 
-  function newQuery() {
+  function newChat() {
     stop();
     setMessages([]);
     setInput('');
-  }
-
-  function onChip(chip: string) {
-    // The watershed-map chip only switches the Atlas panel to the Pathway
-    // tab: re-asking would just re-append a full copy of the previous answer.
-    if (chip.toLowerCase().includes('watershed map')) {
-      setAtlasTab('pathway');
-      if (isMobile) setSheetOpen(true);
-      return;
-    }
-    tabHint.current = tabHintForChip(chip);
-    void send(chip);
-  }
-
-  function chipsFor(answer: TapAnswer): string[] {
-    if (answer.scope === 'redirect') return [];
-    return suggestFollowUps({
-      violations: answer.violations,
-      windowStart: answer.windowStart,
-      windowEnd: answer.windowEnd,
-      boundaryType: answer.boundaryType,
-      metrics: answer.metrics.map((m) => ({ parameter: m.parameter, reportPeriod: m.provenance.reportPeriod })),
-    });
+    setMenuOpen(false);
   }
 
   function toggleLocate() {
@@ -158,7 +141,7 @@ export default function App() {
       return;
     }
     if (!('geolocation' in navigator)) {
-      toast.error('Geolocation is not available in this browser.');
+      toast.error('Location is not available in this browser.');
       return;
     }
     setLocating(true);
@@ -166,7 +149,7 @@ export default function App() {
       (pos) => {
         setLocating(false);
         setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        toast.success('Location on. It will be sent with your next question.');
+        toast.success('Location on. It goes with your next question only.');
       },
       () => {
         setLocating(false);
@@ -199,7 +182,7 @@ export default function App() {
       setListening(true);
       rec.onresult = (e) => {
         const text = e.results?.[0]?.[0]?.transcript ?? '';
-        if (text) void send(text);
+        if (text) send(text);
       };
       rec.onend = () => setListening(false);
       rec.onerror = () => setListening(false);
@@ -225,7 +208,7 @@ export default function App() {
   const composerProps = {
     input,
     onInputChange: setInput,
-    onSend: (t: string) => void send(t),
+    onSend: send,
     busy,
     onStop: stop,
     onAttachFile: attachFile,
@@ -236,81 +219,157 @@ export default function App() {
     coordsActive: coords !== null,
   };
 
+  const notice = (
+    <p className="mb-2 text-center text-[13px] text-muted-foreground">
+      <button type="button" className="underline-offset-4 hover:underline" onClick={() => setInfo('privacy')}>
+        Your privacy
+      </button>
+      <span aria-hidden="true"> · </span>
+      <button type="button" className="underline-offset-4 hover:underline" onClick={() => setInfo('how')}>
+        How Taproot works
+      </button>
+    </p>
+  );
+
   return (
-    <SidebarProvider>
-      <AppSidebar history={history} onNewQuery={newQuery} onHistorySelect={(q) => void send(q)} />
-      <SidebarInset>
-        <a className="sr-only focus:not-sr-only" href="#chat">
-          Skip to conversation
-        </a>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur">
-          <SidebarTrigger aria-label="Toggle sidebar" />
-          <span className="font-display text-lg font-medium md:hidden">Taproot Atlas</span>
-          <div className="ml-auto flex items-center gap-1.5">
-            {latestAnswer && isMobile && (
-              <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
-                <MapIcon className="mr-1 size-4" /> Atlas
-              </Button>
-            )}
-            <span className="hidden sm:block">
-              <CommandPaletteButton onClick={() => setPaletteOpen(true)} />
-            </span>
-            <ThemeToggle />
-          </div>
-        </header>
+    <div className="flex h-dvh flex-col bg-background">
+      <a className="sr-only focus:not-sr-only" href="#composer-input">
+        Skip to message input
+      </a>
+      <header className="z-20 flex h-16 shrink-0 items-center gap-2 px-4 sm:px-6">
+        <button type="button" onClick={newChat} className="press flex items-center gap-2.5 rounded-full pr-2" aria-label="Taproot Atlas, new chat">
+          <Logo size={28} />
+          <span className="font-display text-[22px] font-medium tracking-tight">Taproot Atlas</span>
+        </button>
+        <div className="ml-auto flex items-center gap-1">
+          {!empty && (
+            <HeaderButton label="New chat" onClick={newChat}>
+              <SquarePenIcon className="size-[18px]" />
+              <span className="hidden sm:inline">New chat</span>
+            </HeaderButton>
+          )}
+          <HeaderButton label="Menu" onClick={() => setMenuOpen(true)}>
+            <MenuIcon className="size-[18px]" />
+            <span className="hidden sm:inline">Menu</span>
+          </HeaderButton>
+        </div>
+      </header>
 
-        {empty ? (
-          <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-10">
-            <div className="text-center">
-              <h1 className="font-display text-4xl font-medium tracking-tight sm:text-5xl">
-                Where does your tap water come from, what&apos;s in it, how does it reach you?
-              </h1>
-              <p className="mt-3 text-muted-foreground">
-                Source basins, reported lab results with EPA compliance, and the schematic source-to-tap
-                pathway. Start here.
-              </p>
+      {empty ? (
+        <main
+          className={cn(
+            'mx-auto flex w-full max-w-[672px] flex-1 flex-col justify-center px-5 pb-16',
+            leaving && 'landing-dissolve-out',
+          )}
+        >
+          <div className="stagger-entrance">
+            <h1 style={{ ['--stagger-index' as string]: 0 }} className="font-display text-[40px] font-normal leading-[1.1] tracking-tight sm:text-[52px]">
+              Ask about your tap water.
+            </h1>
+            <p style={{ ['--stagger-index' as string]: 1 }} className="mt-3 text-[17px] text-muted-foreground">
+              Where it comes from, what tests found in it, and how it reaches you. Answers come only from public EPA and
+              utility records.
+            </p>
+            <div style={{ ['--stagger-index' as string]: 2 }} className="mt-8">
+              <Composer {...composerProps} label="Ask about your tap water" placeholder="Ask about a city's tap water…" autoFocus />
             </div>
-            <div className="w-full">
-              <Composer {...composerProps} label="Ask about your tap water" />
-            </div>
-            <Suggestions aria-label="Example questions">
-              {LANDING_EXAMPLES.map((q) => (
-                <Suggestion key={q} suggestion={q} disabled={busy} onClick={(s) => void send(s)} />
+            <div style={{ ['--stagger-index' as string]: 3 }} className="mt-5 flex flex-wrap gap-2.5" aria-label="Example questions">
+              {EXAMPLES.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => send(q)}
+                  className="press min-h-11 rounded-[40px] border border-border px-4 py-2 text-left text-[15px] hover:border-foreground/40 hover:bg-secondary"
+                >
+                  {q}
+                </button>
               ))}
-            </Suggestions>
-          </main>
-        ) : (
-          <main id="chat" aria-live="polite" className="flex min-h-0 flex-1 gap-0">
-            <div className="flex min-h-0 min-w-0 flex-1 basis-[40%] flex-col">
-              <ChatPane
-                messages={messages}
-                {...composerProps}
-                label="Ask a follow-up"
-                chipsFor={chipsFor}
-                onChip={(chip) => onChip(chip)}
-              />
             </div>
-            <aside className="hidden min-h-0 w-[60%] min-w-0 flex-col border-l md:flex" aria-label="Atlas panel">
-              <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                <AtlasPanel answer={latestAnswer} tab={atlasTab} onTabChange={setAtlasTab} loading={busy} />
-              </div>
-            </aside>
-          </main>
-        )}
-
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto" aria-label="Atlas panel">
-            <SheetHeader>
-              <SheetTitle className="font-display">Atlas</SheetTitle>
-            </SheetHeader>
-            <div className="mt-3">
-              <AtlasPanel answer={latestAnswer} tab={atlasTab} onTabChange={setAtlasTab} loading={busy} />
+          </div>
+        </main>
+      ) : (
+        <main id="chat" className="animate-chat-surface-in flex min-h-0 flex-1 flex-col">
+          <ChatPane messages={messages} busy={busy} onFollowUp={send} />
+          <div className="shrink-0 bg-gradient-to-t from-background from-70% to-transparent px-4 pb-4 pt-2">
+            <div className="mx-auto w-full max-w-[672px]">
+              {notice}
+              <Composer {...composerProps} label="Message" />
             </div>
-          </SheetContent>
-        </Sheet>
+          </div>
+        </main>
+      )}
 
-        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={(q) => void send(q)} />
-      </SidebarInset>
-    </SidebarProvider>
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent side="right" className="w-[320px] gap-0 sm:max-w-[360px]">
+          <SheetHeader>
+            <SheetTitle className="font-display text-2xl font-medium">Menu</SheetTitle>
+            <SheetDescription className="sr-only">New chat, recent questions and display settings</SheetDescription>
+          </SheetHeader>
+          <nav className="flex flex-col gap-1 px-3">
+            <button type="button" onClick={newChat} className="press flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-secondary">
+              <SquarePenIcon className="size-[18px]" /> New chat
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="press flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-secondary"
+            >
+              {resolvedTheme === 'dark' ? <SunIcon className="size-[18px]" /> : <MoonIcon className="size-[18px]" />}
+              {resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
+            </button>
+          </nav>
+          <div className="mt-4 border-t px-3 pt-4">
+            <div className="flex items-center justify-between px-3 pb-2">
+              <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <HistoryIcon className="size-4" /> Recent questions
+              </h3>
+              {history.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setHistory([])}
+                  aria-label="Clear recent questions"
+                  className="press inline-flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary"
+                >
+                  <Trash2Icon className="size-4" />
+                </button>
+              )}
+            </div>
+            {history.length === 0 ? (
+              <p className="px-3 text-sm text-muted-foreground">Your questions stay in this browser.</p>
+            ) : (
+              <ul className="flex flex-col">
+                {history.map((q) => (
+                  <li key={q}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        send(q);
+                      }}
+                      className="press w-full truncate rounded-2xl px-3 py-2 text-left text-[15px] hover:bg-secondary"
+                    >
+                      {q}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="mt-auto border-t p-4 text-[13px] text-muted-foreground">
+            <button type="button" className="hover:underline" onClick={() => setInfo('privacy')}>
+              Your privacy
+            </button>
+            <span aria-hidden="true"> · </span>
+            <button type="button" className="hover:underline" onClick={() => setInfo('how')}>
+              How Taproot works
+            </button>
+            <p className="mt-2">Reported records only. Never a real-time safety verdict.</p>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <InfoDialogs open={info} onOpenChange={setInfo} />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={(q) => send(q)} />
+    </div>
   );
 }

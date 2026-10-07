@@ -75,6 +75,15 @@ export function buildFactsMessage(schematic: WaterOriginSchematic, question = ''
           referencePeriod: schematic.waterUse.referencePeriod,
         }
       : null,
+    treatmentProcesses: schematic.treatment?.processes ?? [],
+    treatmentProfile: schematic.treatment?.rigor ?? null,
+    violationRecords: schematic.regulatoryCompliance.records.slice(0, 8).map((r) => ({
+      type: r.violationType,
+      contaminant: r.contaminantName ?? null,
+      beginDate: r.beginDate,
+      returnedToCompliance: r.complianceAchieved,
+    })),
+    compliancePending: schematic.regulatoryCompliance.snapshotPending === true,
     queryWindow: schematic.regulatoryCompliance.queryWindow,
     totalViolationsFound: schematic.regulatoryCompliance.totalViolationsFound,
     dataCaptureTime: schematic.regulatoryCompliance.dataCaptureTime,
@@ -85,7 +94,11 @@ export function buildFactsMessage(schematic: WaterOriginSchematic, question = ''
     `${questionLine}` +
     `Resolver facts (sole ground truth; use nothing else):\n${JSON.stringify(facts)}\n\n` +
     `Respond ONLY with a JSON object shaped exactly like ` +
-    `{"overview": string, "metricsSummary": string, "complianceNote": string, "stewardshipNote": string}.`
+    `{"answer": string, "overview": string, "metricsSummary": string, "complianceNote": string, "stewardshipNote": string}. ` +
+    `"answer" is the chat reply the user reads: Markdown, 40 to 140 words, first sentence answers the exact question, ` +
+    `then at most 5 short bullets with only the facts that answer it (bold the parameter or place name). ` +
+    `If the facts do not contain what was asked (for example no lead result), say so plainly in the first sentence and name what the records do cover. ` +
+    `No headings, no tables, no links, no closing pleasantries.`
   );
 }
 
@@ -96,7 +109,8 @@ function isNarrative(v: unknown): v is Narrative {
     typeof o.overview === 'string' &&
     typeof o.metricsSummary === 'string' &&
     typeof o.complianceNote === 'string' &&
-    typeof o.stewardshipNote === 'string'
+    typeof o.stewardshipNote === 'string' &&
+    (o.answer === undefined || typeof o.answer === 'string')
   );
 }
 
@@ -146,7 +160,7 @@ export async function llmNarrate(
         ? {
             model: config.model,
             temperature: 0,
-            max_output_tokens: 800,
+            max_output_tokens: 1200,
             input: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
               { role: 'user', content: buildFactsMessage(schematic, question) },
@@ -155,7 +169,7 @@ export async function llmNarrate(
         : {
             model: config.model,
             temperature: 0,
-            max_tokens: 800,
+            max_tokens: 1200,
             messages: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
               { role: 'user', content: buildFactsMessage(schematic, question) },
