@@ -10,6 +10,7 @@
 import type { QualityMetricRecord, WaterOriginSchematic } from '../types/water-intelligence.js';
 import { detectIntent, type AnswerIntent } from './narrator.js';
 import { getDirectorySystem } from './systems.js';
+import { composeProfileAnswer } from './profile-answer.js';
 
 export interface ComposedAnswer {
   markdown: string;
@@ -67,6 +68,8 @@ const STATUS_WORDS: Record<QualityMetricRecord['complianceStatus'], string> = {
   within_standard: 'within the standard',
   exceeds_standard: 'above the standard',
   monitoring_violation: 'flagged for a monitoring issue',
+  sample_above_benchmark: 'with individual samples above the limit (not a violation by itself)',
+  occurrence_only: 'with no federal limit to compare',
 };
 
 function metricBullet(m: QualityMetricRecord): string {
@@ -94,6 +97,7 @@ function basinPhrase(basins: string[]): string {
 export function shortName(s: WaterOriginSchematic): string {
   const dir = getDirectorySystem(s.pwsid);
   if (dir?.city) return dir.city;
+  if (s.displayName) return s.displayName;
   return s.systemName.replace(/\s+system$/i, '');
 }
 
@@ -137,6 +141,8 @@ function complianceLine(s: WaterOriginSchematic): string {
 
 export function composeAnswer(s: WaterOriginSchematic, question: string): ComposedAnswer {
   const focus = detectIntent(question);
+  const rich = composeProfileAnswer(s, question, shortName(s), focus);
+  if (rich) return rich;
   const asked = detectParameters(question);
   const metrics = allMetrics(s);
   const name = shortName(s);

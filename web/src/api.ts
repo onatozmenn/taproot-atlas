@@ -5,10 +5,19 @@ import { listDirectorySystems } from '../../lib/systems';
 import type {
   QualityMetricRecord,
   ValidatedApiResponse,
+  WaterSystemProfile,
 } from '../../types/water-intelligence';
 
 export interface TapAnswer {
   systemName: string;
+  /** Place the user asked about ("Phoenix"); falls back to the system name. */
+  placeName: string;
+  /** Same-named places in other states ("Phoenix, OR"). */
+  alternatives: string[];
+  /** Rich EPA profile (SDWIS + SYR4 + UCMR5); null outside coverage. */
+  profile: WaterSystemProfile | null;
+  /** The question this answer responds to (set by the chat, not the server). */
+  question?: string;
   pwsid: string;
   boundaryType: 'VERIFIED_AGENCY' | 'MODELED_EPA' | 'UNVERIFIED_FALLBACK';
   /** water = full report; redirect = slim off-topic deflection, no map/cards. */
@@ -72,6 +81,9 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
   const g = res.groundTruth;
   return {
     systemName: g.systemName,
+    placeName: g.displayName ?? listDirectorySystems().find((s) => s.pwsid === g.pwsid)?.city ?? g.systemName,
+    alternatives: g.alternatives ?? [],
+    profile: g.profile ?? null,
     pwsid: g.pwsid,
     boundaryType: g.boundaryType.toUpperCase() as TapAnswer['boundaryType'],
     scope: res.scope ?? 'water',

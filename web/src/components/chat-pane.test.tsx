@@ -9,6 +9,9 @@ afterEach(() => cleanup());
 
 const base: TapAnswer = {
   systemName: 'NYC DEP Catskill-Delaware',
+  placeName: 'New York',
+  alternatives: [],
+  profile: null,
   pwsid: 'NY7003493',
   boundaryType: 'MODELED_EPA',
   scope: 'water',

@@ -326,7 +326,7 @@ describe('answerTapWater', () => {
     assert.ok(!all.includes('NY7003493'));
   });
 
-  it('directory cities resolve by name with pending compliance', async () => {
+  it('directory cities resolve by name with vendored SDWIS compliance', async () => {
     const la = await answerTapWater(
       { question: 'los angeles water?', lat: 39.9, lon: 32.8 },
       { fetchEcho, recordSource: 'snapshot_fixture' },
@@ -334,10 +334,10 @@ describe('answerTapWater', () => {
     assert.equal(la.scope, 'water');
     assert.equal(la.groundTruth.pwsid, 'CA1910067');
     assert.equal(la.groundTruth.boundaryType, 'unverified_fallback');
-    assert.equal(la.groundTruth.regulatoryCompliance.snapshotPending, true);
+    assert.notEqual(la.groundTruth.regulatoryCompliance.snapshotPending, true);
     assert.deepEqual(la.groundTruth.latestReportedMetrics, []);
-    assert.ok(!la.narrative.complianceNote.includes('0 violations'));
-    assert.ok(la.narrative.complianceNote.includes('not yet curated'));
+    assert.equal(la.groundTruth.profile.pwsid, 'CA1910067');
+    assert.ok(la.groundTruth.profile.violationSummary.total >= 0);
 
     const chi = await answerTapWater(
       { question: 'Where does Chicago tap water come from?' },
@@ -356,25 +356,36 @@ describe('answerTapWater', () => {
     assert.equal(res.groundTruth.pwsid, 'TX1010013');
   });
 
-  it('an unsupported place gets a clear empty state, never a silent NYC default', async () => {
+  it('a place outside the curated directory resolves nationwide, never a silent NYC default', async () => {
     const res = await answerTapWater(
       { question: 'Flint, MI', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
     );
     assert.equal(res.scope, 'water');
-    assert.equal(res.groundTruth.pwsid, 'UNKNOWN');
-    assert.equal(res.groundTruth.placeQuery, 'Flint, MI');
-    assert.ok(res.narrative.overview.includes('not in the current snapshot'));
-    assert.ok(!res.narrative.overview.includes('NY7003493'));
+    assert.equal(res.groundTruth.pwsid, 'MI0002310');
+    assert.equal(res.groundTruth.displayName, 'Flint');
+    assert.equal(res.groundTruth.boundaryType, 'unverified_fallback');
+    assert.ok(res.groundTruth.profile);
+    assert.ok(!res.answer.markdown.includes('NY7003493'));
   });
 
-  it('a place with trailing water words still resolves to the empty state', async () => {
+  it('a place with trailing water words still resolves nationwide', async () => {
     const res = await answerTapWater(
       { question: 'flint, mi water quality?', ...SHOWCASE_CENTER },
       { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
     );
     assert.equal(res.scope, 'water');
-    assert.equal(res.groundTruth.placeQuery, 'flint, MI');
+    assert.equal(res.groundTruth.pwsid, 'MI0002310');
+  });
+
+  it('a place with no community system on file gets the honest empty state', async () => {
+    const res = await answerTapWater(
+      { question: 'Zzyzx, CA water?', ...SHOWCASE_CENTER },
+      { fetchEcho, recordSource: 'snapshot_fixture', findNearby: async () => [] },
+    );
+    assert.equal(res.scope, 'water');
+    assert.equal(res.groundTruth.pwsid, 'UNKNOWN');
+    assert.equal(res.groundTruth.placeQuery, 'Zzyzx, CA');
   });
 
   it('tier B cities resolve with honest uncurated narratives', async () => {
@@ -385,9 +396,10 @@ describe('answerTapWater', () => {
     assert.equal(res.scope, 'water');
     assert.equal(res.groundTruth.pwsid, 'MO6010716');
     assert.deepEqual(res.groundTruth.primaryBasins, []);
-    assert.equal(res.groundTruth.regulatoryCompliance.snapshotPending, true);
-    assert.ok(res.narrative.overview.includes('not yet curated'));
+    // Basins are uncurated, but the SDWIS profile still answers.
+    assert.ok(res.groundTruth.profile);
     assert.ok(!res.narrative.overview.includes('basins outside'));
+    assert.ok(!res.answer.markdown.includes('basins outside'));
   });
 
   it('ambiguous city aliases ask for a state instead of guessing', async () => {
@@ -516,7 +528,9 @@ describe('answerTapWater', () => {
       { fetchEcho: throwing, recordSource: 'live_fetch' },
     );
     assert.equal(la.groundTruth.pwsid, 'CA1910067');
-    assert.equal(la.groundTruth.regulatoryCompliance.snapshotPending, true);
+    // Live outage degrades to the vendored SDWIS profile, never a 502 or a guess.
+    assert.notEqual(la.groundTruth.regulatoryCompliance.snapshotPending, true);
+    assert.ok(la.groundTruth.profile, 'profile still attached');
     assert.equal(la.validationStatus.recordSource, 'snapshot_fixture');
   });
 });

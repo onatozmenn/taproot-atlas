@@ -2,6 +2,7 @@
 // English-only deterministic audit for LLM narrator output.
 // Blocks health certification, coordinate leaks, numeric/entity hallucinations,
 // and non-English output. Falls back to a deterministic template on failure.
+import { profileFacts, flattenFacts } from './profile.js';
 import type {
   QualityMetricRecord,
   WaterOriginSchematic,
@@ -109,6 +110,15 @@ export function buildResolverFacts(
     rawSources.push(schematic.waterUse.referencePeriod);
   }
   for (const c of schematic.conveyances ?? []) allowedEntities.push(c.name.toLowerCase());
+  if (schematic.profile) {
+    const p = schematic.profile;
+    rawSources.push(...flattenFacts(profileFacts(p)));
+    for (const s of p.sources) allowedEntities.push(s.name.toLowerCase());
+    for (const n of p.plants) allowedEntities.push(n.toLowerCase());
+    for (const s of p.purchasedFrom) allowedEntities.push(s.name.toLowerCase());
+    for (const a of p.lab) allowedEntities.push(a.label.toLowerCase(), a.name.toLowerCase());
+    for (const c of p.counties) allowedEntities.push(c.toLowerCase());
+  }
 
   const allowedNumbers = Array.from(
     new Set(rawSources.flatMap((text) => extractNormalizedNumbers(text)).map(normalizeNumericToken))

@@ -6,6 +6,7 @@
 import type { WaterOriginSchematic } from '../types/water-intelligence.js';
 import type { Narrative } from './narrator.js';
 import { WATER_INTELLIGENCE_SYSTEM_PROMPT } from '../prompts/system.js';
+import { profileFacts } from './profile.js';
 
 export interface LlmConfig {
   baseUrl: string;
@@ -87,6 +88,7 @@ export function buildFactsMessage(schematic: WaterOriginSchematic, question = ''
     queryWindow: schematic.regulatoryCompliance.queryWindow,
     totalViolationsFound: schematic.regulatoryCompliance.totalViolationsFound,
     dataCaptureTime: schematic.regulatoryCompliance.dataCaptureTime,
+    epaProfile: schematic.profile ? profileFacts(schematic.profile) : null,
   };
   const q = (question ?? '').slice(0, 500).trim();
   const questionLine = q.length > 0 ? `User question (answer this, nothing else): ${q}\n\n` : '';
