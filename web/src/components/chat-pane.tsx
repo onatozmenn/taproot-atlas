@@ -52,13 +52,33 @@ function AssistantTurn({
   const [revealed, setRevealed] = useState(!msg.fresh);
   const onDone = useCallback(() => setRevealed(true), []);
   const chips = isLatest && answer.followUps.length > 0 ? answer.followUps : [];
+  const markdown = answer.markdown.replace(/\bug\/L\b/g, 'µg/L');
 
   return (
     <article className="animate-message-in" aria-label="Answer">
-      <StreamingAnswer markdown={answer.markdown} animate={Boolean(msg.fresh)} onDone={onDone} />
+      <StreamingAnswer markdown={markdown} animate={Boolean(msg.fresh)} onDone={onDone} />
       {revealed && (
         <>
-          <AnswerActions answer={answer} copyText={answer.markdown} />
+          {answer.alternatives.length > 0 && (
+            <p className="animate-message-action-in mt-3 text-sm text-muted-foreground">
+              Showing the largest system for {answer.placeName}. Did you mean{' '}
+              {answer.alternatives.map((alt, i) => (
+                <span key={alt}>
+                  {i > 0 && (i === answer.alternatives.length - 1 ? ' or ' : ', ')}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onFollowUp(`Tell me about ${alt} water`)}
+                    className="press font-medium text-[var(--link)] underline-offset-2 hover:underline"
+                  >
+                    {alt}
+                  </button>
+                </span>
+              ))}
+              ?
+            </p>
+          )}
+          <AnswerActions answer={answer} copyText={markdown} />
           <EvidenceCard answer={answer} initiallyOpen={isLatest && answer.focus !== 'general'} />
           {chips.length > 0 && (
             <div className="mt-5 flex flex-col items-start gap-2.5" aria-label="Suggested follow-ups">

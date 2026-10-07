@@ -221,6 +221,8 @@ export interface WaterSystemProfile {
   pfas: { tested: boolean; samples: number; compoundsDetected: string[]; aboveMcl: Array<{ name: string; maxNgL: number; mclNgL: number }>; window: string | null };
   /** Deterministic key findings, most important first. */
   highlights: string[];
+  /** Same findings with a level (alert = above a limit / health-based) and topic. */
+  findings: Array<{ level: 'alert' | 'watch' | 'ok'; topic: 'pfas' | 'lead' | 'violations' | 'lab' | 'source' | string; text: string }>;
   provenance: { sdwisQuarter: string | null; sdwisUrl: string; syr4Url: string; ucmr5Url: string; captureTime: string; echoReportUrl: string };
 }
 

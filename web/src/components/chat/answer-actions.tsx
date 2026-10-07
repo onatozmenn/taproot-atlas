@@ -30,6 +30,11 @@ export function sourcesFor(answer: TapAnswer): SourceLink[] {
   for (const m of [...answer.metrics, ...answer.lcr, ...answer.distribution, ...answer.syr, ...answer.ucmr]) {
     add(m.provenance.sourceDocumentUrl, `${m.provenance.reportPeriod} water quality report`, host(m.provenance.sourceDocumentUrl));
   }
+  if (answer.profile) {
+    add(answer.profile.provenance.sdwisUrl, `SDWIS federal data, ${answer.profile.provenance.sdwisQuarter ?? 'latest quarter'} (ECHO bulk download)`, 'U.S. EPA');
+    if (answer.profile.lab.some((a) => a.dataset === 'SYR4')) add(answer.profile.provenance.syr4Url, 'Six-Year Review 4 compliance monitoring, 2012-2019', 'U.S. EPA');
+    if (answer.profile.pfas.tested) add(answer.profile.provenance.ucmr5Url, 'UCMR 5 PFAS and lithium occurrence, 2023-2025', 'U.S. EPA');
+  }
   add(answer.facilityProvenanceUrl, 'SDWIS source facilities', 'U.S. EPA');
   add(answer.upstream?.sourceUrl, 'USGS upstream network (NLDI)', 'U.S. Geological Survey');
   add(answer.waterUse?.sourceUrl, 'USGS county water use estimate', 'U.S. Geological Survey');

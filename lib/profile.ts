@@ -339,6 +339,7 @@ function buildProfile(pwsid: string, now: Date): WaterSystemProfile | null {
       window: pfasDates.length > 0 ? `${pfasDates[0]} to ${pfasDates[pfasDates.length - 1]}` : null,
     },
     highlights: [],
+    findings: [],
     provenance: {
       sdwisQuarter: sys.quarter,
       sdwisUrl: ECHO_BULK_URL,
@@ -348,7 +349,8 @@ function buildProfile(pwsid: string, now: Date): WaterSystemProfile | null {
       echoReportUrl: echoReportUrl(pwsid),
     },
   };
-  profile.highlights = buildHighlights(profile);
+  profile.findings = buildFindings(profile);
+  profile.highlights = profile.findings.map((f) => f.text);
   return profile;
 }
 
@@ -357,46 +359,49 @@ function fmt(n: number): string {
 }
 
 /** Deterministic key findings, ranked by public-health relevance. */
-export function buildHighlights(p: WaterSystemProfile): string[] {
-  const h: string[] = [];
+export function buildFindings(p: WaterSystemProfile): WaterSystemProfile['findings'] {
+  const h: WaterSystemProfile['findings'] = [];
+  const add = (level: 'alert' | 'watch' | 'ok', topic: string, text: string) => h.push({ level, topic, text });
   for (const a of p.pfas.aboveMcl.slice(0, 2)) {
-    h.push(`${a.name} reached ${fmt(a.maxNgL)} ng/L in UCMR 5 testing, above the ${a.mclNgL} ng/L federal limit set in 2024 (compliance is judged on averages, due 2029).`);
+    add('alert', 'pfas', `${a.name} reached ${fmt(a.maxNgL)} ng/L in UCMR 5 testing, above the ${a.mclNgL} ng/L federal limit set in 2024 (compliance is judged on averages, due 2029).`);
   }
   if (p.pfas.tested && p.pfas.aboveMcl.length === 0) {
-    h.push(
-      p.pfas.compoundsDetected.length === 0
-        ? `No PFAS were detected in UCMR 5 testing (${p.pfas.samples} sampling rounds).`
-        : `UCMR 5 detected ${p.pfas.compoundsDetected.length} PFAS compound${p.pfas.compoundsDetected.length === 1 ? '' : 's'}, none above a federal limit.`,
-    );
+    if (p.pfas.compoundsDetected.length === 0) add('ok', 'pfas', `No PFAS were detected in UCMR 5 testing (${p.pfas.samples} sampling rounds).`);
+    else add('watch', 'pfas', `UCMR 5 detected ${p.pfas.compoundsDetected.length} PFAS compound${p.pfas.compoundsDetected.length === 1 ? '' : 's'}, none above a federal limit.`);
   }
   if (p.leadSummary) {
     const l = p.leadSummary;
-    h.push(
-      l.latestPpb > 15
-        ? `Lead at the 90th-percentile home tap was ${fmt(l.latestPpb)} ppb in the period ending ${l.latestPeriodEnd}, above the 15 ppb action level.`
-        : `Latest lead 90th percentile: ${fmt(l.latestPpb)} ppb (period ending ${l.latestPeriodEnd}), under the 15 ppb action level${l.periodsAboveActionLevel > 0 ? `; ${l.periodsAboveActionLevel} earlier period${l.periodsAboveActionLevel === 1 ? ' was' : 's were'} above it` : ''}.`,
-    );
+    if (l.latestPpb > 15) add('alert', 'lead', `Lead at the 90th-percentile home tap was ${fmt(l.latestPpb)} ppb in the period ending ${l.latestPeriodEnd}, above the 15 ppb action level.`);
+    else
+      add(
+        l.latestPpb >= 10 ? 'watch' : 'ok',
+        'lead',
+        `Latest lead 90th percentile: ${fmt(l.latestPpb)} ppb (period ending ${l.latestPeriodEnd}), under the 15 ppb action level${l.periodsAboveActionLevel > 0 ? `; ${l.periodsAboveActionLevel} earlier period${l.periodsAboveActionLevel === 1 ? ' was' : 's were'} above it` : ''}.`,
+      );
   }
   const v = p.violationSummary;
-  h.push(
-    v.last5Years === 0
-      ? 'No SDWIS violations recorded in the last 5 years.'
-      : `${v.last5Years} SDWIS violation${v.last5Years === 1 ? '' : 's'} in the last 5 years, ${v.healthBased5Years} health-based${v.unresolved > 0 ? `, ${v.unresolved} not yet resolved` : ''}.`,
-  );
+  if (v.last5Years === 0) add('ok', 'violations', 'No SDWIS violations recorded in the last 5 years.');
+  else
+    add(
+      v.healthBased5Years > 0 || v.unresolved > 0 ? 'alert' : 'watch',
+      'violations',
+      `${v.last5Years} SDWIS violation${v.last5Years === 1 ? '' : 's'} in the last 5 years, ${v.healthBased5Years} health-based${v.unresolved > 0 ? `, ${v.unresolved} not yet resolved` : ''}.`,
+    );
   const above = p.lab
     .filter((a) => a.status === 'max_above_benchmark' && a.group !== 'pfas' && a.group !== 'disinfectant_residual' && a.name !== 'LEAD' && a.name !== 'COPPER')
     .sort((x, y) => (y.aboveBenchmark?.count ?? 0) - (x.aboveBenchmark?.count ?? 0));
   for (const a of above.slice(0, 2)) {
     const n = a.aboveBenchmark ? `${a.aboveBenchmark.atLeast ? 'at least ' : ''}${a.aboveBenchmark.count} sample${a.aboveBenchmark.count === 1 ? '' : 's'}` : 'a sample';
-    h.push(`${a.label}: ${n} above the ${a.benchmark?.value} ${a.benchmark?.unit} limit in 2012-2019 monitoring (highest ${fmt(a.maxInBenchmarkUnit ?? 0)}, typical ${fmt(a.medianInBenchmarkUnit ?? 0)} ${a.benchmark?.unit}).`);
+    add('watch', 'lab', `${a.label}: ${n} above the ${a.benchmark?.value} ${a.benchmark?.unit} limit in 2012-2019 monitoring (highest ${fmt(a.maxInBenchmarkUnit ?? 0)}, typical ${fmt(a.medianInBenchmarkUnit ?? 0)} ${a.benchmark?.unit}).`);
   }
   const main = [...p.purchasedFrom].sort((x, y) => (y.population ?? 0) - (x.population ?? 0))[0];
-  if (main && (main.population ?? 0) > (p.population ?? 0) * 0.5) {
-    h.push(`Buys treated water from ${main.name}.`);
-  } else if (main) {
-    h.push(`Has a purchased-water connection with ${main.name}.`);
-  }
+  if (main && (main.population ?? 0) > (p.population ?? 0) * 0.5) add('ok', 'source', `Buys treated water from ${main.name}.`);
+  else if (main) add('ok', 'source', `Has a purchased-water connection with ${main.name}.`);
   return h.slice(0, 6);
+}
+
+export function buildHighlights(p: WaterSystemProfile): string[] {
+  return buildFindings(p).map((f) => f.text);
 }
 
 // ---------------------------------------------------------------------------

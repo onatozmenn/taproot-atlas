@@ -8,6 +8,7 @@ import { EmptyState } from '../atlas/empty-state';
 import { PathwaySchematic } from '../atlas/pathway-schematic';
 import { QualityTable } from '../atlas/quality-table';
 import { SourceCard } from '../atlas/source-card';
+import { WaterReport } from '../report/water-report';
 
 type Tab = 'source' | 'quality' | 'pathway' | 'compliance';
 
@@ -25,6 +26,7 @@ export function EvidenceCard({ answer, initiallyOpen }: { answer: TapAnswer; ini
   const [tab, setTab] = useState<Tab>(defaultTab(answer.focus));
 
   if (answer.scope === 'redirect') return null;
+  if (answer.profile && answer.pwsid !== 'UNKNOWN') return <WaterReport answer={answer} initiallyOpen={initiallyOpen} />;
   if (answer.pwsid === 'UNKNOWN') {
     return answer.place ? (
       <div className="animate-rich-content-in mt-4">

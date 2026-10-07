@@ -96,7 +96,7 @@ export default function App() {
         ...(coords ? { lat: coords.lat, lon: coords.lon } : {}),
         ...(contextPwsid ? { contextPwsid } : {}),
       });
-      setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer, fresh: true }]);
+      setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer: { ...answer, question: q }, fresh: true }]);
     } catch (e) {
       if (!controller.signal.aborted) {
         const msg = e instanceof Error ? e.message : 'Lookup failed. Check your connection and retry.';

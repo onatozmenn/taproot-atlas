@@ -74,6 +74,12 @@
     --ring: #0066c5;
     --link: #0066c5;
     --tertiary: #000c1f73;
+    --level-alert: #c1121f;
+    --level-alert-bg: #c1121f14;
+    --level-watch: #a15c00;
+    --level-watch-bg: #b8690014;
+    --level-ok: #00703c;
+    --level-ok-bg: #00703c12;
     --chart-1: #002664;
     --chart-2: #0066c5;
     --chart-3: #007f26;
@@ -92,6 +98,12 @@
 }
 
 .dark {
+    --level-alert: #ff6b6b;
+    --level-alert-bg: #ff6b6b1f;
+    --level-watch: #f0b44c;
+    --level-watch-bg: #f0b44c1f;
+    --level-ok: #4fd18b;
+    --level-ok-bg: #4fd18b1a;
     --background: #050b16;
     --foreground: #eef2f8;
     --card: #0b1424;
