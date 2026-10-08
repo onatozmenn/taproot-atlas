@@ -97,8 +97,9 @@ export function buildFactsMessage(schematic: WaterOriginSchematic, question = ''
     `Resolver facts (sole ground truth; use nothing else):\n${JSON.stringify(facts)}\n\n` +
     `Respond ONLY with a JSON object shaped exactly like ` +
     `{"answer": string, "overview": string, "metricsSummary": string, "complianceNote": string, "stewardshipNote": string}. ` +
-    `"answer" is the chat reply the user reads: Markdown, 40 to 140 words, first sentence answers the exact question, ` +
-    `then at most 5 short bullets with only the facts that answer it (bold the parameter or place name). ` +
+    `"answer" is the chat reply the user reads: Markdown, 15 to 50 words, at most 2 sentences, no bullets. ` +
+    `The first sentence answers the exact question and bolds the key number or verdict; the second, only if needed, adds the one fact that qualifies it. ` +
+    `Never mention anything the user did not ask about: the interface already draws the chart, map and records beside your words. ` +
     `If the facts do not contain what was asked (for example no lead result), say so plainly in the first sentence and name what the records do cover. ` +
     `No headings, no tables, no links, no closing pleasantries.`
   );

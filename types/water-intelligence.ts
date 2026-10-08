@@ -223,6 +223,8 @@ export interface WaterSystemProfile {
   highlights: string[];
   /** Same findings with a level (alert = above a limit / health-based) and topic. */
   findings: Array<{ level: 'alert' | 'watch' | 'ok'; topic: 'pfas' | 'lead' | 'violations' | 'lab' | 'source' | string; text: string }>;
+  /** EPA service-area polygon (reported or modeled), when published. */
+  serviceArea?: { geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown }; method: 'reported' | 'modeled'; areaKm2: number; sourceUrl: string } | null;
   provenance: { sdwisQuarter: string | null; sdwisUrl: string; syr4Url: string; ucmr5Url: string; captureTime: string; echoReportUrl: string };
 }
 
