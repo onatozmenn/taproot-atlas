@@ -16,7 +16,7 @@ import type {
 } from '../types/water-intelligence.js';
 import { benchmarkFor, normUnit, toBenchmarkUnit, unitLabel } from './standards.js';
 import { echoReportUrl } from './echo.js';
-import { stateShard, nationalIndex } from './national.js';
+import { stateShard, nationalIndex, serviceArea } from './national.js';
 
 interface RawSystem {
   system: null | {
@@ -349,6 +349,7 @@ function buildProfile(pwsid: string, now: Date): WaterSystemProfile | null {
       echoReportUrl: echoReportUrl(pwsid),
     },
   };
+  profile.serviceArea = serviceArea(pwsid);
   profile.findings = buildFindings(profile);
   profile.highlights = profile.findings.map((f) => f.text);
   return profile;

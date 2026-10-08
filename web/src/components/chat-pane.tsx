@@ -79,7 +79,7 @@ function AssistantTurn({
             </p>
           )}
           <AnswerActions answer={answer} copyText={markdown} />
-          <EvidenceCard answer={answer} initiallyOpen={isLatest && answer.focus !== 'general'} />
+          <EvidenceCard answer={answer} initiallyOpen={isLatest && answer.focus !== 'general'} onAsk={busy ? undefined : onFollowUp} />
           {chips.length > 0 && (
             <div className="mt-5 flex flex-col items-start gap-2.5" aria-label="Suggested follow-ups">
               {chips.map((c, i) => (

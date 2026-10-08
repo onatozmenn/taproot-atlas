@@ -4,6 +4,7 @@
 // scannable bullets, the one caveat that matters, never a safety verdict.
 import type { LabAnalyteSummary, WaterOriginSchematic, WaterSystemProfile } from '../types/water-intelligence.js';
 import type { AnswerIntent } from './narrator.js';
+import { plainViolation } from './plain-violation.js';
 
 export interface ProfileAnswer {
   markdown: string;
@@ -97,271 +98,152 @@ function labFor(p: WaterSystemProfile, analytes: string[]): LabAnalyteSummary[] 
   return p.lab.filter((a) => want.has(a.name.toUpperCase()));
 }
 
-function labBullet(a: LabAnalyteSummary): string {
-  const range = a.firstDate && a.lastDate ? `${a.firstDate.slice(0, 4)}-${a.lastDate.slice(0, 4)}` : '';
-  const src = a.dataset === 'SYR4' ? `EPA compliance monitoring${range ? `, ${range}` : ''}` : `EPA UCMR 5${range ? `, ${range}` : ''}`;
-  if (a.detects === 0) return `- **${a.label}**: not detected in ${fmtN(a.samples)} samples (${src})`;
-  const unit = a.benchmark?.unit ?? a.unit ?? '';
-  const max = a.maxInBenchmarkUnit ?? a.maxValue;
-  const med = a.medianInBenchmarkUnit ?? a.medianDetect;
-  let s = `- **${a.label}**: found in ${fmtN(a.detects)} of ${fmtN(a.samples)} samples, typically ${fmtN(med ?? 0)} ${unit}, highest ${fmtN(max ?? 0)} ${unit}`;
-  if (a.benchmark) {
-    const lim = `${fmtN(a.benchmark.value)} ${a.benchmark.unit}`;
-    const kind = a.benchmark.kind === 'action_level' ? 'action level' : a.benchmark.kind === 'mrdl' ? 'disinfectant limit' : 'federal limit';
-    if (a.status === 'max_above_benchmark' && a.aboveBenchmark) {
-      s += `; ${a.aboveBenchmark.atLeast ? 'at least ' : ''}${a.aboveBenchmark.count} sample${a.aboveBenchmark.count === 1 ? '' : 's'} above the ${lim} ${kind}`;
-    } else {
-      s += ` vs a ${lim} ${kind}`;
-    }
-  }
-  return `${s} (${src})`;
-}
-
 function violationsAbout(p: WaterSystemProfile, re: RegExp) {
   return p.violations.filter((v) => re.test(`${v.contaminant ?? ''} ${v.rule ?? ''} ${v.name ?? ''}`));
 }
 
-function violationBullet(v: WaterSystemProfile['violations'][number]): string {
-  const what = v.name ?? v.contaminant ?? 'Violation';
-  const about = v.contaminant && v.name && !v.name.toLowerCase().includes(v.contaminant.toLowerCase()) ? ` (${v.contaminant})` : '';
-  const state = v.returnedToCompliance
-    ? `back in compliance ${niceDate(v.returnedToCompliance)}`
-    : v.status === 'Resolved' || v.status === 'Archived'
-      ? 'resolved'
-      : 'not yet resolved';
-  return `- ${niceDate(v.begin)}: **${what}**${about}, ${v.healthBased ? 'health-based' : 'paperwork or monitoring'}, ${state}`;
-}
-
 // ---------------------------------------------------------------------------
 
+// Answers are deliberately short: one sentence that answers the exact
+// question, plus at most one that qualifies it. The interface draws the
+// chart, map or timeline for that topic, so nothing else is repeated here.
+
 function answerLead(city: string, p: WaterSystemProfile): string[] {
-  const out: string[] = [];
   const l = p.leadSummary;
-  if (!l) {
-    out.push(`I don't have a lead and copper summary for ${city} in the federal records.`);
-  } else {
-    const above = l.latestPpb > 15;
-    out.push(
-      `**${poss(city)} latest lead result is ${fmtN(l.latestPpb)} ppb**, ${above ? 'above' : 'under'} the federal 15 ppb action level (90th percentile of sampled home taps, ${period(p.lead[p.lead.length - 1].start, p.lead[p.lead.length - 1].end)}).`,
-      '',
-    );
-    const byEnd = new Map<string, number>();
-    for (const x of p.lead) byEnd.set(niceMonth(x.end), x.ppb);
-    const recent = [...byEnd.entries()].slice(-4).map(([k, v]) => `${fmtN(v)} (${k})`);
-    if (recent.length > 1) out.push(`- **Recent trend, ppb**: ${recent.join(', ')}`);
-    out.push(
-      l.periodsAboveActionLevel > 0
-        ? `- **Above the action level** in ${l.periodsAboveActionLevel} of ${l.periods} reported periods; the highest was ${fmtN(l.maxPpb)} ppb (${niceMonth(l.maxPeriodEnd)})`
-        : `- **Never above the action level** in ${l.periods} reported periods; the highest was ${fmtN(l.maxPpb)} ppb (${niceMonth(l.maxPeriodEnd)})`,
-    );
-    if (p.copperSummary) {
-      out.push(`- **Copper**: ${fmtN(p.copperSummary.latestPpb / 1000)} mg/L latest vs a 1.3 mg/L action level`);
-    }
-  }
-  const lsl = violationsAbout(p, /lead and copper|lsl|service line/i).slice(0, 2);
-  for (const v of lsl) out.push(violationBullet(v));
-  if (p.treatment.some((t) => /corrosion|orthophosphate|inhibitor|ph adjust/i.test(`${t.process} ${t.objective ?? ''}`))) {
-    out.push('- **Corrosion control**: the utility reports treatment that keeps lead from leaching out of pipes');
-  }
+  if (!l) return [`I don't have a lead and copper result for ${city} in EPA's records.`];
+  const last = p.lead[p.lead.length - 1];
+  const above = l.latestPpb > 15;
+  const out = [
+    `**${poss(city)} latest lead result is ${fmtN(l.latestPpb)} ppb**, ${above ? 'above' : 'under'} the federal 15 ppb action level (${period(last.start, last.end)}).`,
+  ];
   out.push(
-    '',
-    "Lead rarely comes from the source water; it leaches from lead service lines and older plumbing, so one home can differ from the city average. If your water sat for hours, run the cold tap first, and a filter certified to NSF/ANSI 53 removes lead.",
+    l.periodsAboveActionLevel > 0
+      ? `It went over in ${l.periodsAboveActionLevel} of ${l.periods} reporting periods, peaking at ${fmtN(l.maxPpb)} ppb in ${niceMonth(l.maxPeriodEnd)}.`
+      : `It has stayed under in all ${l.periods} reporting periods on record.`,
   );
   return out;
 }
 
 function answerPfas(city: string, p: WaterSystemProfile): string[] {
-  const out: string[] = [];
-  const pf = p.pfas;
-  const rows = p.lab.filter((a) => a.group === 'pfas');
-  if (!pf.tested) {
-    out.push(`${city} has no PFAS results in EPA's UCMR 5 national survey yet.`);
-    return out;
-  }
+  const pf = { ...p.pfas, window: windowWords(p.pfas.window) };
+  if (!pf.tested) return [`${city} has no PFAS results in EPA's UCMR 5 national survey yet.`];
   if (pf.aboveMcl.length > 0) {
-    out.push(
-      `**Yes. ${city} reported ${list(pf.aboveMcl.map((a) => a.name))} above the new federal PFAS limits** in EPA's UCMR 5 testing (${pf.window}).`,
-      '',
-    );
-  } else if (pf.compoundsDetected.length > 0) {
-    out.push(
-      `**${city} had low-level PFAS detections, none above a federal limit**, in EPA's UCMR 5 testing (${pf.window}).`,
-      '',
-    );
-  } else {
-    out.push(
-      `**No PFAS were detected in ${poss(city)} water** in EPA's UCMR 5 testing: 29 compounds checked over ${pf.samples} sampling rounds (${pf.window}).`,
-    );
-    return [...out, '', 'UCMR 5 is a one-time national survey; results reflect samples at the treatment plant or entry points, not every tap.'];
+    const top = [...pf.aboveMcl].sort((a, b) => b.maxNgL / b.mclNgL - a.maxNgL / a.mclNgL)[0];
+    return [
+      `**Yes. ${city} reported ${list(pf.aboveMcl.map((a) => a.name))} above the 2024 federal PFAS limits** in EPA testing (${pf.window}).`,
+      `The highest was ${top.name} at ${fmtN(top.maxNgL)} ng/L, against a ${fmtN(top.mclNgL)} ng/L limit.`,
+    ];
   }
-  const detected = rows.filter((a) => a.detects > 0).sort((a, b) => (b.maxInBenchmarkUnit ?? 0) - (a.maxInBenchmarkUnit ?? 0) || b.detects - a.detects);
-  for (const a of detected.slice(0, 5)) {
-    const ng = a.unit === 'ug/L' ? (a.maxValue ?? 0) * 1000 : a.maxValue ?? 0;
-    const max = a.maxInBenchmarkUnit ?? ng;
-    const lim = a.benchmark ? ` vs a ${fmtN(a.benchmark.value)} ng/L limit` : ', no federal limit';
-    out.push(`- **${a.label}**: highest ${fmtN(max)} ng/L, found in ${a.detects} of ${a.samples} samples${lim}`);
+  if (pf.compoundsDetected.length > 0) {
+    return [`**${city} had low-level PFAS detections, none above a federal limit**, in EPA testing (${pf.window}).`];
   }
-  if (detected.length > 5) out.push(`- ${detected.length - 5} more PFAS compounds detected at lower levels`);
-  out.push(
-    '',
-    'The 2024 rule judges compliance on a running annual average starting in 2029; EPA proposed in May 2026 to keep the 4 ng/L PFOA and PFOS limits but drop the PFHxS, PFNA and GenX limits. Reverse osmosis and certified activated-carbon filters reduce PFAS at home.',
-  );
-  return out;
+  return [`**No PFAS were detected in ${poss(city)} water** across ${pf.samples} EPA sampling rounds (${pf.window}).`];
+}
+
+function windowWords(w: string | null): string {
+  const m = (w ?? '').match(/(\d{4})-\d{2}-\d{2}\s+to\s+(\d{4})-\d{2}-\d{2}/);
+  if (!m) return w ?? '';
+  return m[1] === m[2] ? m[1] : `${m[1]}-${m[2]}`;
 }
 
 function answerAnalytes(city: string, p: WaterSystemProfile, t: Topic): string[] {
-  const out: string[] = [];
   const rows = labFor(p, t.analytes).sort((a, b) => b.samples - a.samples);
-  const related =
-    t.key === 'coliform'
-      ? violationsAbout(p, /coliform|e\.? ?coli|microbial|surface water treatment|turbidity/i)
-      : violationsAbout(p, t.words);
-  const treat =
-    t.key === 'fluoride'
-      ? p.treatment.filter((x) => /fluorid/i.test(x.process))
-      : t.key === 'chlorine'
-        ? p.treatment.filter((x) => /chlor|hypochlor|ozon|ultraviolet|uv/i.test(x.process))
-        : [];
-  const headRow = rows.find((a) => a.detects > 0) ?? rows[0];
   if (t.key === 'coliform') {
-    out.push(
-      related.length === 0
-        ? `**No bacteria or treatment-technique violations are on record for ${city}** in EPA's drinking water database.`
-        : `**${city} has ${related.length} bacteria or surface-water-treatment record${related.length === 1 ? '' : 's'}** in EPA's database; the most recent are below.`,
-    );
-  } else if (headRow) {
-    const above = rows.some((a) => a.status === 'max_above_benchmark');
-    const any = rows.some((a) => a.detects > 0);
-    out.push(
-      !any
-        ? `**${t.name} was not detected in ${poss(city)} compliance samples** (${headRow.firstDate?.slice(0, 4)}-${headRow.lastDate?.slice(0, 4)}).`
-        : above
-          ? `**${city} reported some ${t.name.toLowerCase()} samples above the federal limit**, though typical levels were lower.`
-          : `**${t.name} shows up in ${poss(city)} water at levels under the federal limit.**`,
-    );
-  } else if (treat.length > 0) {
-    out.push(`I don't have ${t.name.toLowerCase()} lab samples for ${city}, but the utility reports ${list(treat.map((x) => x.process.toLowerCase()))} as a treatment step.`);
-  } else {
-    out.push(`I don't have ${t.name.toLowerCase()} results for ${city} in EPA's national monitoring files.`);
+    const related = violationsAbout(p, /coliform|e\.? ?coli|microbial|surface water treatment|turbidity/i);
+    if (related.length === 0) return [`**No bacteria violations are on record for ${city}** in EPA's drinking water database.`];
+    const v = related[0];
+    return [
+      `**${city} has ${related.length} bacteria or treatment record${related.length === 1 ? '' : 's'} on file.**`,
+      `The most recent began ${niceDate(v.begin)}${v.returnedToCompliance ? ` and was back in compliance ${niceDate(v.returnedToCompliance)}` : ''}.`,
+    ];
   }
-  if (rows.length > 0) out.push('', ...rows.slice(0, 4).map(labBullet));
-  if (treat.length > 0 && headRow) out.push(`- **Treatment**: ${list(treat.map((x) => x.process.toLowerCase()))}`);
-  const cutoff = `${new Date().getUTCFullYear() - 15}`;
-  const recentRel = related.filter((v) => (v.begin ?? '') >= cutoff);
-  for (const v of recentRel.slice(0, 3)) out.push(violationBullet(v));
-  if (recentRel.length === 0 && related.length > 0 && t.key !== 'coliform') {
-    out.push(`- **No related violations in the last 15 years**; the most recent was in ${(related[0].begin ?? '').slice(0, 4)}`);
+  const head = rows.find((a) => a.detects > 0) ?? rows[0];
+  if (!head) {
+    const treat =
+      t.key === 'fluoride'
+        ? p.treatment.filter((x) => /fluorid/i.test(x.process))
+        : t.key === 'chlorine'
+          ? p.treatment.filter((x) => /chlor|hypochlor|ozon|ultraviolet|uv/i.test(x.process))
+          : [];
+    return treat.length > 0
+      ? [`I don't have ${t.name.toLowerCase()} lab results for ${city}, but the utility lists ${list(treat.map((x) => x.process.toLowerCase()))} as a treatment step.`]
+      : [`I don't have ${t.name.toLowerCase()} results for ${city} in EPA's national monitoring files.`];
   }
-  const health = rows.find((a) => a.benchmark?.health)?.benchmark?.health;
-  const note = rows.find((a) => a.benchmark?.note)?.benchmark?.note;
-  const outlier = rows.find((a) => a.outlierExcluded);
-  const tail: string[] = [];
-  if (health) tail.push(health);
-  if (note && rows.some((a) => a.status === 'max_above_benchmark')) tail.push(note);
-  if (outlier) tail.push(`One reported value (${fmtN(outlier.outlierExcluded!.value)} ${outlier.benchmark?.unit}) looks like a unit-entry error and is left out.`);
-  if (rows.length > 0 && rows[0].dataset === 'SYR4') tail.push('These are 2012-2019 EPA compliance samples, the latest national release.');
-  if (tail.length > 0) out.push('', tail.join(' '));
-  return out;
+  const years = head.firstDate && head.lastDate ? `${head.firstDate.slice(0, 4)}-${head.lastDate.slice(0, 4)}` : '';
+  if (head.detects === 0) return [`**${t.name} was not detected in ${poss(city)} ${fmtN(head.samples)} samples**${years ? ` (${years})` : ''}.`];
+  let unit = head.benchmark?.unit ?? head.unit ?? '';
+  let max = head.maxInBenchmarkUnit ?? head.maxValue ?? 0;
+  let med = head.medianInBenchmarkUnit ?? head.medianDetect ?? 0;
+  let limV = head.benchmark?.value ?? 0;
+  if (unit === 'ug/L' && limV >= 1000) {
+    unit = 'mg/L';
+    max /= 1000;
+    med /= 1000;
+    limV /= 1000;
+  }
+  const above = rows.some((a) => a.status === 'max_above_benchmark');
+  const lim = head.benchmark ? `${fmtN(limV)} ${unit}` : null;
+  const first = above
+    ? `**Some ${poss(city)} ${head.label.toLowerCase()} samples went above the ${lim} federal limit**, though the typical level was ${fmtN(med)} ${unit}.`
+    : lim
+      ? `**${head.label} in ${poss(city)} water typically measured ${fmtN(med)} ${unit}**, under the ${lim} federal limit.`
+      : `**${head.label} turned up in ${fmtN(head.detects)} of ${fmtN(head.samples)} ${city} samples**, typically ${fmtN(med)} ${unit}; it has no federal limit.`;
+  return [first, `The highest of ${fmtN(head.samples)} samples was ${fmtN(max)} ${unit}${years ? ` (${years})` : ''}.`];
 }
 
 function answerSource(city: string, s: WaterOriginSchematic, p: WaterSystemProfile): string[] {
-  const out: string[] = [];
   const basins = s.primaryBasins;
   const kind = sourceWords(p);
-  const serves = p.population ? ` serves about ${people(p.population)}` : '';
-  out.push(
-    basins.length > 0
-      ? `**${poss(city)} water comes from ${list(basins.map((b) => (/(river|lake|reservoir|aquifer|basin|valley|bay|creek|watershed)/i.test(b) ? b : `the ${b} basin`)))}.** ${p.name}${serves}${kind ? ` and is classed as ${kind}` : ''}.`
-      : `**${p.name}${serves} using ${kind || 'its own sources'}.**`,
-    '',
-  );
-  const fc = p.facilityCounts;
-  const intakes = fc['Intake'] ?? 0;
-  const wells = fc['Well'] ?? 0;
-  const counts: string[] = [];
-  if (intakes) counts.push(`${intakes} surface intake${intakes === 1 ? '' : 's'}`);
-  if (wells) counts.push(`${wells} well${wells === 1 ? '' : 's'}`);
-  if (fc['Reservoir']) counts.push(`${fc['Reservoir']} reservoir${fc['Reservoir'] === 1 ? '' : 's'}`);
-  if (counts.length > 0) out.push(`- **Active sources**: ${list(counts)}`);
-  const named = p.sources.filter((x) => !/^(well|intake)\s*#?\d+$/i.test(x.name)).slice(0, 4).map((x) => x.name);
-  if (named.length > 0) out.push(`- **Named sources**: ${list(named)}`);
-  if (p.plants.length > 0) out.push(`- **Treatment plants**: ${list(p.plants, 3)}`);
-  const buys = [...p.purchasedFrom].sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
-  if (buys.length > 0) out.push(`- **Also buys water from**: ${list(buys.map((b) => b.name), 3)}`);
-  if (p.counties.length > 0) out.push(`- **Serves**: ${list(p.counties.map((c) => `${c} County`), 3)}${p.state ? `, ${p.state}` : ''}`);
-  if (s.waterUse) out.push(`- **County supply mix (modeled)**: about ${s.waterUse.surfacePct}% surface, ${s.waterUse.groundPct}% groundwater`);
-  if (p.sourceWaterProtection) out.push('- **Source water protection plan** on file with the state');
-  return out;
-}
-
-function groupTreatment(p: WaterSystemProfile): string[] {
-  const by = new Map<string, string[]>();
-  for (const t of p.treatment) {
-    const k = t.objective ?? 'Other';
-    const arr = by.get(k) ?? [];
-    if (!arr.includes(t.process.toLowerCase())) arr.push(t.process.toLowerCase());
-    by.set(k, arr);
+  const serves = p.population ? `, serving about ${people(p.population)}` : '';
+  if (basins.length > 0) {
+    return [
+      `**${poss(city)} water comes from ${list(basins.map((b) => (/(river|lake|reservoir|aquifer|basin|valley|bay|creek|watershed)/i.test(b) ? b : `the ${b} basin`)))}.**`,
+      `${p.name} delivers it${serves}.`,
+    ];
   }
-  return [...by.entries()].map(([k, v]) => `${k.toLowerCase()}: ${list(v, 3)}`);
+  const buys = [...p.purchasedFrom].sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
+  if (buys.length > 0) return [`**${city} buys its water from ${list(buys.map((b) => b.name), 2)}**${serves}.`];
+  const fc = p.facilityCounts;
+  const from = fc['Intake'] ? `${fc['Intake']} surface intake${fc['Intake'] === 1 ? '' : 's'}` : fc['Well'] ? `${fc['Well']} wells` : '';
+  return [`**${city} runs on ${kind || 'its own sources'}${from ? `, drawn through ${from}` : ''}**${serves}.`];
 }
 
 function answerPathway(city: string, s: WaterOriginSchematic, p: WaterSystemProfile): string[] {
-  const out: string[] = [`Here is how ${poss(city)} water gets to your tap.`, ''];
-  const steps: string[] = [];
-  const src = s.primaryBasins.length > 0 ? list(s.primaryBasins) : (p.primarySource ?? 'local sources');
-  const fc = p.facilityCounts;
-  const srcCount = [fc['Intake'] ? `${fc['Intake']} intakes` : '', fc['Well'] ? `${fc['Well']} wells` : ''].filter(Boolean).join(' and ');
-  steps.push(`**Source**: ${src}${srcCount ? `, drawn through ${srcCount}` : ''}`);
-  if ((s.conveyances ?? []).length > 0) steps.push(`**Conveyance**: ${list((s.conveyances ?? []).map((c) => c.name), 3)}`);
-  if (p.purchasedFrom.length > 0) steps.push(`**Wholesale supply**: treated water bought from ${list([...p.purchasedFrom].sort((a, b) => (b.population ?? 0) - (a.population ?? 0)).map((b) => b.name), 2)}`);
-  const g = groupTreatment(p);
-  if (p.plants.length > 0 || g.length > 0) {
-    steps.push(`**Treatment**${p.plants.length > 0 ? ` at ${list(p.plants, 2)}` : ''}${g.length > 0 ? `: ${g.slice(0, 4).join('; ')}` : ''}`);
-  }
-  const dist: string[] = [];
-  if (fc['Storage']) dist.push(`${fc['Storage']} storage tanks`);
-  if (fc['Pump Facility']) dist.push(`${fc['Pump Facility']} pump stations`);
-  if (p.connections) dist.push(`${fmtN(p.connections)} service connections`);
-  steps.push(`**Distribution**: city mains${dist.length > 0 ? ` with ${list(dist)}` : ''}`);
-  steps.push('**Your tap**: the service line and home plumbing, where lead can enter');
-  out.push(...steps.map((x, i) => `${i + 1}. ${x}`));
-  out.push('', 'The map draws this route as a schematic; exact pipe alignments and intake locations are not published.');
-  return out;
+  const src = s.primaryBasins.length > 0 ? list(s.primaryBasins, 2) : sourceWords(p) || 'local sources';
+  const plants = p.plants.length || (p.facilityCounts['Treatment Plant'] ?? 0);
+  const steps = [
+    `**Source**: ${src}`,
+    p.purchasedFrom.length > 0 ? `**Wholesale**: ${list(p.purchasedFrom.map((b) => b.name), 2)}` : '',
+    plants > 0 ? `**Treatment**: ${plants} plant${plants === 1 ? '' : 's'}` : '',
+    `**Your tap**${p.connections ? `: one of ${fmtN(p.connections)} connections` : ''}`,
+  ].filter(Boolean);
+  return [`${poss(city)} water takes ${steps.length} steps to reach you.`, '', ...steps.map((x, i) => `${i + 1}. ${x}`)];
 }
 
 function answerCompliance(city: string, p: WaterSystemProfile): string[] {
   const v = p.violationSummary;
-  const out: string[] = [];
-  out.push(
-    v.last5Years === 0
-      ? `**${city} has no drinking water violations on record in the last 5 years.**`
-      : `**${city} has ${v.last5Years} violation${v.last5Years === 1 ? '' : 's'} on record in the last 5 years, ${v.healthBased5Years === 0 ? 'none' : v.healthBased5Years} health-based.**${v.healthBased5Years === 0 ? ' The rest are monitoring or reporting lapses.' : ''}`,
-    '',
-  );
-  const recent = p.violations.slice(0, 4);
-  if (recent.length > 0) out.push(...recent.map(violationBullet));
-  if (v.unresolved > 0) out.push(`- **Still open**: ${v.unresolved}`);
-  if (p.lastSanitarySurvey?.date) {
-    const sig = p.lastSanitarySurvey.findings.filter((f) => f.startsWith('significant'));
-    out.push(
-      `- **Last state inspection** (${p.lastSanitarySurvey.reason?.toLowerCase() ?? 'site visit'}): ${niceDate(p.lastSanitarySurvey.date)}${sig.length > 0 ? `, ${sig.length} significant deficienc${sig.length === 1 ? 'y' : 'ies'} (${list(sig.map((x) => x.replace('significant deficiency: ', '')), 3)})` : ', no significant deficiencies'}`,
-    );
-  }
-  out.push('', `All-time, EPA lists ${v.total} records for this system, ${v.healthBasedAllTime} of them health-based. A record describes a past period, not today's water.`);
+  if (v.last5Years === 0) return [`**${city} has no drinking water violations in the last 5 years.**`];
+  const out = [
+    `**${city} has ${v.last5Years} violation${v.last5Years === 1 ? '' : 's'} in the last 5 years, ${v.healthBased5Years === 0 ? 'none' : v.healthBased5Years} health-based.**`,
+  ];
+  const hb = p.violations.find((x) => x.healthBased);
+  if (v.healthBased5Years > 0 && hb) {
+    out.push(`The latest: ${plainViolation(hb).title.toLowerCase()}, starting ${niceDate(hb.begin)}${hb.returnedToCompliance ? `, fixed ${niceDate(hb.returnedToCompliance)}` : v.unresolved > 0 ? ', still open' : ''}.`);
+  } else if (v.unresolved > 0) out.push(`${v.unresolved} ${v.unresolved === 1 ? 'is' : 'are'} still open.`);
+  else if (v.healthBased5Years === 0) out.push('All were monitoring or reporting lapses, not water above a limit.');
   return out;
 }
 
-function answerOverview(city: string, s: WaterOriginSchematic, p: WaterSystemProfile): string[] {
-  const out: string[] = [];
-  const src = s.primaryBasins.length > 0 ? `from ${list(s.primaryBasins, 3)}` : p.primarySource ? `from ${sourceWords(p)}` : '';
-  out.push(
-    `Here is what EPA's records say about ${poss(city)} tap water${p.population ? `, which reaches about ${people(p.population)}` : ''}${src ? ` ${src}` : ''}.`,
-    '',
-    ...p.highlights.slice(0, 5).map((h) => `- ${h}`),
-    '',
-    "These are records, not a live reading of your tap. Ask me about any of them, like lead, PFAS or violations, and I'll go deeper.",
-  );
-  return out;
+function answerOverview(city: string, p: WaterSystemProfile, safety: boolean): string[] {
+  const flags = p.findings.filter((f) => f.level === 'alert');
+  const notes = p.findings.filter((f) => f.level === 'watch');
+  const pre = safety ? "No record can vouch for your tap today, but " : '';
+  const cap = (x: string) => (pre ? x : x.charAt(0).toUpperCase() + x.slice(1));
+  if (flags.length === 0 && notes.length === 0) return [`${pre}**${cap(`nothing in EPA's records for ${city} is above a federal limit.`)}**`];
+  if (flags.length === 0) {
+    return [`${pre}**${cap(`nothing in ${poss(city)} EPA records is above a federal limit**`)}; ${notes.length === 1 ? 'one thing is' : `${notes.length} things are`} worth a look.`];
+  }
+  return [`${pre}**${cap(`${poss(city)} records flag ${flags.length === 1 ? 'one thing' : `${flags.length} things`}.`)}**`, flags[0].text];
 }
 
 function followUps(city: string, p: WaterSystemProfile, focus: AnswerIntent, asked: Set<string>): string[] {
@@ -397,7 +279,7 @@ export function composeProfileAnswer(
 
   if (topics.length > 0) {
     topics.slice(0, 2).forEach((t, i) => {
-      if (i > 0) lines.push('', '---', '');
+      if (i > 0) lines.push('');
       if (t.key === 'lead') lines.push(...answerLead(city, p));
       else if (t.key === 'pfas') lines.push(...answerPfas(city, p));
       else lines.push(...answerAnalytes(city, p, t));
@@ -409,15 +291,23 @@ export function composeProfileAnswer(
   } else if (focus === 'source') {
     lines.push(...answerSource(city, s, p));
   } else {
-    lines.push(...answerOverview(city, s, p));
-    if (safety) {
-      lines.splice(0, 1, `No record can promise what comes out of your tap today, but here is what EPA's records show for ${city}${p.population ? `, which serves about ${people(p.population)}` : ''}.`);
-    }
+    lines.push(...answerOverview(city, p, safety));
   }
   return {
-    markdown: lines.join('\n').replace(/\n{3,}/g, '\n\n').trim(),
+    markdown: joinAnswer(lines).replace(/\n{3,}/g, '\n\n').trim(),
     followUps: followUps(city, p, topics.length > 0 ? 'quality' : focus, asked),
     focus: topics.length > 0 ? 'quality' : focus,
     askedParameters,
   };
+}
+
+/** Sentences join into one paragraph; a numbered list keeps its lines. */
+function joinAnswer(lines: string[]): string {
+  const out: string[] = [];
+  for (const l of lines) {
+    const prev = out[out.length - 1];
+    if (prev !== undefined && l && prev && !/^\d+\. /.test(l) && !/^\d+\. /.test(prev)) out[out.length - 1] = `${prev} ${l}`;
+    else out.push(l);
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }

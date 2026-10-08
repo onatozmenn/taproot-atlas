@@ -4,6 +4,7 @@
 //   data/national/index.json        system index (name, city, state, pop, areas)
 //   data/national/<ST>.json.gz      SDWIS profiles for that primacy agency
 //   data/national/<ST>.occ.json.gz  SYR4 + UCMR5 lab summaries
+//   data/national/<ST>.geo.json.gz  EPA service-area polygons (v3, simplified ~200 m)
 //   data/national/places.json       Census 2024 gazetteer places + ZCTAs
 // Files are read with fs on first use (never bundled into the client).
 import { existsSync, readFileSync } from 'node:fs';
@@ -92,10 +93,10 @@ export function indexRow(pwsid: string): IndexRow | null {
 
 const shardCache = new Map<string, Record<string, unknown> | null>();
 /** Raw per-state shard (profiles or occurrence). */
-export function stateShard<T>(st: string, kind: 'profiles' | 'occurrence'): { meta: Record<string, unknown>; systems: Record<string, T> } | null {
+export function stateShard<T>(st: string, kind: 'profiles' | 'occurrence' | 'geo'): { meta: Record<string, unknown>; systems: Record<string, T> } | null {
   const key = `${st}|${kind}`;
   if (!shardCache.has(key)) {
-    const f = readJson<Record<string, unknown>>(kind === 'profiles' ? `${st}.json.gz` : `${st}.occ.json.gz`);
+    const f = readJson<Record<string, unknown>>(kind === 'profiles' ? `${st}.json.gz` : kind === 'geo' ? `${st}.geo.json.gz` : `${st}.occ.json.gz`);
     shardCache.set(key, f);
   }
   const f = shardCache.get(key);
@@ -304,5 +305,26 @@ export function resolveNationalSystem(question: string): NationalHit | null {
     label: place.name,
     center: [top.p.lon, top.p.lat],
     alternatives: options.slice(1, 4).map((o) => `${place.name}, ${o.p.state}`),
+  };
+}
+
+export interface ServiceArea {
+  geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown };
+  /** reported = state/utility boundary; modeled = EPA machine-learning estimate. */
+  method: 'reported' | 'modeled';
+  areaKm2: number;
+  sourceUrl: string;
+}
+
+/** EPA Public Water System Service Area polygon for a system, or null. */
+export function serviceArea(pwsid: string): ServiceArea | null {
+  const shard = stateShard<{ t: 'Polygon' | 'MultiPolygon'; c: unknown; m: 'reported' | 'modeled'; km2: number }>(pwsid.slice(0, 2), 'geo');
+  const g = shard?.systems[pwsid];
+  if (!g) return null;
+  return {
+    geometry: { type: g.t, coordinates: g.c },
+    method: g.m,
+    areaKm2: g.km2,
+    sourceUrl: String(shard?.meta.url ?? 'https://www.epa.gov/ground-water-and-drinking-water/public-water-system-service-areas'),
   };
 }
