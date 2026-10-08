@@ -132,7 +132,7 @@ export function ViolationRiver({
           <motion.path
             d={riverPath}
             fill="url(#river)"
-            initial={false}
+            initial={reduce ? false : { x: 0 }}
             animate={reduce ? undefined : { x: [0, -WAVE] }}
             transition={{ duration: 6, ease: 'linear', repeat: Infinity }}
           />
@@ -145,7 +145,7 @@ export function ViolationRiver({
               stroke="var(--link)"
               strokeOpacity={0.14}
               strokeDasharray="14 22"
-              initial={false}
+              initial={reduce ? false : { strokeDashoffset: 0 }}
               animate={reduce ? undefined : { strokeDashoffset: [0, -72] }}
               transition={{ duration: 4 + i, ease: 'linear', repeat: Infinity }}
             />
