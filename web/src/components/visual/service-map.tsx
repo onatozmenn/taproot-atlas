@@ -35,6 +35,23 @@ function centreOf(rings: Ring[]): [number, number] | null {
   return b ? [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2] : null;
 }
 
+/** MapLibre needs a real GPU canvas; without one the map stays a blank box. */
+function webglAvailable(): boolean {
+  try {
+    const c = document.createElement('canvas');
+    return Boolean(c.getContext('webgl2') ?? c.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * How long to wait for the basemap to settle before admitting defeat. Tile
+ * hosts can hang (blocked network, adblock) without ever firing an error,
+ * which used to leave a permanently blank map and no fallback.
+ */
+const SETTLE_MS = 15000;
+
 /** A gentle arc from a to b, for water arriving from a far source. */
 function arc(a: [number, number], b: [number, number], steps = 48): number[][] {
   const mx = (a[0] + b[0]) / 2;
@@ -60,6 +77,7 @@ function arc(a: [number, number], b: [number, number], steps = 48): number[][] {
 export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; p: WaterSystemProfile; compact?: boolean }) {
   const el = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const sa = p.serviceArea!;
   const rings = ringsOf(sa.geometry);
   const centre = centreOf(rings);
@@ -69,8 +87,16 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
     let map: import('maplibre-gl').Map | null = null;
     let raf = 0;
     let cancelled = false;
+    let settleTimer = 0;
+    const fail = () => {
+      if (!cancelled) {
+        window.clearTimeout(settleTimer);
+        setFailed(true);
+      }
+    };
     (async () => {
       try {
+        if (!webglAvailable()) throw new Error('webgl unavailable');
         const ml = await loadMaplibre();
         if (cancelled || !el.current) return;
         const box = bboxOf([...rings, ...sources.map((s) => [[s.at[0], s.at[1]]])]);
@@ -86,8 +112,21 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
           dragRotate: false,
           pitchWithRotate: false,
         });
+        settleTimer = window.setTimeout(fail, SETTLE_MS);
+        let tileErrors = 0;
         map.on('error', () => {
-          if (map && !map.isStyleLoaded()) setFailed(true);
+          if (!map) return;
+          if (!map.isStyleLoaded()) {
+            fail();
+            return;
+          }
+          // Tile/glyph failures after the style arrived: a few bad tiles are
+          // normal, but a burst of them means the basemap will never paint.
+          tileErrors += 1;
+          if (tileErrors >= 6) fail();
+        });
+        map.on('idle', () => {
+          window.clearTimeout(settleTimer);
         });
         map.on('load', () => {
           if (!map) return;
@@ -156,11 +195,12 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
           raf = requestAnimationFrame(tick);
         });
       } catch {
-        if (!cancelled) setFailed(true);
+        fail();
       }
     })();
     return () => {
       cancelled = true;
+      window.clearTimeout(settleTimer);
       cancelAnimationFrame(raf);
       try {
         map?.remove();
@@ -169,7 +209,7 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.pwsid]);
+  }, [p.pwsid, attempt]);
 
   const facts = [
     p.population ? `${people(p.population)} people` : '',
@@ -188,9 +228,19 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
     >
       <div className={compact ? 'relative h-[240px]' : 'relative h-[320px]'}>
         {failed ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 bg-[var(--muted)] text-[14px] text-muted-foreground">
+          <div className="flex h-full flex-col items-center justify-center gap-2 bg-[var(--muted)] px-6 text-center text-[14px] text-muted-foreground">
             <MapIcon className="size-5" />
             The map couldn't load. The boundary is still in the EPA record.
+            <button
+              type="button"
+              onClick={() => {
+                setFailed(false);
+                setAttempt((a) => a + 1);
+              }}
+              className="press mt-1 rounded-full border px-4 py-1.5 font-medium text-foreground hover:bg-secondary"
+            >
+              Retry the map
+            </button>
           </div>
         ) : (
           <div ref={el} className="service-map absolute inset-0" role="application" aria-label={`Map of the area ${p.name} serves`} />
