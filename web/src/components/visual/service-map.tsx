@@ -114,6 +114,14 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
         });
         settleTimer = window.setTimeout(fail, SETTLE_MS);
         let tileErrors = 0;
+        // A tile that arrived means the basemap is painting; stop the clock.
+        // ('idle' never comes: the animated source arcs repaint forever.
+        // Our own GeoJSON overlays resolve instantly and don't count.)
+        map.on('sourcedata', (e) => {
+          if (e.isSourceLoaded && e.sourceId !== 'area' && e.sourceId !== 'arcs' && e.sourceId !== 'wsheds') {
+            window.clearTimeout(settleTimer);
+          }
+        });
         map.on('error', () => {
           if (!map) return;
           if (!map.isStyleLoaded()) {
@@ -243,7 +251,10 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
             </button>
           </div>
         ) : (
-          <div ref={el} className="service-map absolute inset-0" role="application" aria-label={`Map of the area ${p.name} serves`} />
+          // Inline positioning: MapLibre's own `.maplibregl-map` rule sets
+          // position:relative, which beats Tailwind's `absolute` and
+          // collapses this box to zero height (blank map).
+          <div ref={el} className="service-map" role="application" aria-label={`Map of the area ${p.name} serves`} style={{ position: 'absolute', inset: 0 }} />
         )}
       </div>
     </VisualFrame>
