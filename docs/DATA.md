@@ -22,3 +22,12 @@ Rules baked into `lib/profile.ts`:
 Shards: `data/national/<ST>.json.gz` (profiles), `<ST>.occ.json.gz` (lab), `index.json`, `places.json`. They are read with `fs` by the `/api/ask` function (`vercel.json` `includeFiles`), never shipped to the browser.
 
 Refresh: re-download the ECHO SDWA zip quarterly and rerun the two build scripts.
+
+## Service-area polygons (`data/national/<ST>.geo.json.gz`)
+
+EPA Public Water System Service Areas, v3 (March 2026), queried by PWSID from the
+hosted layer `services.arcgis.com/cJ9YHowT8TU7DUyn/.../Water_System_Boundaries/FeatureServer/0`
+with `maxAllowableOffset=0.002` (about 200 m) and 4-decimal coordinates. 9,498 of
+9,675 profiled systems have a polygon. `m` is `reported` (state or utility
+boundary) or `modeled` (EPA random-forest / decision-tree estimate); the map draws
+modeled borders dashed and says so.

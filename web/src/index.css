@@ -229,3 +229,25 @@
 
 /* Records card: the atlas cards sit flush inside the rich content card. */
 .evidence [data-slot='card'] { border: 0; box-shadow: none; background: transparent; padding-top: .25rem; padding-bottom: .25rem; }
+
+/* ---------- Visual answers ---------- */
+@keyframes journey-flow { from { background-position: 0 0 } to { background-position: 0 28px } }
+@keyframes journey-drop { 0% { top: -6px; opacity: 0 } 10% { opacity: 1 } 90% { opacity: 1 } 100% { top: 100%; opacity: 0 } }
+@keyframes tube-shimmer { from { background-position: 0 0 } to { background-position: 40px 0 } }
+.journey-flow {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 10px, rgb(255 255 255 / .35) 10px 14px),
+    linear-gradient(180deg, color-mix(in oklab, var(--link) 70%, white), var(--link));
+  animation: journey-flow 1.1s linear infinite;
+}
+.journey-drop { animation: journey-drop 2.7s cubic-bezier(.45, .05, .55, .95) infinite both; }
+.tube-liquid::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(110deg, transparent 0 14px, rgb(255 255 255 / .18) 14px 20px);
+  animation: tube-shimmer 1.6s linear infinite;
+}
+.service-map .maplibregl-ctrl-attrib { font-size: 10px; background: rgb(255 255 255 / .7); }
+.dark .service-map { filter: invert(.92) hue-rotate(180deg) saturate(.6); }
+@media (prefers-reduced-motion: reduce) {
+  .journey-flow, .journey-drop, .tube-liquid::after { animation: none !important; }
+}

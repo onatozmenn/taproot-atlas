@@ -8,7 +8,7 @@ import { EmptyState } from '../atlas/empty-state';
 import { PathwaySchematic } from '../atlas/pathway-schematic';
 import { QualityTable } from '../atlas/quality-table';
 import { SourceCard } from '../atlas/source-card';
-import { WaterReport } from '../report/water-report';
+import { VisualAnswer } from '../visual/visual-answer';
 
 type Tab = 'source' | 'quality' | 'pathway' | 'compliance';
 
@@ -21,12 +21,12 @@ function defaultTab(focus: TapAnswer['focus']): Tab {
  * "rich content" block): it rises in under the text, opens on the section
  * the question was about, and older answers keep it collapsed.
  */
-export function EvidenceCard({ answer, initiallyOpen }: { answer: TapAnswer; initiallyOpen: boolean }) {
+export function EvidenceCard({ answer, initiallyOpen, onAsk }: { answer: TapAnswer; initiallyOpen: boolean; onAsk?: (q: string) => void }) {
   const [open, setOpen] = useState(initiallyOpen);
   const [tab, setTab] = useState<Tab>(defaultTab(answer.focus));
 
   if (answer.scope === 'redirect') return null;
-  if (answer.profile && answer.pwsid !== 'UNKNOWN') return <WaterReport answer={answer} initiallyOpen={initiallyOpen} />;
+  if (answer.profile && answer.pwsid !== 'UNKNOWN') return <VisualAnswer answer={answer} onAsk={onAsk} />;
   if (answer.pwsid === 'UNKNOWN') {
     return answer.place ? (
       <div className="animate-rich-content-in mt-4">

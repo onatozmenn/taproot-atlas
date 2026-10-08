@@ -210,7 +210,7 @@ async function mountMap(
   };
 }
 
-async function loadMaplibre(): Promise<MapLibre> {
+export async function loadMaplibre(): Promise<MapLibre> {
   const maplibregl = await import('maplibre-gl');
   await import('maplibre-gl/dist/maplibre-gl.css');
   // Vite code-splits the MapLibre web worker into a hashed chunk whose
