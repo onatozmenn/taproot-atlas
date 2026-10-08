@@ -5,7 +5,8 @@ import type { TapAnswer } from '../api';
 import { AnswerActions } from './chat/answer-actions';
 import { EvidenceCard } from './chat/evidence-card';
 import { StreamingAnswer } from './chat/streaming-answer';
-import { ThinkingRow } from './chat/thinking-row';
+import { LIVE_DELAYS, LIVE_STEPS, traceFor } from './chat/answer-trace';
+import { ClarifyCard, FollowUpList, ThinkingTrace, useStages } from './kit';
 
 export interface ChatMsg {
   id: number;
@@ -14,6 +15,15 @@ export interface ChatMsg {
   answer?: TapAnswer;
   /** True for the answer that just arrived: it streams in and animates. */
   fresh?: boolean;
+  /** How long the answer took, measured in the browser. */
+  elapsedMs?: number;
+}
+
+/** The trace while an answer is on its way: steps reached so far, live timer. */
+function LiveTrace() {
+  const stage = useStages(LIVE_DELAYS);
+  const steps = LIVE_STEPS.slice(0, stage + 1).map((label) => ({ label }));
+  return <ThinkingTrace steps={steps} working className="animate-message-in" />;
 }
 
 interface ChatPaneProps {
@@ -52,50 +62,28 @@ function AssistantTurn({
   const [revealed, setRevealed] = useState(!msg.fresh);
   const onDone = useCallback(() => setRevealed(true), []);
   const chips = isLatest && answer.followUps.length > 0 ? answer.followUps : [];
+  const steps = traceFor(answer);
   const markdown = answer.markdown.replace(/\bug\/L\b/g, 'µg/L');
 
   return (
     <article className="animate-message-in" aria-label="Answer">
+      {steps.length > 0 && <ThinkingTrace className="mb-3" steps={steps} working={false} elapsedMs={msg.elapsedMs} />}
       <StreamingAnswer markdown={markdown} animate={Boolean(msg.fresh)} onDone={onDone} />
       {revealed && (
         <>
-          {answer.alternatives.length > 0 && (
-            <p className="animate-message-action-in mt-3 text-sm text-muted-foreground">
-              Showing the largest system for {answer.placeName}. Did you mean{' '}
-              {answer.alternatives.map((alt, i) => (
-                <span key={alt}>
-                  {i > 0 && (i === answer.alternatives.length - 1 ? ' or ' : ', ')}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onFollowUp(`Tell me about ${alt} water`)}
-                    className="press font-medium text-[var(--link)] underline-offset-2 hover:underline"
-                  >
-                    {alt}
-                  </button>
-                </span>
-              ))}
-              ?
-            </p>
+          {answer.alternatives.length > 0 && isLatest && (
+            <ClarifyCard
+              className="mt-5"
+              question={`Showing ${answer.placeName}. Did you mean another one?`}
+              options={answer.alternatives.map((alt) => ({ label: alt }))}
+              disabled={busy}
+              onChoose={(o) => onFollowUp(`Tell me about ${o.label} water`)}
+              onSkip={() => undefined}
+            />
           )}
           <AnswerActions answer={answer} copyText={markdown} />
           <EvidenceCard answer={answer} initiallyOpen={isLatest && answer.focus !== 'general'} onAsk={busy ? undefined : onFollowUp} />
-          {chips.length > 0 && (
-            <div className="mt-5 flex flex-col items-start gap-2.5" aria-label="Suggested follow-ups">
-              {chips.map((c, i) => (
-                <button
-                  key={c}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onFollowUp(c)}
-                  style={{ animationDelay: `${120 + i * 70}ms` }}
-                  className="press animate-option-pill-in flex min-h-14 w-fit max-w-full items-center rounded-[40px] border border-border bg-transparent px-6 py-3 text-left text-[16px] hover:border-foreground/40 hover:bg-secondary disabled:opacity-50"
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
+          {chips.length > 0 && <FollowUpList className="mt-6" items={chips} onPick={onFollowUp} disabled={busy} />}
         </>
       )}
     </article>
@@ -120,7 +108,7 @@ export function ChatPane({ messages, busy, onFollowUp }: ChatPaneProps) {
               <AssistantTurn key={m.id} msg={m} isLatest={m.id === lastAssistantId && !busy} busy={busy} onFollowUp={onFollowUp} />
             ),
           )}
-          {busy && <ThinkingRow />}
+          {busy && <LiveTrace />}
         </div>
       </StickToBottom.Content>
       <ScrollToEnd />

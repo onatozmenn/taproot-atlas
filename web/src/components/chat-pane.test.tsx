@@ -98,14 +98,14 @@ describe('ChatPane (America.gov-style chat)', () => {
 
   it('shows a Sources pill and the feedback/copy actions', () => {
     renderPane([{ id: 2, role: 'assistant', answer: base }]);
-    expect(screen.getByRole('button', { name: /Sources/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /sources/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Good response' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
   });
 
   it('redirect answers get no sources and no records card', () => {
     renderPane([{ id: 2, role: 'assistant', answer: { ...base, scope: 'redirect', followUps: [] } }]);
-    expect(screen.queryByRole('button', { name: /Sources/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /sources/i })).toBeNull();
     expect(screen.queryByText(/PWSID NY7003493/)).toBeNull();
   });
 

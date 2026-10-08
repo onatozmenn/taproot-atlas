@@ -90,13 +90,14 @@ export default function App() {
     setMessages((m) => [...m.map((x) => ({ ...x, fresh: false })), { id: nextId++, role: 'user', text: q }]);
     setInput('');
     setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 10));
+    const started = performance.now();
     try {
       const answer = await askTapWater(q, {
         signal: controller.signal,
         ...(coords ? { lat: coords.lat, lon: coords.lon } : {}),
         ...(contextPwsid ? { contextPwsid } : {}),
       });
-      setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer: { ...answer, question: q }, fresh: true }]);
+      setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer: { ...answer, question: q }, fresh: true, elapsedMs: performance.now() - started }]);
     } catch (e) {
       if (!controller.signal.aborted) {
         const msg = e instanceof Error ? e.message : 'Lookup failed. Check your connection and retry.';

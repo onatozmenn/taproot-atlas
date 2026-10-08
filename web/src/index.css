@@ -251,3 +251,20 @@
 @media (prefers-reduced-motion: reduce) {
   .journey-flow, .journey-drop, .tube-liquid::after { animation: none !important; }
 }
+
+/* ---------- Taproot Kit ---------- */
+@keyframes kit-drop { 0%, 100% { opacity: .18; scale: .7 } 45% { opacity: 1; scale: 1.05 } }
+@keyframes kit-spin { to { rotate: 360deg } }
+@keyframes kit-fade-up { from { opacity: 0; transform: translateY(6px); filter: blur(2px) } to { opacity: 1; transform: none; filter: none } }
+@keyframes kit-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes kit-pop-in { from { opacity: 0; scale: .9 } to { opacity: 1; scale: 1 } }
+@keyframes kit-pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in oklab, var(--level-alert) 50%, transparent) } 50% { opacity: .8; box-shadow: 0 0 0 4px transparent } }
+.kit-spin { animation: kit-spin .7s linear infinite; }
+.kit-fade-up { animation: kit-fade-up .36s var(--ease-out-quint) both; }
+.kit-fade-in { animation: kit-fade-in .35s ease-out both; }
+.kit-pop-in { animation: kit-pop-in .25s var(--ease-out-quint) both; }
+.kit-pulse { animation: kit-pulse 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .kit-drop, .kit-spin, .kit-fade-up, .kit-fade-in, .kit-pop-in, .kit-pulse,
+  [style*='kit-fade-up'], [style*='kit-pop-in'], [style*='kit-drop'] { animation: none !important; }
+}
