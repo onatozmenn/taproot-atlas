@@ -12,16 +12,19 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const CANDIDATES = [
-  path.resolve(here, '../data/national'),
-  path.resolve(here, '../../data/national'),
-  path.resolve(process.cwd(), 'data/national'),
-];
+function candidates(): string[] {
+  const list = [path.resolve(here, '../data/national'), path.resolve(here, '../../data/national')];
+  // `process` does not exist in the browser bundle; this module is only read there via stubs.
+  if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
+    list.push(path.resolve(process.cwd(), 'data/national'));
+  }
+  return list;
+}
 
 let root: string | null | undefined;
 export function nationalRoot(): string | null {
   if (root !== undefined) return root;
-  root = CANDIDATES.find((c) => existsSync(path.join(c, 'index.json'))) ?? null;
+  root = candidates().find((c) => existsSync(path.join(c, 'index.json'))) ?? null;
   return root;
 }
 
