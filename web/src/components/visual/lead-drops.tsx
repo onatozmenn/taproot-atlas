@@ -94,7 +94,7 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
               stroke="var(--level-alert)"
               strokeWidth={1.5}
               strokeDasharray="5 5"
-              initial={false}
+              initial={reduce ? false : { x: 0 }}
               animate={reduce ? undefined : { x: [0, -(2 * Math.PI * 25) / 0.9] }}
               transition={{ duration: 6, ease: 'linear', repeat: Infinity }}
             />
