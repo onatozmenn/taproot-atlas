@@ -1,11 +1,17 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
+import { act } from 'react';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { loadMaplibre } from '../RealMap';
 import { loadProfile } from '../../../../lib/profile';
 import type { TapAnswer } from '../../api';
 import { VisualAnswer, visualKind } from './visual-answer';
 
-vi.mock('../RealMap', () => ({ loadMaplibre: () => new Promise(() => {}) }));
-afterEach(() => cleanup());
+vi.mock('../RealMap', () => ({ loadMaplibre: vi.fn(() => new Promise(() => {})) }));
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
 
 function answerFor(pwsid: string, question: string, focus: TapAnswer['focus'] = 'quality'): TapAnswer {
   const profile = loadProfile(pwsid);
@@ -72,5 +78,35 @@ describe('VisualAnswer picks one figure per question', () => {
     render(<VisualAnswer answer={answerFor('TX2270001', 'How does Austin water reach my tap?', 'pathway')} />);
     expect(screen.getByText('Your tap')).toBeTruthy();
     expect(screen.getByText(/stops to your glass/)).toBeTruthy();
+  });
+
+  it('map: a failed load shows the fallback with a retry', async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as never);
+    vi.mocked(loadMaplibre).mockRejectedValueOnce(new Error('no webgl'));
+    render(<VisualAnswer answer={answerFor('CO0116001', 'Where does Denver water come from?', 'source')} />);
+    expect(await screen.findByText(/couldn't load/, {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Retry the map/ })).toBeTruthy();
+  });
+
+  it('map: a stalled basemap times out into the fallback', async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as never);
+    vi.useFakeTimers();
+    class FakeMap {
+      on() {
+        return this;
+      }
+      remove() {}
+      isStyleLoaded() {
+        return false;
+      }
+    }
+    vi.mocked(loadMaplibre).mockResolvedValueOnce({ Map: FakeMap } as never);
+    render(<VisualAnswer answer={answerFor('CO0116001', 'Where does Denver water come from?', 'source')} />);
+    expect(screen.queryByText(/couldn't load/)).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16000);
+    });
+    expect(screen.getByText(/couldn't load/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Retry the map/ })).toBeTruthy();
   });
 });
