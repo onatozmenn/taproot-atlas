@@ -1,9 +1,9 @@
-import { CheckIcon, CopyIcon, ExternalLinkIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react';
+import { CheckIcon, CopyIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { TapAnswer } from '../../api';
+import { SourceList, SourceToggle } from '../kit';
 
 export interface SourceLink {
   href: string;
@@ -39,18 +39,6 @@ export function sourcesFor(answer: TapAnswer): SourceLink[] {
   add(answer.upstream?.sourceUrl, 'USGS upstream network (NLDI)', 'U.S. Geological Survey');
   add(answer.waterUse?.sourceUrl, 'USGS county water use estimate', 'U.S. Geological Survey');
   return out.slice(0, 8);
-}
-
-function Favicon({ href }: { href: string }) {
-  const h = host(href);
-  return (
-    <img
-      src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64`}
-      alt=""
-      className="size-5 rounded-full border-2 border-background bg-background object-cover"
-      loading="lazy"
-    />
-  );
 }
 
 function IconAction({
@@ -110,21 +98,7 @@ export function AnswerActions({ answer, copyText }: { answer: TapAnswer; copyTex
 
   return (
     <div className="animate-message-action-in relative mt-3 flex flex-wrap items-center gap-1">
-      {sources.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="press mr-1 inline-flex h-9 items-center gap-2 rounded-full border border-border px-3.5 text-sm font-medium hover:bg-secondary"
-          aria-label={`Sources, ${sources.length}`}
-        >
-          Sources
-          <span className="flex -space-x-1.5" aria-hidden="true">
-            {[...new Set(sources.map((s) => host(s.href)))].slice(0, 3).map((h) => (
-              <Favicon key={h} href={`https://${h}`} />
-            ))}
-          </span>
-        </button>
-      )}
+      {sources.length > 0 && <SourceToggle sources={sources} open={open} onToggle={() => setOpen(!open)} />}
       <IconAction label={rating === 'up' ? 'Remove rating' : 'Good response'} pressed={rating === 'up'} onClick={() => rate('up')}>
         <ThumbsUpIcon className={cn('size-[18px]', rating === 'up' && 'fill-current')} />
       </IconAction>
@@ -143,33 +117,7 @@ export function AnswerActions({ answer, copyText }: { answer: TapAnswer; copyTex
           <p className="text-muted-foreground">Your feedback helps us improve.</p>
         </div>
       )}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-3xl sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-semibold tracking-tight">Sources</DialogTitle>
-            <DialogDescription>Public records this answer is drawn from.</DialogDescription>
-          </DialogHeader>
-          <ul className="scrollbar-thin -mx-2 max-h-[60vh] space-y-1 overflow-y-auto">
-            {sources.map((s) => (
-              <li key={s.href}>
-                <a
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="press flex items-start gap-3 rounded-2xl px-2 py-2.5 hover:bg-secondary"
-                >
-                  <Favicon href={s.href} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-medium leading-snug">{s.title}</span>
-                    <span className="block truncate text-sm text-muted-foreground">{s.publisher}</span>
-                  </span>
-                  <ExternalLinkIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </DialogContent>
-      </Dialog>
+      {sources.length > 0 && <SourceList sources={sources} open={open} />}
     </div>
   );
 }
