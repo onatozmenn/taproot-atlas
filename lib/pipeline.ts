@@ -347,6 +347,10 @@ async function answerCore(
       }
       return best || 'that city';
     })();
+    // Choices the web ClarifyCard turns into one-tap follow-ups. Each label
+    // resolves to exactly one system when asked back ("Chelsea, MA").
+    const choiceLabels = [...new Set(candidates.map((c) => `${c.city}, ${c.state}`))];
+    if (choiceLabels.length > 1) ambiguousSchematic.alternatives = choiceLabels;
     return {
       narrative: {
         overview: `Multiple water systems match "${aliasLabel}". Please name a state so the correct record is used: ${names}.`,

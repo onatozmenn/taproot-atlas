@@ -67,6 +67,8 @@ function AssistantTurn({
   const steps = traceFor(answer);
   const state = answer.profile?.state;
   const shownPlace = state && !answer.placeName.includes(',') ? `${answer.placeName}, ${state}` : answer.placeName;
+  // No system picked yet: the alternatives are the only choices, nothing is "shown now".
+  const ambiguous = answer.pwsid === 'UNKNOWN';
   const markdown = answer.markdown.replace(/\bug\/L\b/g, 'µg/L');
 
   return (
@@ -78,8 +80,13 @@ function AssistantTurn({
           {answer.alternatives.length > 0 && isLatest && (
             <ClarifyCard
               className="mt-5"
-              question={`Showing ${shownPlace}. Did you mean another one?`}
-              options={[{ label: shownPlace, hint: 'Shown now' }, ...answer.alternatives.map((alt) => ({ label: alt }))]}
+              question={ambiguous ? 'Which one did you mean?' : `Showing ${shownPlace}. Did you mean another one?`}
+              options={
+                ambiguous
+                  ? answer.alternatives.map((alt) => ({ label: alt }))
+                  : [{ label: shownPlace, hint: 'Shown now' }, ...answer.alternatives.map((alt) => ({ label: alt }))]
+              }
+              skipLabel={ambiguous ? 'Not now' : undefined}
               disabled={busy}
               onChoose={(o) => {
                 if (o.label !== shownPlace) onFollowUp(`Tell me about ${o.label} water`);
