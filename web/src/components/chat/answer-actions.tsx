@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import type { TapAnswer } from '../../api';
 import { SourceList, SourceToggle } from '../kit';
+import { sendFeedback } from '../../feedback';
 
 export interface SourceLink {
   href: string;
@@ -82,6 +83,7 @@ export function AnswerActions({ answer, copyText }: { answer: TapAnswer; copyTex
   const [copied, setCopied] = useState(false);
 
   function rate(r: 'up' | 'down') {
+    if (rating !== r) sendFeedback({ kind: 'rating', rating: r, question: answer.question ?? '', pwsid: answer.pwsid, scope: answer.scope });
     setRating((cur) => (cur === r ? null : r));
     setThanks(rating !== r);
     window.setTimeout(() => setThanks(false), 2200);

@@ -1,0 +1,97 @@
+{
+ "note": "Out-of-time backtest. Each year: model trained only on outcomes known two years earlier; list = top 10% (968 of 9,675 scored community systems). People = current population served (SDWIS).",
+ "years": [
+  {
+   "year": 2023,
+   "systems": 9675,
+   "visits": 968,
+   "violators": 342,
+   "people": 8707591,
+   "model_caught": 206,
+   "model_people": 4177705,
+   "ett_caught": 93,
+   "ett_people": 1425593,
+   "repeat_caught": 138,
+   "repeat_people": 3348065,
+   "extra_vs_ett": 132,
+   "extra_people": 3193193,
+   "extra_high_svi": 49,
+   "both": 74,
+   "model_only": 132,
+   "ett_only": 19,
+   "neither": 117,
+   "first_time": 145,
+   "first_time_model": 24,
+   "first_time_ett": 25,
+   "hit_rate_model": 0.213,
+   "hit_rate_ett": 0.096
+  },
+  {
+   "year": 2024,
+   "systems": 9675,
+   "visits": 968,
+   "violators": 335,
+   "people": 8044784,
+   "model_caught": 201,
+   "model_people": 4904394,
+   "ett_caught": 87,
+   "ett_people": 1092559,
+   "repeat_caught": 147,
+   "repeat_people": 3236284,
+   "extra_vs_ett": 136,
+   "extra_people": 4143140,
+   "extra_high_svi": 61,
+   "both": 65,
+   "model_only": 136,
+   "ett_only": 22,
+   "neither": 112,
+   "first_time": 131,
+   "first_time_model": 13,
+   "first_time_ett": 22,
+   "hit_rate_model": 0.208,
+   "hit_rate_ett": 0.09
+  },
+  {
+   "year": 2025,
+   "systems": 9675,
+   "visits": 968,
+   "violators": 303,
+   "people": 5598264,
+   "model_caught": 201,
+   "model_people": 3806610,
+   "ett_caught": 90,
+   "ett_people": 1058347,
+   "repeat_caught": 138,
+   "repeat_people": 2833939,
+   "extra_vs_ett": 130,
+   "extra_people": 2974900,
+   "extra_high_svi": 54,
+   "both": 71,
+   "model_only": 130,
+   "ett_only": 19,
+   "neither": 83,
+   "first_time": 116,
+   "first_time_model": 21,
+   "first_time_ett": 23,
+   "hit_rate_model": 0.208,
+   "hit_rate_ett": 0.093
+  }
+ ],
+ "context": [
+  {
+   "fact": "9\u201345 million people a year were served by community water systems with health-based violations, 1982\u20132015; nearly 21 million in 2015.",
+   "source": "Allaire, Wu & Lall, PNAS 2018",
+   "url": "https://www.pnas.org/doi/10.1073/pnas.1719805115"
+  },
+  {
+   "fact": "Waterborne pathogens caused an estimated 7.15 million illnesses, 118,000 hospitalizations and 6,630 deaths (3,300 linked to drinking water) in the U.S. in 2014, with $3.33 billion in direct healthcare costs.",
+   "source": "CDC, Collier et al. 2021",
+   "url": "https://www.cdc.gov/healthy-water-data/waterborne-disease-in-us/results.html"
+  },
+  {
+   "fact": "States must survey every community system at least once every three years, and EPA flags \"priority systems\" only at 11+ points on its Enforcement Targeting Tool.",
+   "source": "40 CFR 142.16; EPA ETT",
+   "url": "https://www.epa.gov/dwreginfo/sanitary-surveys"
+  }
+ ]
+}

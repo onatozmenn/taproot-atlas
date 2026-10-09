@@ -58,6 +58,24 @@ export function CommandPalette({ open, onOpenChange, onPick }: CommandPalettePro
             >
               Open the triage queue (for utilities and state programs)
             </CommandItem>
+            <CommandItem
+              value="view:impact backtest what would have changed"
+              onSelect={() => {
+                onOpenChange(false);
+                window.location.hash = '#/impact';
+              }}
+            >
+              See the impact: what Taproot would have caught in 2025
+            </CommandItem>
+            <CommandItem
+              value="view:study usability test help us test"
+              onSelect={() => {
+                onOpenChange(false);
+                window.location.hash = '#/study';
+              }}
+            >
+              Help us test Taproot (10 minutes)
+            </CommandItem>
           </CommandGroup>
           <CommandGroup heading="Example questions">
             {EXAMPLE_QUESTIONS.map((q) => (

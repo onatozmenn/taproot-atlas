@@ -408,6 +408,9 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
               </section>
             )}
 
+            <a href="#/impact" className="press mt-8 inline-flex h-9 items-center rounded-full border border-border px-4 text-[14px] font-medium">
+              What this list would have caught in 2025 →
+            </a>
             <p className="mt-8 text-[12.5px] leading-relaxed text-muted-foreground">
               Forecast: Taproot model on EPA SDWIS records (violations, lead and copper results, inspections, system inventory), backtested on {data.meta.curve.years}.{' '}
               {data.meta.ett_note} Suggested steps are starting points drawn from each system’s record, not engineering advice.

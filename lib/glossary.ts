@@ -153,6 +153,13 @@ const ENTRIES: GlossaryEntry[] = [
     followUps: ['How is {place} water treated?'],
   },
   {
+    id: 'accuracy',
+    match: /\b(how accurate|how reliable|accuracy|can i trust|how good is (?:the |taproot'?s? )?(?:forecast|model|prediction)|track record)\b/i,
+    answer:
+      'We tested it on the past. A list made in January 2025 from earlier records held 201 of the 303 systems that broke a health rule that year; EPA’s targeting formula, given the same number of slots, held 90. [See the full backtest](#/impact)',
+    followUps: ["What's the violation risk for {place} water?", 'Which water systems are riskiest nationwide?'],
+  },
+  {
     id: 'risk-score',
     match: /\b(risk score|risk forecast|taproot forecast|forecast)\b/i,
     answer:
@@ -181,6 +188,9 @@ export function findGlossaryEntry(question: string): GlossaryEntry | null {
   const q = (question ?? '').trim();
   if (!q) return null;
   const words = q.split(/\s+/).length;
+  // Questions about Taproot itself ("how accurate is Taproot?") need no "what is".
+  const self = ENTRIES.find((e) => e.id === 'accuracy');
+  if (self && words <= 12 && self.match.test(q)) return self;
   const explain = EXPLAIN_RE.test(q);
   if (!explain && words > 3) return null;
   if (words > 14) return null;
