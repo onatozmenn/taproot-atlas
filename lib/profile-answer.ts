@@ -5,6 +5,7 @@
 import type { LabAnalyteSummary, WaterOriginSchematic, WaterSystemProfile } from '../types/water-intelligence.js';
 import type { AnswerIntent } from './narrator.js';
 import { plainViolation } from './plain-violation.js';
+import { driverText } from './risk-text.js';
 
 export interface ProfileAnswer {
   markdown: string;
@@ -36,6 +37,7 @@ const TOPICS: Topic[] = [
   { key: 'lithium', name: 'Lithium', words: /\blithium\b/i, analytes: ['LITHIUM'] },
   { key: 'coliform', name: 'Bacteria', words: /\b(coliform|bacteria|e\.?\s?coli|microb\w*|germs?|boil)\b/i, analytes: [] },
   { key: 'solvents', name: 'Industrial solvents', words: /\b(tce|pce|trichloroethylene|tetrachloroethylene|benzene|vinyl chloride|solvents?|vocs?)\b/i, analytes: ['TRICHLOROETHYLENE', 'TETRACHLOROETHYLENE', 'BENZENE', 'VINYL CHLORIDE', 'CARBON TETRACHLORIDE', '1,2-DICHLOROETHANE'] },
+  { key: 'risk', name: 'Risk forecast', words: /\b(risk|risky|likely|likelihood|chances?|odds|probabilit\w*|predict\w*|forecast\w*|outlook|next year|in the future|going to (?:have|get)|will (?:it|they|there) (?:have|be|get))\b/i, analytes: [] },
   { key: 'pesticides', name: 'Pesticides', words: /\b(pesticides?|herbicides?|atrazine|glyphosate|weed ?killer)\b/i, analytes: ['ATRAZINE', 'GLYPHOSATE', 'SIMAZINE', 'ALACHLOR', '2,4-D'] },
 ];
 
@@ -109,6 +111,27 @@ function violationsAbout(p: WaterSystemProfile, re: RegExp) {
 // Answers are deliberately short: one sentence that answers the exact
 // question, plus at most one that qualifies it. The interface draws the
 // chart, map or timeline for that topic, so nothing else is repeated here.
+
+const pctWords = (x: number): string => `${Math.round(x * 100)}%`;
+
+function answerRisk(city: string, p: WaterSystemProfile): string[] {
+  const r = p.risk;
+  if (!r) return [`I don't have a forecast for ${city}; Taproot scores community systems serving 3,300 people or more.`];
+  const pct = r.probability * 100;
+  const num = pct < 10 ? String(Math.round(pct * 10) / 10) : String(Math.round(pct));
+  const chance = pct < 1 ? 'less than a 1%' : pct > 95 ? 'more than a 95%' : `${/^(8|11|18)(\.|$)/.test(num) ? 'an' : 'a'} ${num}%`;
+  const vs =
+    r.percentile >= 0.5
+      ? `higher than ${pctWords(r.percentile)} of the systems Taproot scores`
+      : `lower than ${pctWords(1 - r.percentile)} of the systems Taproot scores`;
+  const want = r.percentile >= 0.5 ? 'up' : 'down';
+  const top = r.drivers.find((d) => d.dir === want) ?? r.drivers[0];
+  const why = top ? ` The biggest factor ${top.dir === 'up' ? 'raising' : 'lowering'} it: ${driverText(top)}.` : '';
+  return [
+    `**Taproot's forecast gives ${city} ${chance} chance of a new health-based violation in ${r.year}**, ${vs}.${why}`,
+    `It is a forecast from EPA records, not a test of your water.`,
+  ];
+}
 
 function answerLead(city: string, p: WaterSystemProfile): string[] {
   const l = p.leadSummary;
@@ -263,6 +286,7 @@ function followUps(city: string, p: WaterSystemProfile, focus: AnswerIntent, ask
     if (!out.includes(q)) out.push(q);
   };
   if (p.pfas.aboveMcl.length > 0 && !asked.has('pfas')) push(`Which PFAS were found in ${city}?`);
+  if (p.risk && !asked.has('risk') && p.risk.tier !== 'low') push(`What's the risk of a violation in ${city} next year?`);
   if (!asked.has('lead')) push(`Is there lead in ${city} water?`);
   const dbp = p.lab.find((a) => /TTHM|HAA5/.test(a.name) && a.status === 'max_above_benchmark');
   if (dbp && !asked.has('dbp')) push(`What are disinfection byproducts in ${city}?`);
@@ -293,6 +317,7 @@ export function composeProfileAnswer(
       if (i > 0) lines.push('');
       if (t.key === 'lead') lines.push(...answerLead(city, p));
       else if (t.key === 'pfas') lines.push(...answerPfas(city, p));
+      else if (t.key === 'risk') lines.push(...answerRisk(city, p));
       else lines.push(...answerAnalytes(city, p, t));
     });
   } else if (focus === 'compliance') {

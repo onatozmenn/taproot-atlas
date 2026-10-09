@@ -108,3 +108,14 @@ describe('VisualAnswer picks one figure per question', () => {
     expect(screen.getByRole('img', { name: /Map of the area/ })).toBeTruthy();
   });
 });
+
+describe('RiskForecast', () => {
+  it('routes forecast questions to the forecast figure and draws drivers', () => {
+    const a = answerFor('IL0316000', "What's the risk of a violation in Chicago next year?");
+    expect(visualKind(a).kind).toBe('risk');
+    render(<VisualAnswer answer={a} />);
+    expect(screen.getByText(/chance of a new health-based violation in 2026/)).toBeTruthy();
+    expect(screen.getByText(/What moved it/)).toBeTruthy();
+    expect(screen.getByText(/EPA targeting score/)).toBeTruthy();
+  });
+});

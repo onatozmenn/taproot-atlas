@@ -17,6 +17,7 @@ import type {
 import { benchmarkFor, normUnit, toBenchmarkUnit, unitLabel } from './standards.js';
 import { echoReportUrl } from './echo.js';
 import { stateShard, nationalIndex, serviceArea } from './national.js';
+import { riskFor } from './risk.js';
 
 interface RawSystem {
   system: null | {
@@ -350,6 +351,7 @@ function buildProfile(pwsid: string, now: Date): WaterSystemProfile | null {
     },
   };
   profile.serviceArea = serviceArea(pwsid);
+  profile.risk = riskFor(pwsid);
   profile.findings = buildFindings(profile);
   profile.highlights = profile.findings.map((f) => f.text);
   return profile;
