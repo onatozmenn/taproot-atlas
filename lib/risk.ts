@@ -47,8 +47,12 @@ function load(): RiskFile | null {
   const candidates = [
     path.resolve(here, '../data/national/risk.json.gz'),
     path.resolve(here, '../../data/national/risk.json.gz'),
-    path.resolve(process.cwd(), 'data/national/risk.json.gz'),
   ];
+  // `process` does not exist in the browser bundle; without this guard every
+  // profile load would throw there (the offline pipeline calls riskFor too).
+  if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
+    candidates.push(path.resolve(process.cwd(), 'data/national/risk.json.gz'));
+  }
   const file = candidates.find((f) => existsSync(f));
   try {
     cache = file ? (JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')) as RiskFile) : null;
