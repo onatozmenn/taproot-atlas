@@ -122,6 +122,8 @@ const STATE_NAMES: Record<string, string> = {
   wa: 'washington', wv: 'west virginia', wi: 'wisconsin', wy: 'wyoming',
 };
 
+const ENGLISH_WORD_CODES = new Set(['me', 'in', 'or', 'oh', 'ok', 'hi', 'id', 'de', 'la', 'pa', 'al', 'co']);
+
 /** Two-letter state code hinted in the question, if any. */
 function extractStateHint(question: string): string | null {
   const q = ` ${(question ?? '').toLowerCase()} `;
@@ -131,8 +133,18 @@ function extractStateHint(question: string): string | null {
       return code;
     }
   }
-  // Bare state codes as standalone words ("ks", "mo", "va" ...).
+  // "City, ST": a code right after a comma is the clearest hint.
+  const comma = q.match(/,\s*([a-z]{2})\b/);
+  if (comma && STATE_NAMES[comma[1]]) return comma[1];
+  // Upper-case codes as standalone words ("Boston MA water").
+  for (const m of (question ?? '').matchAll(/\b([A-Z]{2})\b/g)) {
+    const code = m[1].toLowerCase();
+    if (STATE_NAMES[code]) return code;
+  }
+  // Lower-case bare codes ("ks", "mo", "va" ...), skipping codes that are
+  // everyday English words: "tell me about" is not Maine.
   for (const code of Object.keys(STATE_NAMES)) {
+    if (ENGLISH_WORD_CODES.has(code)) continue;
     if (new RegExp(`\\b${code}\\b`).test(q)) return code;
   }
   return null;
