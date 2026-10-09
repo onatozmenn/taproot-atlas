@@ -88,3 +88,26 @@ describe('llmNarrate', () => {
     assert.ok(!msg.includes('-74') && !msg.includes('40.7'));
   });
 });
+
+describe('reasoning models (gpt-6-luna)', () => {
+  it('omits temperature and sends reasoning effort on the Responses API', async () => {
+    let sent;
+    const fetchFn = async (_url, init) => {
+      sent = JSON.parse(init.body);
+      return { ok: true, status: 200, json: async () => ({ output_text: JSON.stringify(goodBody) }) };
+    };
+    await llmNarrate(schematic, { ...config, model: 'gpt-6-luna', api: 'responses' }, fetchFn);
+    assert.equal('temperature' in sent, false);
+    assert.equal(sent.reasoning.effort, 'low');
+  });
+  it('keeps temperature 0 for non-reasoning models', async () => {
+    let sent;
+    const fetchFn = async (_url, init) => {
+      sent = JSON.parse(init.body);
+      return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(goodBody) } }] }) };
+    };
+    await llmNarrate(schematic, { ...config, model: 'gpt-4o-mini' }, fetchFn);
+    assert.equal(sent.temperature, 0);
+    assert.equal('reasoning_effort' in sent, false);
+  });
+});
