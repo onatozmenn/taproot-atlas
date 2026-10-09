@@ -12,6 +12,9 @@
     "api/triage.ts": {
       "includeFiles": "data/national/triage.json.gz",
       "maxDuration": 15
+    },
+    "api/feedback.ts": {
+      "maxDuration": 10
     }
   }
 }
