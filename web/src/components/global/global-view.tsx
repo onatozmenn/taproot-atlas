@@ -87,7 +87,8 @@ const OWR_EXAMPLE = `{
   "region": "Co. Limerick",
   "population": 126790,
   "exceedances": [
-    { "date": "2025-08-14", "parameter": "THM", "value": 112, "limit": 100, "unit": "µg/L" }
+    { "date": "2025-08-14", "parameter": "THM",
+      "value": 112, "limit": 100, "unit": "µg/L" }
   ],
   "actions": [
     { "date": "2025-12-31", "kind": "watchlist", "reasons": ["thm"] }
@@ -167,7 +168,7 @@ export function GlobalView() {
                 </div>
                 <p className="mt-1.5 text-[13.5px] leading-snug text-muted-foreground">
                   {r.registry} · {r.results} · {r.actions}.{' '}
-                  <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 whitespace-nowrap text-[var(--link)]">
+                  <a href={r.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[var(--link)]">
                     {r.source}
                     <ArrowUpRightIcon className="size-3.5" />
                   </a>
@@ -221,7 +222,7 @@ export function GlobalView() {
             Each country plugs in through a small adapter that writes the Open Water Record. Ireland’s adapter is a dozen lines; a country with no public records can start from
             this format.
           </p>
-          <pre className="mt-3 overflow-x-auto rounded-2xl bg-muted px-4 py-3 font-mono text-[12.5px] leading-relaxed">{OWR_EXAMPLE}</pre>
+          <pre className="mt-3 whitespace-pre-wrap break-words rounded-2xl bg-muted px-4 py-3 font-mono text-[12px] leading-relaxed sm:text-[12.5px]">{OWR_EXAMPLE}</pre>
           <p className="mt-1.5 text-[12px] text-muted-foreground">Illustrative values in the exceedance line.</p>
         </section>
 

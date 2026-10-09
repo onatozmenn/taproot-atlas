@@ -103,6 +103,9 @@ export function buildFactsMessage(schematic: WaterOriginSchematic, question = ''
     `"answer" is the chat reply the user reads: Markdown, 15 to 50 words, at most 2 sentences, no bullets. ` +
     `The first sentence answers the exact question and bolds the key number or verdict; the second, only if needed, adds the one fact that qualifies it. ` +
     `Never mention anything the user did not ask about: the interface already draws the chart, map and records beside your words. ` +
+    `For "is it safe" questions, never certify safety; lead with the most serious finding and its number (for example "16 health-based violations in the last 5 years"), not a vague phrase. ` +
+    `Use plain words a resident knows; never "SDWIS", "review window" or "certify". ` +
+    `Reply in the language the user wrote in, keeping numbers and units exactly as in the facts. ` +
     `If the facts do not contain what was asked (for example no lead result), say so plainly in the first sentence and name what the records do cover. ` +
     `No headings, no tables, no links, no closing pleasantries.`
   );

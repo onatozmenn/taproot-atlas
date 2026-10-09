@@ -122,7 +122,7 @@ export function AnswerActions({ answer, copyText }: { answer: TapAnswer; copyTex
           <p className="text-muted-foreground">Your feedback helps us improve.</p>
         </div>
       )}
-      {sources.length > 0 && <SourceList sources={sources} open={open} />}
+      {sources.length > 0 && <SourceList sources={sources} open={open} onClose={() => setOpen(false)} />}
     </div>
   );
 }

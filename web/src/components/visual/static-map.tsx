@@ -10,7 +10,9 @@ import { useTheme } from 'next-themes';
 
 type Ring = number[][];
 const TILE = 256;
-const CARTO = (dark: boolean) => `https://basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}`;
+// Esri Canvas basemaps: keyless raster tiles (CARTO now watermarks keyless use).
+const BASE = (dark: boolean) =>
+  `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${dark ? 'Dark' : 'Light'}_Gray_Base/MapServer/tile`;
 
 /** lon/lat → world pixels at zoom z. */
 function project([lon, lat]: number[], z: number): [number, number] {
@@ -83,7 +85,7 @@ export function StaticMap({ rings, sources = [], centre, modeled, height, label 
       for (let ty = Math.floor(oy / TILE); ty <= Math.floor((oy + height) / TILE); ty++) {
         if (ty < 0 || ty >= n) continue;
         const wx = ((tx % n) + n) % n;
-        tiles.push({ key: `${z}/${tx}/${ty}`, src: `${CARTO(dark)}/${z}/${wx}/${ty}.png`, left: tx * TILE - ox, top: ty * TILE - oy });
+        tiles.push({ key: `${z}/${tx}/${ty}`, src: `${BASE(dark)}/${z}/${ty}/${wx}`, left: tx * TILE - ox, top: ty * TILE - oy });
       }
     }
     const d = rings
@@ -114,7 +116,7 @@ export function StaticMap({ rings, sources = [], centre, modeled, height, label 
           ))}
         </svg>
       )}
-      <span className="absolute bottom-1 right-2 rounded bg-background/70 px-1 text-[10px] text-muted-foreground">© OpenStreetMap · © CARTO</span>
+      <span className="absolute bottom-1 right-2 rounded bg-background/70 px-1 text-[10px] text-muted-foreground">Esri, HERE, Garmin, © OpenStreetMap</span>
     </div>
   );
 }

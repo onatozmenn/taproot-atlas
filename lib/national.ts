@@ -167,6 +167,9 @@ export function findPlaceInText(text: string): PlaceHit | null {
   // State hint: postal code after a comma ("Flint, MI") or a full state name.
   const states = new Set<string>();
   for (const m of raw.matchAll(/,\s*([A-Z]{2})\b/g)) states.add(m[1]);
+  // "Marfa TX water": a bare postal code also counts, except the ones that
+  // are everyday words when typed in capitals (IN, OR, ME, OK, HI).
+  for (const m of raw.matchAll(/\s([A-Z]{2})(?=[\s?.!]|$)/g)) if (STATE_NAMES[m[1]] && !/^(IN|OR|ME|OK|HI)$/.test(m[1])) states.add(m[1]);
   for (const [code, name] of Object.entries(STATE_NAMES)) if (q.includes(` ${name} `)) states.add(code);
   const common = new Set(p.commonWordPlaces ?? []);
   let best: { hit: PlaceHit; score: number } | null = null;
@@ -285,7 +288,9 @@ export function resolveNationalSystem(question: string): NationalHit | null {
     const c = zipCenter(zip[1]);
     if (c) {
       const st = zipToState(zip[1]);
-      const near = nearestPlaces(c[1], c[0], 16).filter((pl) => !st || pl.state === st);
+      // Border ZIPs (Manhattan's west side) sit closer to another state's
+      // places, so look wider and keep the ZIP's own state.
+      const near = nearestPlaces(c[1], c[0], st ? 400 : 16).filter((pl) => !st || pl.state === st).slice(0, 16);
       for (const pl of near) {
         const rows = systemsForPlace(pl.name, pl.state);
         if (rows.length > 0) return { row: rows[0], label: pl.name, center: c, alternatives: [] };

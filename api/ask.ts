@@ -18,7 +18,7 @@ import { fetchDistributionMetrics } from '../lib/distribution.js';
 import { fetchUpstreamSummary } from '../lib/nldi.js';
 
 interface AskRequest {
-  body?: { question?: unknown; lat?: unknown; lon?: unknown; contextPwsid?: unknown };
+  body?: { question?: unknown; lat?: unknown; lon?: unknown; contextPwsid?: unknown; pwsid?: unknown };
   method?: string;
   headers?: Record<string, string | string[] | undefined>;
   ip?: string;
@@ -145,9 +145,11 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
   const contextPwsid =
     typeof body.contextPwsid === 'string' && /^[A-Z]{2}[0-9]{7}$/.test(body.contextPwsid) ? body.contextPwsid : undefined;
 
+  const pwsid = typeof body.pwsid === 'string' && /^[A-Z]{2}[0-9]{7}$/.test(body.pwsid) ? body.pwsid : undefined;
+
   try {
     const out = await answerTapWater(
-      { question, ...coords, ...(contextPwsid ? { contextPwsid } : {}) },
+      { question, ...coords, ...(contextPwsid ? { contextPwsid } : {}), ...(pwsid ? { pwsid } : {}) },
       {
         ...(liveEcho
           ? {

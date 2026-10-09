@@ -182,7 +182,7 @@ export function ViolationRiver({
               initial={reduce ? false : { opacity: 0, scale: 0 }}
               animate={seen ? { opacity: 1, scale: active ? 1.6 : 1 } : undefined}
               transition={{ type: 'spring', stiffness: 300, damping: 18, delay: active ? 0 : 0.2 + (it.cx / W) * 1.1 + (idx % 3) * 0.02 }}
-              className="cursor-pointer outline-none"
+              className="cursor-pointer outline-none focus-visible:[&>circle:first-child]:stroke-[var(--link)] focus-visible:[&>circle:first-child]:[stroke-width:2]"
               tabIndex={0}
               role="button"
               aria-label={`${it.pv.title}, ${day(it.v.begin)}`}
@@ -195,6 +195,7 @@ export function ViolationRiver({
               }}
             >
               <circle r={10} fill="transparent" />
+              {active && <circle r={r + 4.5} fill="none" stroke="var(--foreground)" strokeWidth={1.25} />}
               {it.open && !reduce && (
                 <motion.circle
                   r={r + 2}

@@ -86,6 +86,7 @@ function AssistantTurn({
                   ? answer.alternatives.map((alt) => ({ label: alt }))
                   : [{ label: shownPlace, hint: 'Shown now' }, ...answer.alternatives.map((alt) => ({ label: alt }))]
               }
+              initial={ambiguous ? null : 0}
               skipLabel={ambiguous ? 'Not now' : undefined}
               disabled={busy}
               onChoose={(o) => {

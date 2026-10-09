@@ -99,7 +99,7 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
               transition={{ duration: 6, ease: 'linear', repeat: Infinity }}
             />
           </g>
-          <text x={W - padR} y={yAL - 8} textAnchor="end" className="fill-[var(--level-alert)] text-[11.5px] font-medium">
+          <text x={padL + 4} y={yAL - 8} textAnchor="start" className="fill-[var(--level-alert)] text-[11.5px] font-medium">
             Action level · 15 ppb
           </text>
           {s.map((d, i) => {
@@ -114,8 +114,16 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
                 onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(i)}
                 onBlur={() => setHover(null)}
-                tabIndex={0}
-                className="cursor-default outline-none"
+                // One tab stop for the whole chart; arrow keys walk the rounds.
+                tabIndex={i === s.length - 1 ? 0 : -1}
+                data-drop={i}
+                onKeyDown={(e) => {
+                  const to = e.key === 'ArrowLeft' ? i - 1 : e.key === 'ArrowRight' ? i + 1 : -1;
+                  if (to < 0 || to >= s.length) return;
+                  e.preventDefault();
+                  (e.currentTarget.parentElement?.querySelector(`[data-drop="${to}"]`) as SVGGElement | null)?.focus();
+                }}
+                className="cursor-default outline-none focus-visible:[&_path]:stroke-foreground focus-visible:[&_path]:[stroke-width:2]"
                 aria-label={`${month(d.end)}: ${num(d.ppb)} ppb`}
               >
                 <rect x={x(i) - step / 2} y={top - 10} width={step} height={base - top + 10} fill="transparent" />
@@ -154,8 +162,8 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
         </svg>
         <div
           aria-live="polite"
-          className="pointer-events-none absolute right-0 top-0 rounded-full bg-foreground px-3 py-1 text-[12.5px] font-medium text-background transition-opacity duration-200"
-          style={{ opacity: h ? 1 : 0 }}
+          className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-full bg-foreground px-3 py-1 text-[12.5px] font-medium text-background transition-[opacity,left] duration-200"
+          style={{ opacity: h ? 1 : 0, left: `${hover === null ? 50 : Math.min(88, Math.max(12, (x(hover) / W) * 100))}%` }}
         >
           {h ? `${month(h.end)} · ${num(h.ppb)} ppb` : '\u00a0'}
         </div>

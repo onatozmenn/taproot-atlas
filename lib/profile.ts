@@ -328,7 +328,7 @@ function buildProfile(pwsid: string, now: Date): WaterSystemProfile | null {
       unresolved,
       byRule5Years: [...byRule.entries()].map(([rule, count]) => ({ rule, count })).sort((a, b) => b.count - a.count).slice(0, 6),
     },
-    violations: viol.slice(0, 15),
+    violations: viol.slice(0, 80),
     lastSanitarySurvey: survey ? { date: survey.date, reason: survey.reason, findings } : null,
     siteVisitCount: raw.visitCount ?? raw.visits.length,
     lab,
@@ -383,12 +383,12 @@ export function buildFindings(p: WaterSystemProfile): WaterSystemProfile['findin
       );
   }
   const v = p.violationSummary;
-  if (v.last5Years === 0) add('ok', 'violations', 'No SDWIS violations recorded in the last 5 years.');
+  if (v.last5Years === 0) add('ok', 'violations', 'No violations of federal drinking-water rules in the last 5 years.');
   else
     add(
       v.healthBased5Years > 0 || v.unresolved > 0 ? 'alert' : 'watch',
       'violations',
-      `${v.last5Years} SDWIS violation${v.last5Years === 1 ? '' : 's'} in the last 5 years, ${v.healthBased5Years} health-based${v.unresolved > 0 ? `, ${v.unresolved} not yet resolved` : ''}.`,
+      `${v.last5Years} federal drinking-water violation${v.last5Years === 1 ? '' : 's'} in the last 5 years, ${v.healthBased5Years} health-based${v.unresolved > 0 ? `, ${v.unresolved} not yet resolved` : ''}.`,
     );
   const above = p.lab
     .filter((a) => a.status === 'max_above_benchmark' && a.group !== 'pfas' && a.group !== 'disinfectant_residual' && a.name !== 'LEAD' && a.name !== 'COPPER')

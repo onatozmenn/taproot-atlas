@@ -25,31 +25,30 @@ function Root() {
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
-  if (hash.startsWith('#/kit')) {
-    return (
-      <Suspense fallback={null}>
-        <KitGallery />
-      </Suspense>
-    );
-  }
-  if (hash.startsWith('#/triage')) {
-    return (
-      <Suspense fallback={null}>
-        <TriageView initialState={triageState(hash)} />
-      </Suspense>
-    );
-  }
-  if (hash.startsWith('#/global')) {
-    return (
-      <Suspense fallback={null}>
-        <GlobalView />
-      </Suspense>
-    );
-  }
-  if (hash.startsWith('#/impact') || hash.startsWith('#/study')) {
-    return <Suspense fallback={null}>{hash.startsWith('#/impact') ? <ImpactView /> : <StudyView />}</Suspense>;
-  }
-  return <App />;
+  const page = hash.startsWith('#/kit') ? (
+    <KitGallery />
+  ) : hash.startsWith('#/triage') ? (
+    <TriageView initialState={triageState(hash)} />
+  ) : hash.startsWith('#/global') ? (
+    <GlobalView />
+  ) : hash.startsWith('#/impact') ? (
+    <ImpactView />
+  ) : hash.startsWith('#/study') ? (
+    <StudyView />
+  ) : null;
+  useEffect(() => {
+    if (!page) document.title = 'Taproot Atlas';
+  }, [page]);
+  // The chat stays mounted under every page, so "Back to chat" returns to
+  // the same conversation instead of an empty start screen.
+  return (
+    <>
+      <div hidden={page !== null}>
+        <App />
+      </div>
+      {page && <Suspense fallback={null}>{page}</Suspense>}
+    </>
+  );
 }
 
 createRoot(document.getElementById('root')!).render(
