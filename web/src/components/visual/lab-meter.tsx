@@ -52,6 +52,14 @@ function Tube({ a, i, seen }: { a: LabAnalyteSummary; i: number; seen: boolean }
             />
           )}
         </div>
+        {over && lim !== null && (
+          /* the stretch above the limit that single samples reached */
+          <div
+            className="absolute inset-y-1.5 rounded-r-full"
+            style={{ left: pct(lim), width: `calc(${pct(max)} - ${pct(lim)})`, background: `repeating-linear-gradient(135deg, color-mix(in oklab, ${TONE.alert} 35%, transparent) 0 4px, transparent 4px 8px)` }}
+            aria-hidden="true"
+          />
+        )}
         {!nd && (
           <motion.div
             className="absolute top-0 h-9 w-0 border-l-2 border-dotted"
@@ -106,6 +114,20 @@ export function LabMeter({ name, rows, sourceUrl }: { name: string; rows: LabAna
         {shown.map((a, i) => (
           <Tube key={a.name} a={a} i={i} seen={seen} />
         ))}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted-foreground" aria-hidden="true">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-5 rounded-full" style={{ background: TONE.water }} />
+          typical sample
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-0 border-l-2 border-dotted border-foreground" />
+          highest sample
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-[3px] rounded-full bg-[var(--level-alert)]" />
+          federal limit
+        </span>
       </div>
     </VisualFrame>
   );

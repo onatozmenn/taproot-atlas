@@ -43,6 +43,12 @@ export function SourceToggle({ sources, open, onToggle }: { sources: SourceItem[
       type="button"
       aria-expanded={open}
       onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && open) {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
       className={cn('press mr-1 inline-flex h-9 items-center gap-2 rounded-full border border-border px-3 text-sm font-medium hover:bg-secondary', open && 'bg-secondary')}
     >
       <span className="flex -space-x-1.5" aria-hidden="true">
@@ -55,9 +61,15 @@ export function SourceToggle({ sources, open, onToggle }: { sources: SourceItem[
   );
 }
 
-export function SourceList({ sources, open }: { sources: SourceItem[]; open: boolean }) {
+export function SourceList({ sources, open, onClose }: { sources: SourceItem[]; open: boolean; onClose?: () => void }) {
   return (
     <div
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && open && onClose) {
+          e.preventDefault();
+          onClose();
+        }
+      }}
       className="grid w-full transition-[grid-template-rows,opacity] duration-300"
       style={{ gridTemplateRows: open ? '1fr' : '0fr', opacity: open ? 1 : 0, transitionTimingFunction: 'var(--ease-out-quint)' }}
       aria-hidden={!open}
@@ -96,7 +108,7 @@ export function SourceStack({ sources, defaultOpen = false }: { sources: SourceI
   return (
     <div className="flex flex-col items-start">
       <SourceToggle sources={sources} open={open} onToggle={() => setOpen(!open)} />
-      <SourceList sources={sources} open={open} />
+      <SourceList sources={sources} open={open} onClose={() => setOpen(false)} />
     </div>
   );
 }

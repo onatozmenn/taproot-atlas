@@ -42,10 +42,10 @@ export const millions = (n: number) => (n >= 1_000_000 ? `${(Math.round(n / 100_
 export const oneIn = (rate: number) => `1 in ${Math.max(1, Math.round(1 / Math.max(rate, 1e-6)))}`;
 
 const GROUPS: Array<{ key: 'both' | 'model_only' | 'ett_only' | 'neither'; label: string; color: string }> = [
-  { key: 'model_only', label: 'Only Taproot’s list', color: TONE.water },
-  { key: 'both', label: 'Both lists', color: 'color-mix(in oklab, var(--link) 55%, transparent)' },
-  { key: 'ett_only', label: 'Only EPA’s formula', color: TONE.watch },
-  { key: 'neither', label: 'Neither list', color: TONE.faint },
+  { key: 'model_only', label: 'Only Taproot', color: TONE.water },
+  { key: 'both', label: 'Both', color: 'color-mix(in oklab, var(--link) 75%, var(--foreground) 10%)' },
+  { key: 'ett_only', label: 'Only EPA formula', color: TONE.watch },
+  { key: 'neither', label: 'Neither', color: TONE.faint },
 ];
 
 /** One dot per system that went on to have a new health-based violation. */
@@ -149,7 +149,7 @@ export function ImpactView() {
               role="tab"
               aria-selected={i === idx}
               onClick={() => setIdx(i)}
-              className={cn('press h-8 rounded-full px-3 text-[13px] font-medium tabular-nums text-muted-foreground', i === idx && 'bg-secondary text-foreground')}
+              className={cn('press h-8 rounded-full px-3 text-[13px] font-medium tabular-nums text-muted-foreground', i === idx && 'bg-foreground text-background')}
             >
               {r.year}
             </button>
@@ -185,7 +185,7 @@ export function ImpactView() {
           <h2 className="font-display text-[24px] font-medium tracking-tight">Who the extra catches serve</h2>
           <p className="mt-2 text-[16px] leading-snug">
             In {y.year}, {y.extra_vs_ett} systems on Taproot’s list but not EPA’s went on to break a health rule. They serve <strong>{millions(y.extra_people)} people</strong>, and{' '}
-            {y.extra_high_svi} of them are in counties in the top quarter of CDC’s Social Vulnerability Index. Across {years[0].year}–{years[years.length - 1].year} that is about{' '}
+            {y.extra_high_svi} of them are in counties in the top quarter of CDC’s Social Vulnerability Index. Averaged over {years[0].year}–{years[years.length - 1].year}, that is about{' '}
             {millions(avgExtraPeople)} people a year.
           </p>
         </section>

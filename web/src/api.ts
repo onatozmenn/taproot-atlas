@@ -176,7 +176,7 @@ function toTapAnswer(res: ValidatedApiResponse): TapAnswer {
 
 export async function askTapWater(
   question: string,
-  opts: { lat?: number; lon?: number; signal?: AbortSignal; contextPwsid?: string } = {},
+  opts: { lat?: number; lon?: number; signal?: AbortSignal; contextPwsid?: string; pwsid?: string } = {},
 ): Promise<TapAnswer> {
   const q = question.slice(0, 2000);
   const hasCoords =
@@ -200,6 +200,7 @@ export async function askTapWater(
           question: q,
           ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}),
           ...(opts.contextPwsid ? { contextPwsid: opts.contextPwsid } : {}),
+          ...(opts.pwsid ? { pwsid: opts.pwsid } : {}),
         }),
         signal: controller.signal,
       });
@@ -218,6 +219,7 @@ export async function askTapWater(
       question: q,
       ...(hasCoords ? { lat: opts.lat, lon: opts.lon } : {}),
       ...(opts.contextPwsid ? { contextPwsid: opts.contextPwsid } : {}),
+      ...(opts.pwsid ? { pwsid: opts.pwsid } : {}),
     }),
   );
 }

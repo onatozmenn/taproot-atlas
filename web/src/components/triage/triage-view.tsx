@@ -97,11 +97,21 @@ export function caught(curve: number[], xs: number[], share: number): number {
 
 function nice(name: string): string {
   if (name !== name.toUpperCase()) return name;
-  return name.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()).replace(/\b(Of|And|The)\b/g, (w) => w.toLowerCase());
+  return name
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (c) => c.toUpperCase())
+    .replace(/\b(Of|And|The)\b/g, (w) => w.toLowerCase())
+    .replace(/\b(Sud|Mud|Wsc|Pws|Wsd|Psd|Ynp|Gtnp|Rwd|Cwd|Wd|Pud|Hoa|Mhp|Usa|Ii|Iii|Llc|Afb)\b/g, (w) => w.toUpperCase())
+    .replace(/\s*-\s*/g, ' - ');
 }
 
 const pctText = (p: number) => (p >= 0.995 ? '>99%' : p < 0.01 ? '<1%' : `${Math.round(p * 100)}%`);
-const people = (n: number) => (n >= 1_000_000 ? `${Math.round(n / 100_000) / 10}M` : n >= 10_000 ? `${Math.round(n / 1000)}k` : n.toLocaleString('en-US'));
+export const people = (n: number) =>
+  n >= 1_000_000 ? `${Math.round(n / 100_000) / 10}M` : n >= 1_000 ? `${n >= 10_000 ? Math.round(n / 1000) : Math.round(n / 100) / 10}k` : String(n);
+export const ordinal = (n: number) => {
+  const t = n % 100;
+  return `${n}${t >= 11 && t <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+};
 
 function drivers(r: TriageRow): RiskDriver[] {
   return r.d.map((f, i) => ({ f, label: r.dl[i] ?? f, value: r.dv[i] ?? null, dir: r.dd[i] ?? 'up', w: 0 }));
@@ -109,7 +119,14 @@ function drivers(r: TriageRow): RiskDriver[] {
 
 async function fetchTriage(params: Record<string, string>): Promise<TriageData> {
   const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== ''));
-  const res = await fetch(`/api/triage?${qs.toString()}`);
+  let res: Response;
+  try {
+    res = await fetch(`/api/triage?${qs.toString()}`);
+  } catch {
+    // Cold starts occasionally drop the first request: try once more.
+    await new Promise((r) => setTimeout(r, 600));
+    res = await fetch(`/api/triage?${qs.toString()}`);
+  }
   if (!res.ok) throw new Error(`Triage request failed (${res.status})`);
   return (await res.json()) as TriageData;
 }
@@ -167,7 +184,12 @@ function Capacity({ data }: { data: TriageData }) {
       />
       <p className="mt-4 text-[15px] leading-snug">
         Taking them in Taproot’s order meets about <strong>{Math.round(model * 100)}%</strong> of next year’s new health-based violations
-        {data.expected > 0 ? <> (≈{Math.round(model * data.expected)} of {Math.round(data.expected)} expected)</> : null}.
+        {data.expected >= 5 ? (
+          <> (≈{Math.round(model * data.expected)} of {Math.round(data.expected)} expected)</>
+        ) : data.expected > 0 ? (
+          <> (only about {Math.max(1, Math.round(data.expected))} expected here a year, so read this as the national rate)</>
+        ) : null}
+        .
       </p>
       <div className="mt-3 space-y-2">
         {bars.map(([label, v, color]) => (
@@ -180,7 +202,9 @@ function Capacity({ data }: { data: TriageData }) {
           </div>
         ))}
       </div>
-      <p className="mt-3 text-[12.5px] text-muted-foreground">Out-of-time backtest, {c.years}, all U.S. systems Taproot scores.</p>
+      <p className="mt-3 text-[12.5px] text-muted-foreground">
+        One backtest ({c.years}, all U.S. systems Taproot scores), read at the share of systems you can reach: each method visits its own top {Math.round(share * 1000) / 10}%.
+      </p>
     </section>
   );
 }
@@ -188,7 +212,7 @@ function Capacity({ data }: { data: TriageData }) {
 function Row({ r, rank, actions, year }: { r: TriageRow; rank: number; actions: Record<Action, string>; year: number }) {
   const [open, setOpen] = useState(false);
   const tone = r.p >= 0.2 ? TONE.alert : r.p >= 0.05 ? TONE.watch : TONE.water;
-  const ask = r.c ? `What's the risk of a violation in ${r.c}, ${r.st} next year?` : null;
+  const ask = `What's the risk of a new violation at ${nice(r.n)} next year?`;
   return (
     <li className="border-b border-border last:border-b-0">
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="press flex w-full items-center gap-3 px-1 py-3.5 text-left">
@@ -231,15 +255,16 @@ function Row({ r, rank, actions, year }: { r: TriageRow; rank: number; actions: 
           </ul>
           <p className="mt-2 text-[12.5px] text-muted-foreground">
             {Math.round(r.p * 1000) / 10}% chance of a new health-based violation in {year} · EPA targeting score {r.ett}
-            {r.svi !== null ? ` · county vulnerability ${Math.round(r.svi * 100)}th pct` : ''} · {r.id}
+            {r.svi !== null ? ` · county vulnerability ${ordinal(Math.round(r.svi * 100))} percentile` : ''} · {r.id}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {ask && (
-              <a href={`#/ask?q=${encodeURIComponent(ask)}`} className="press inline-flex h-8 items-center gap-1.5 rounded-full border border-border px-3 text-[13px] font-medium">
-                <MessageCircleIcon className="size-3.5" />
-                Ask Taproot about {r.c}
-              </a>
-            )}
+            <a
+              href={`#/ask?q=${encodeURIComponent(ask)}&pwsid=${encodeURIComponent(r.id)}`}
+              className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3 text-[13px] font-medium text-background"
+            >
+              <MessageCircleIcon className="size-3.5" />
+              Ask Taproot about this system
+            </a>
             <a
               href={`https://echo.epa.gov/detailed-facility-report?fid=${encodeURIComponent(r.id)}`}
               target="_blank"
@@ -265,6 +290,15 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
   const [data, setData] = useState<TriageData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const onHash = () => {
+      const st = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('state')?.toUpperCase() ?? null;
+      if (window.location.hash.startsWith('#/triage')) setState(st && STATES[st] ? st : null);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   useEffect(() => {
     document.title = `Taproot Triage${state ? ` · ${STATES[state]}` : ''}`;
@@ -345,7 +379,7 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
           <Chip on={action === ''} onClick={() => setAction('')}>
             Any issue
           </Chip>
-          {(['monitoring', 'lead', 'dbp', 'micro', 'chem', 'deficiency', 'enforcement'] as Action[]).map((a) => (
+          {(['monitoring', 'lead', 'dbp', 'micro', 'chem', 'deficiency', 'surface', 'enforcement', 'watch'] as Action[]).map((a) => (
             <Chip key={a} on={action === a} onClick={() => setAction(action === a ? '' : a)}>
               {ACTION_SHORT[a]}
             </Chip>
@@ -400,7 +434,7 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
               <section className="mt-10 rounded-[28px] border bg-card px-5 py-5 sm:px-6" aria-label="Fairness check">
                 <p className="text-[13px] font-medium text-muted-foreground">Fairness check</p>
                 <p className="mt-1 text-[16px] leading-snug">
-                  In the most socially vulnerable third of counties, the forecast’s top 10% caught <strong>{Math.round(fair.high.recall_top10 * 100)}%</strong> of next-year
+                  Nationally, in the most socially vulnerable third of counties, the forecast’s top 10% caught <strong>{Math.round(fair.high.recall_top10 * 100)}%</strong> of next-year
                   violations, against <strong>{Math.round(fair.low.recall_top10 * 100)}%</strong> in the least vulnerable third. Violations there are also more common (
                   {Math.round(fair.high.base_rate * 1000) / 10}% vs {Math.round(fair.low.base_rate * 1000) / 10}% a year), so the queue leans toward the communities that need it.
                 </p>

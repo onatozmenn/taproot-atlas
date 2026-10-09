@@ -20,10 +20,12 @@ export interface ClarifyCardProps {
   skipLabel?: string;
   disabled?: boolean;
   className?: string;
+  /** Option already in effect (e.g. the place shown now), checked from the start. */
+  initial?: number | null;
 }
 
-export function ClarifyCard({ question, options, onChoose, onSkip, skipLabel = 'Keep this one', disabled, className }: ClarifyCardProps) {
-  const [picked, setPicked] = useState<number | null>(null);
+export function ClarifyCard({ question, options, onChoose, onSkip, skipLabel = 'Keep this one', disabled, className, initial = null }: ClarifyCardProps) {
+  const [picked, setPicked] = useState<number | null>(initial);
   const [done, setDone] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();

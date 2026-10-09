@@ -121,8 +121,10 @@ function answerRisk(city: string, p: WaterSystemProfile): string[] {
   const num = pct < 10 ? String(Math.round(pct * 10) / 10) : String(Math.round(pct));
   const chance = pct < 1 ? 'less than a 1%' : pct > 95 ? 'more than a 95%' : `${/^(8|11|18)(\.|$)/.test(num) ? 'an' : 'a'} ${num}%`;
   const vs =
-    r.percentile >= 0.5
-      ? `higher than ${pctWords(r.percentile)} of the systems Taproot scores`
+    r.percentile >= 0.99
+      ? `in the top 1% of the systems Taproot scores`
+      : r.percentile >= 0.5
+      ? `higher than ${pctWords(Math.min(r.percentile, 0.98))} of the systems Taproot scores`
       : `lower than ${pctWords(1 - r.percentile)} of the systems Taproot scores`;
   const want = r.percentile >= 0.5 ? 'up' : 'down';
   const top = r.drivers.find((d) => d.dir === want) ?? r.drivers[0];

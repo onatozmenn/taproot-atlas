@@ -57,6 +57,11 @@ export interface AskInput {
    * snapping back to the NYC showcase default.
    */
   contextPwsid?: string;
+  /**
+   * PWSID chosen in the UI (a triage row's "Ask Taproot"). Wins over any
+   * place the question text happens to name ("Maysville Regional Water").
+   */
+  pwsid?: string;
 }
 
 export interface NarrateResult {
@@ -197,7 +202,7 @@ export async function answerTapWater(
 
 /** Topics that are clearly not tap water, even when a city is named. */
 const OFF_TOPIC_RE =
-  /\b(weather|forecast|temperatures?|raining|snowing|restaurants?|hotels?|crime|traffic|news|sports?|stocks?|elections?|jobs?|rent|housing|things to do|tourism|flights?|nightlife|population of|time zone)\b/i;
+  /\b(weather|temperatures?|raining|snowing|restaurants?|hotels?|crime|traffic|news|sports?|stocks?|elections?|jobs?|rent|housing|things to do|tourism|flights?|nightlife|population of|time zone)\b/i;
 const COUNTRY_RE =
   /\b(france|england|britain|united kingdom|uk|germany|japan|italy|spain|turkey|t\u00fcrkiye|canada|mexico|china|india|brazil|australia|russia|netherlands|greece|portugal|ireland|egypt|korea|europe|asia|africa)\b/i;
 /** World cities that share a name with a small US place. */
@@ -241,7 +246,11 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
     /\b(levels? (?:of|in)|how much|is there|my water|our water|my tap|in (?:the |my |our )?(?:tap )?water)\b/i.test(question);
   const queue = triageAnswer(question);
   if (queue) return redirect(queue.markdown, queue.followUps);
-  const term = asksAboutRecords ? null : findGlossaryEntry(question);
+  // "what about PFAS?" mid-conversation asks for the city's PFAS record,
+  // not a definition: only "what is/means/define" questions get the term.
+  const hasContext = typeof input.contextPwsid === 'string' && input.contextPwsid !== 'UNKNOWN';
+  const recordFollowUp = hasContext && /^(?:and\s+|so\s+)?(?:what|how)\s+about\b|^(?:and|also|any)\b/i.test(question.trim());
+  const term = asksAboutRecords || recordFollowUp ? null : findGlossaryEntry(question);
   if (term) {
     const ctx = typeof input.contextPwsid === 'string' ? input.contextPwsid : '';
     const place = ctx ? (getDirectorySystem(ctx)?.city ?? titleCity(indexRow(ctx)?.citiesServed[0] ?? '')) || null : null;
@@ -338,13 +347,15 @@ async function answerCore(
 
   const resolved = resolveSystem(lat, lon);
   // Directory match upgrades off-topic-looking questions ("houston?") to water.
-  const namedHit = findSystemByText(question);
-  const candidates = findSystemCandidates(question);
+  const pin = typeof input.pwsid === 'string' && /^[A-Z]{2}\d{7}$/.test(input.pwsid) && (getDirectorySystem(input.pwsid) || hasProfile(input.pwsid)) ? input.pwsid : null;
+  if (pin) input = { ...input, contextPwsid: pin, lat: undefined, lon: undefined };
+  const namedHit = pin ? (getDirectorySystem(pin) ?? null) : findSystemByText(question);
+  const candidates = pin ? [] : findSystemCandidates(question);
   // Conversation context: no city named, no coordinates, no other place ->
   // keep talking about the system from the previous turn.
   // A question that names any US place or ZIP ("Does Phoenix have PFAS?")
   // starts a new subject, even mid-conversation.
-  const namesPlace = /\b\d{5}\b/.test(question) || findPlaceInText(question) !== null;
+  const namesPlace = !pin && (/\b\d{5}\b/.test(question) || findPlaceInText(question) !== null);
   const contextHit =
     !namedHit &&
     !namesPlace &&
@@ -352,21 +363,21 @@ async function answerCore(
     input.lat === undefined &&
     typeof input.contextPwsid === 'string' &&
     input.contextPwsid !== 'UNKNOWN' &&
-    !detectPlaceQuery(question)
+    (pin !== null || !detectPlaceQuery(question))
       ? getDirectorySystem(input.contextPwsid)
       : null;
   const dirHit = namedHit ?? contextHit;
   // Nationwide fallback: any US place or ZIP served by one of ~9,700
   // community systems (3,300+ people). Curated directory cities win.
   let nationalHit: NationalHit | null =
-    !dirHit && candidates.length === 0 ? resolveNationalSystem(question) : null;
+    !dirHit && candidates.length === 0 && !pin ? resolveNationalSystem(question) : null;
   if (
     !dirHit &&
     !nationalHit &&
     candidates.length === 0 &&
     input.lat === undefined &&
     typeof input.contextPwsid === 'string' &&
-    !detectPlaceQuery(question) &&
+    (pin !== null || !detectPlaceQuery(question)) &&
     !namesPlace &&
     hasProfile(input.contextPwsid)
   ) {
@@ -425,7 +436,10 @@ async function answerCore(
   // A supported place outside the directory ("Flint, MI") is a water
   // question with an honest empty state, never a silent NYC default and
   // never an off-topic deflection. Directory hits always win.
-  const placeQuery = !dirHit && !nationalHit ? detectPlaceQuery(question) : null;
+  const namedPlace = !dirHit && !nationalHit && !pin ? findPlaceInText(question) : null;
+  const placeQuery = !dirHit && !nationalHit
+    ? detectPlaceQuery(question) ?? (namedPlace && namedPlace.stateNamed ? `${namedPlace.name}, ${namedPlace.state}` : null)
+    : null;
   // A named city wins over the coordinate polygon: the web chat sends no
   // location, so coords are usually just the NYC default. An explicit city
   // mention is the stronger signal of user intent.
@@ -499,9 +513,9 @@ async function answerCore(
       return {
         narrative: {
           overview:
-            `"${placeQuery}" is not in the current snapshot. The snapshot covers major United States community water systems, ` +
-            `including ${sample.join(', ')}. Ask about one of these cities in plain words.`,
-          metricsSummary: 'No lab metrics are shown for areas outside the snapshot.',
+            `I don't have ${placeQuery} yet. Taproot covers the community water systems serving 3,300 people or more, ` +
+            `so a smaller town's system is likely outside it. Try the nearest larger city, or a ZIP code.`,
+          metricsSummary: `Covered examples: ${sample.slice(0, 4).join(', ')}.`,
           complianceNote: 'Verify live records at the linked ECHO system profile.',
           stewardshipNote: schematic.disclaimer,
         },

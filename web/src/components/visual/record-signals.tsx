@@ -49,7 +49,8 @@ function signals(p: WaterSystemProfile, city: string): Signal[] {
     key: 'viol',
     label: 'Violations',
     value: String(v.healthBased5Years),
-    ratio: v.healthBased5Years > 0 ? Math.min(1.01, 0.4 + v.healthBased5Years * 0.2) : 0,
+    // The limit for health-based violations is zero: any one fills the ring.
+    ratio: v.healthBased5Years > 0 ? 1.01 : 0,
     state: `health-based · 5 yrs`,
     ask: `Any violations for ${city} in the last 5 years?`,
     tone: v.healthBased5Years > 0 ? TONE.alert : v.last5Years > 0 ? TONE.watch : TONE.ok,
@@ -66,7 +67,7 @@ function signals(p: WaterSystemProfile, city: string): Signal[] {
     value: top ? `${Math.max(1, Math.round(top.r * 100))}%` : '–',
     ratio: top ? top.r : null,
     state: top ? 'typical level vs limit' : 'No lab data',
-    ask: top && topic ? `What about ${topic.name.toLowerCase()} in ${city}?` : null,
+    ask: top && topic ? `What about ${topic.name.toLowerCase()} in ${city}?` : `What else is tested in ${city} water?`,
     tone: toneFor(top ? top.r : null),
   });
   return out;
@@ -76,13 +77,14 @@ function Dial({ s, i, seen, onAsk }: { s: Signal; i: number; seen: boolean; onAs
   const reduce = useReducedMotion();
   const R = 34;
   const C = 2 * Math.PI * R;
-  const frac = s.ratio === null ? 0 : s.ratio === 0 ? 1 : Math.min(1, s.ratio);
+  // Ring = share of the limit; "none" leaves it empty rather than full.
+  const frac = s.ratio === null ? 0 : Math.min(1, s.ratio);
   const over = (s.ratio ?? 0) > 1;
   const body = (
     <>
       <svg viewBox="-44 -44 88 88" className="size-[92px] -rotate-90" aria-hidden="true">
         <circle r={R} fill="none" stroke="color-mix(in oklab, var(--foreground) 12%, transparent)" strokeWidth={6} />
-        {s.ratio !== null && (
+        {s.ratio !== null && s.ratio > 0 && (
           <motion.circle
             r={R}
             fill="none"
@@ -93,7 +95,6 @@ function Dial({ s, i, seen, onAsk }: { s: Signal; i: number; seen: boolean; onAs
             initial={reduce ? false : { strokeDashoffset: C }}
             animate={seen ? { strokeDashoffset: C * (1 - frac) } : undefined}
             transition={{ duration: 1.2, delay: 0.15 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-            opacity={s.ratio === 0 ? 0.55 : 1}
           />
         )}
         {over && !reduce && seen && (
@@ -108,7 +109,10 @@ function Dial({ s, i, seen, onAsk }: { s: Signal; i: number; seen: boolean; onAs
           />
         )}
       </svg>
-      <span className="absolute inset-x-0 top-[30px] text-center font-display text-[24px] font-medium leading-none tabular-nums" style={{ color: over ? s.tone : undefined }}>
+      <span
+        className="absolute inset-x-0 top-2 flex h-[92px] items-center justify-center text-center font-display text-[22px] font-medium leading-none tabular-nums"
+        style={{ color: over ? s.tone : s.ratio === 0 ? TONE.ok : undefined }}
+      >
         {s.value}
       </span>
       <span className="mt-1 block text-[15px] font-semibold leading-tight">{s.label}</span>
@@ -134,11 +138,17 @@ export function RecordSignals({ p, city, sourceUrl, onAsk }: { p: WaterSystemPro
   const [ref, seen] = useOnScreen<HTMLDivElement>();
   const s = signals(p, city);
   const flagged = s.filter((x) => (x.ratio ?? 0) > 1).length;
+  const word = ['No', 'One', 'Two', 'Three', 'All four'][flagged];
+  // Typical levels can sit under a limit while single past samples broke it;
+  // the headline must not contradict an answer that mentions those samples.
+  const pastPeaks = p.lab.some(
+    (a) => a.benchmark && !/^(LEAD|COPPER)/.test(a.name.toUpperCase()) && (a.maxInBenchmarkUnit ?? 0) > a.benchmark.value,
+  );
   return (
     <VisualFrame
       eyebrow={`${city} · four checks against federal limits`}
-      headline={flagged === 0 ? 'Nothing over a limit' : `${flagged} of 4 over a limit`}
-      sub="Records, not a live reading of your tap. Tap a dial to ask about it."
+      headline={flagged === 0 ? (pastPeaks ? 'Typical levels under every limit' : 'Nothing over a limit') : flagged === 4 ? 'All four checks flagged' : `${word} of four checks flagged`}
+      sub={`${pastPeaks && flagged === 0 ? 'Some past samples ran over a limit. ' : ''}Records, not a live reading of your tap. Tap a dial to ask about it.`}
       source="EPA SDWIS, Six-Year Review 4 and UCMR 5"
       sourceUrl={sourceUrl}
     >

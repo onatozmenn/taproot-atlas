@@ -156,7 +156,7 @@ const ENTRIES: GlossaryEntry[] = [
     id: 'accuracy',
     match: /\b(how accurate|how reliable|accuracy|can i trust|how good is (?:the |taproot'?s? )?(?:forecast|model|prediction)|track record)\b/i,
     answer:
-      'We tested it on the past. A list made in January 2025 from earlier records held 201 of the 303 systems that broke a health rule that year; EPA’s targeting formula, given the same number of slots, held 90. [See the full backtest](#/impact)',
+      'Two parts. Every fact in an answer is read straight from EPA records and checked against them before it is shown. The forecast was tested on the past: a list made in January 2025 from earlier records held 201 of the 303 systems that broke a health rule that year; EPA’s targeting formula, given the same number of slots, held 90. [See the full backtest](#/impact)',
     followUps: ["What's the violation risk for {place} water?", 'Which water systems are riskiest nationwide?'],
   },
   {

@@ -8,7 +8,7 @@ export type Scope = 'water' | 'greeting' | 'off_topic';
 
 /** Any of these marks the question as tap-water business. */
 const WATER_RE =
-  /\b(waters?|tap|drink(?:ing)?|pwsid|watershed|basin|reservoir|aqueduct|treatment|distribution|quality|complianc|violations?|turbidity|coliform|lead|fluoride|chlorine|pfas|pipe|plumb|faucet|filter|sewer|results?|reports?|sources?|epa|echo|sdwis|dep\b|bill|arsenic|nitrates?|nitrites?|copper|uranium|radium|radon|pfoa|pfos|forever chemicals?|bacteria|e\.? ?coli|chloramines?|trihalomethanes?|tthm|haa5|byproducts?|contaminants?|hardness|boil|utility|utilities)\b/i;
+  /\b(waters?|tap|drink(?:ing)?|pwsid|watershed|basin|reservoir|aqueduct|treatment|distribution|quality|complianc|violations?|turbidity|coliform|lead|fluoride|chlorine|pfas|pipe|plumb|faucet|filter|sewer|results?|reports?|sources?|epa|echo|sdwis|dep\b|bill|arsenic|nitrates?|nitrites?|copper|uranium|radium|radon|pfoa|pfos|forever chemicals?|bacteria|e\.? ?coli|chloramines?|trihalomethanes?|tthm|haa5|byproducts?|contaminants?|hardness|boil|utility|utilities|risk|risky|score)\b/i;
 
 /** Short social openers/closers with no topical content. */
 const SMALLTALK_RE =

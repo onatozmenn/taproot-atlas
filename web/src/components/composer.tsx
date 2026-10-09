@@ -87,7 +87,7 @@ export function Composer(props: ComposerProps) {
         e.preventDefault();
         submit();
       }}
-      className="group rounded-[28px] border border-border bg-card shadow-[var(--shadow-elevation-1)] transition-[border-color,box-shadow] duration-200 focus-within:border-foreground/30"
+      className="group rounded-[28px] border border-border bg-card shadow-[var(--shadow-elevation-1)] transition-[border-color,box-shadow] duration-200 focus-within:border-foreground/30 focus-within:ring-2 focus-within:ring-[var(--link)]/35"
     >
       <label className="sr-only" htmlFor="composer-input">
         {props.label}

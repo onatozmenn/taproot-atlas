@@ -88,7 +88,7 @@ export default function App() {
     }
   }, [history]);
 
-  async function run(q: string) {
+  async function run(q: string, pinPwsid?: string) {
     const controller = new AbortController();
     abortRef.current = controller;
     busyRef.current = true;
@@ -103,6 +103,7 @@ export default function App() {
         signal: controller.signal,
         ...(coords ? { lat: coords.lat, lon: coords.lon } : {}),
         ...(contextPwsid ? { contextPwsid } : {}),
+        ...(pinPwsid ? { pwsid: pinPwsid } : {}),
       });
       setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer: { ...answer, question: q }, fresh: true, elapsedMs: performance.now() - started }]);
     } catch (e) {
@@ -119,7 +120,7 @@ export default function App() {
     }
   }
 
-  function send(question: string) {
+  function send(question: string, pinPwsid?: string) {
     const q = question.trim().slice(0, 2000);
     if (!q || busy || busyRef.current) return;
     busyRef.current = true;
@@ -129,11 +130,11 @@ export default function App() {
       setLeaving(true);
       window.setTimeout(() => {
         setLeaving(false);
-        void run(q);
+        void run(q, pinPwsid);
       }, 220);
       return;
     }
-    void run(q);
+    void run(q, pinPwsid);
   }
 
   // `#/ask?q=…` (from the triage queue or an in-answer link) asks once, then clears.
@@ -141,9 +142,11 @@ export default function App() {
     const take = () => {
       const h = window.location.hash;
       if (!h.startsWith('#/ask')) return;
-      const q = new URLSearchParams(h.split('?')[1] ?? '').get('q');
+      const params = new URLSearchParams(h.split('?')[1] ?? '');
+      const q = params.get('q');
+      const pin = params.get('pwsid') ?? undefined;
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      if (q) sendRef.current(q);
+      if (q) sendRef.current(q, pin && /^[A-Z]{2}\d{7}$/.test(pin) ? pin : undefined);
     };
     take();
     window.addEventListener('hashchange', take);
