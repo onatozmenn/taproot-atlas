@@ -6,7 +6,7 @@
   "framework": "vite",
   "functions": {
     "api/ask.ts": {
-      "includeFiles": "data/national/**",
+      "includeFiles": "data/{national,global}/**",
       "maxDuration": 60
     },
     "api/triage.ts": {

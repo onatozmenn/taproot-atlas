@@ -10,13 +10,14 @@ const KitGallery = lazy(() => import('./components/kit/kit-gallery'));
 const TriageView = lazy(() => import('./components/triage/triage-view'));
 const ImpactView = lazy(() => import('./components/impact/impact-view'));
 const StudyView = lazy(() => import('./components/study/study-view'));
+const GlobalView = lazy(() => import('./components/global/global-view'));
 
 function triageState(hash: string): string | null {
   const st = new URLSearchParams(hash.split('?')[1] ?? '').get('state');
   return st && /^[A-Za-z]{2}$/.test(st) ? st.toUpperCase() : null;
 }
 
-/** `/#/kit` opens the Kit gallery, `/#/triage` the priority queue, `/#/impact` the backtest story, `/#/study` the usability test; everything else is the chat. */
+/** `/#/kit` opens the Kit gallery, `/#/triage` the priority queue, `/#/impact` the backtest story, `/#/study` the usability test, `/#/global` beyond the U.S.; everything else is the chat. */
 function Root() {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
@@ -35,6 +36,13 @@ function Root() {
     return (
       <Suspense fallback={null}>
         <TriageView initialState={triageState(hash)} />
+      </Suspense>
+    );
+  }
+  if (hash.startsWith('#/global')) {
+    return (
+      <Suspense fallback={null}>
+        <GlobalView />
       </Suspense>
     );
   }

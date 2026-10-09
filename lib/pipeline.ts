@@ -2,6 +2,7 @@
 // Resolver (single authority) → extractedFacts → narrator → audit → fallback.
 // Returns ValidatedApiResponse in both pass and fail paths: audit failure still
 // answers 200 with the deterministic summary, flagged in validationStatus.
+import { irelandAnswer } from './global.js';
 import type {
   ResolverOutput,
   ValidatedApiResponse,
@@ -230,6 +231,8 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
     const base = await answerCore({ question: 'hello' }, deps);
     return { ...base, scope: 'redirect', answer: { markdown, followUps: followUps.length ? followUps : EXAMPLE_FOLLOW_UPS, focus: 'general', author: 'template' } };
   };
+  const ie = irelandAnswer(question);
+  if (ie) return redirect(ie.markdown, ie.followUps);
   // "what is ppb?" after a lead answer is part of the conversation, not
   // off-topic: answer the term in plain words and keep the city context.
   const asksAboutRecords =
@@ -259,7 +262,7 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
     );
   }
   if (COUNTRY_RE.test(question) && !/\b(new mexico)\b/i.test(question)) {
-    return redirect(`Taproot only covers U.S. public water systems, using EPA records. I can't speak to water outside the United States.`, EXAMPLE_FOLLOW_UPS);
+    return redirect(`Taproot covers U.S. public water systems today, plus Ireland’s at-risk list. Other countries need their regulator’s records first. [Where Taproot can go next](#/global)`, EXAMPLE_FOLLOW_UPS);
   }
   void input;
   return null;
