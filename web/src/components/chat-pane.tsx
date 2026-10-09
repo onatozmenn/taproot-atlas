@@ -17,6 +17,8 @@ export interface ChatMsg {
   fresh?: boolean;
   /** How long the answer took, measured in the browser. */
   elapsedMs?: number;
+  /** The user pressed Stop before an answer arrived. */
+  stopped?: boolean;
 }
 
 /** The trace while an answer is on its way: steps reached so far, live timer. */
@@ -63,6 +65,8 @@ function AssistantTurn({
   const onDone = useCallback(() => setRevealed(true), []);
   const chips = isLatest && answer.followUps.length > 0 ? answer.followUps : [];
   const steps = traceFor(answer);
+  const state = answer.profile?.state;
+  const shownPlace = state && !answer.placeName.includes(',') ? `${answer.placeName}, ${state}` : answer.placeName;
   const markdown = answer.markdown.replace(/\bug\/L\b/g, 'µg/L');
 
   return (
@@ -74,10 +78,12 @@ function AssistantTurn({
           {answer.alternatives.length > 0 && isLatest && (
             <ClarifyCard
               className="mt-5"
-              question={`Showing ${answer.placeName}. Did you mean another one?`}
-              options={answer.alternatives.map((alt) => ({ label: alt }))}
+              question={`Showing ${shownPlace}. Did you mean another one?`}
+              options={[{ label: shownPlace, hint: 'Shown now' }, ...answer.alternatives.map((alt) => ({ label: alt }))]}
               disabled={busy}
-              onChoose={(o) => onFollowUp(`Tell me about ${o.label} water`)}
+              onChoose={(o) => {
+                if (o.label !== shownPlace) onFollowUp(`Tell me about ${o.label} water`);
+              }}
               onSkip={() => undefined}
             />
           )}
@@ -104,6 +110,10 @@ export function ChatPane({ messages, busy, onFollowUp }: ChatPaneProps) {
                   {m.text}
                 </p>
               </div>
+            ) : m.stopped || !m.answer ? (
+              <p key={m.id} className="animate-message-in text-[15px] text-muted-foreground" role="status">
+                Stopped. Ask again whenever you're ready.
+              </p>
             ) : (
               <AssistantTurn key={m.id} msg={m} isLatest={m.id === lastAssistantId && !busy} busy={busy} onFollowUp={onFollowUp} />
             ),

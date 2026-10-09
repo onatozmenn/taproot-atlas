@@ -73,7 +73,7 @@
     --input: #000c1f1a;
     --ring: #0066c5;
     --link: #0066c5;
-    --tertiary: #000c1f73;
+    --tertiary: #000c1f94;
     --level-alert: #c1121f;
     --level-alert-bg: #c1121f14;
     --level-watch: #a15c00;
@@ -115,15 +115,15 @@
     --secondary: #ffffff12;
     --secondary-foreground: #eef2f8;
     --muted: #ffffff0d;
-    --muted-foreground: #eef2f8a6;
+    --muted-foreground: #eef2f8bf;
     --accent: #ffffff12;
     --accent-foreground: #eef2f8;
     --destructive: #ff5a5f;
-    --border: #ffffff1a;
-    --input: #ffffff26;
+    --border: #ffffff24;
+    --input: #ffffff33;
     --ring: #5aa9ff;
     --link: #7cb8ff;
-    --tertiary: #eef2f873;
+    --tertiary: #eef2f89c;
     --chart-1: #7cb8ff;
     --chart-2: #5aa9ff;
     --chart-3: #4ed08a;
@@ -267,4 +267,23 @@
 @media (prefers-reduced-motion: reduce) {
   .kit-drop, .kit-spin, .kit-fade-up, .kit-fade-in, .kit-pop-in, .kit-pulse,
   [style*='kit-fade-up'], [style*='kit-pop-in'], [style*='kit-drop'] { animation: none !important; }
+}
+
+/* ---------- Static (no-WebGL) service map ---------- */
+@keyframes static-map-draw { from { stroke-dashoffset: 1 } to { stroke-dashoffset: 0 } }
+@keyframes static-map-fill-in { from { fill-opacity: 0 } to { fill-opacity: .13 } }
+@keyframes static-map-flow { to { stroke-dashoffset: -14 } }
+.static-map-fill { fill: var(--link); fill-opacity: .13; animation: static-map-fill-in 1.2s var(--ease-out-quint) .6s both; }
+.static-map-line { fill: none; stroke: #003f7f; stroke-width: 1.8; stroke-linejoin: round; stroke-dashoffset: 0; animation: static-map-draw 1.6s var(--ease-out-quint) .2s both; }
+.dark .static-map-line { stroke: #9ccaff; }
+.static-map-arc { fill: none; stroke: var(--link); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 3 4; animation: static-map-flow .9s linear infinite; }
+.static-map-dot { fill: var(--background); stroke: var(--link); stroke-width: 2; }
+.static-map-label { font-size: 12px; fill: var(--foreground); paint-order: stroke; stroke: var(--background); stroke-width: 3px; }
+@media (prefers-reduced-motion: reduce) { .static-map-fill, .static-map-line, .static-map-arc { animation: none !important; } }
+
+/* Figures: every focusable mark shows where focus is. */
+.viz [tabindex]:focus-visible, .viz button:focus-visible, .viz a:focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 2px;
+  border-radius: 6px;
 }

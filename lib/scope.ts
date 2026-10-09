@@ -48,7 +48,7 @@ export function offTopicNarrative(): {
   complianceNote: string;
 } {
   return {
-    overview: 'I do not give opinions or commentary outside tap-water records.',
+    overview: 'I only answer questions about U.S. tap-water records, and I could not find one in that message.',
     metricsSummary:
       'If you have a tap-water question, ask where it comes from, what public lab reports say is in it, or how it reaches your tap, in plain English words.',
     complianceNote: 'Every answer stays inside the public records - nothing more.',

@@ -39,7 +39,7 @@ import {
   profileLabMetrics,
   hasProfile,
 } from './profile.js';
-import { resolveNationalSystem, indexRow, systemCenter, type NationalHit } from './national.js';
+import { resolveNationalSystem, indexRow, systemCenter, findPlaceInText, type NationalHit } from './national.js';
 
 export const SHOWCASE_CENTER = { lat: 40.78, lon: -73.97 };
 
@@ -161,9 +161,14 @@ export async function answerTapWater(
   input: AskInput,
   deps: PipelineDeps = {},
 ): Promise<ValidatedApiResponse> {
-  const out = await answerCore(input, deps);
-  if (out.answer) return out;
   const question = (input.question ?? '').slice(0, 2000);
+  const special = await answerSpecial(question, input, deps);
+  if (special) return special;
+  const out = await answerCore(input, deps);
+  if (out.answer) {
+    worldCityNote(out, question);
+    return out;
+  }
   if (out.scope === 'redirect') {
     out.answer = {
       markdown: [out.narrative.overview, out.narrative.metricsSummary].filter(Boolean).join('\n\n'),
@@ -182,7 +187,75 @@ export async function answerTapWater(
     const c = composeAnswer(out.groundTruth, question);
     out.answer = { markdown: c.markdown, followUps: c.followUps, focus: c.focus, author: 'template' };
   }
+  worldCityNote(out, question);
   return out;
+}
+
+/** Topics that are clearly not tap water, even when a city is named. */
+const OFF_TOPIC_RE =
+  /\b(weather|forecast|temperatures?|raining|snowing|restaurants?|hotels?|crime|traffic|news|sports?|stocks?|elections?|jobs?|rent|housing|things to do|tourism|flights?|nightlife|population of|time zone)\b/i;
+const COUNTRY_RE =
+  /\b(france|england|britain|united kingdom|uk|germany|japan|italy|spain|turkey|t\u00fcrkiye|canada|mexico|china|india|brazil|australia|russia|netherlands|greece|portugal|ireland|egypt|korea|europe|asia|africa)\b/i;
+/** World cities that share a name with a small US place. */
+const WORLD_CITIES = new Set(['paris', 'london', 'berlin', 'rome', 'madrid', 'athens', 'dublin', 'moscow', 'cairo', 'toronto', 'vancouver', 'lisbon', 'vienna', 'amsterdam', 'florence', 'naples', 'manchester', 'delhi', 'lima', 'sydney', 'melbourne']);
+
+function placeIn(text: string): string | null {
+  const hit = findPlaceInText(text);
+  return hit ? hit.name : null;
+}
+
+/** Distinct places in a "compare A and B" style question. */
+function comparedPlaces(question: string): string[] {
+  if (!/\b(compare|comparison|versus|vs\.?|difference between|better than)\b/i.test(question) && !/\b(and|or)\b.*\bwater\b/i.test(question)) return [];
+  const parts = question.split(/\b(?:and|or|vs\.?|versus|with|to|than)\b|[,;&]/i);
+  const out: string[] = [];
+  for (const part of parts) {
+    const n = placeIn(part);
+    if (n && !out.includes(n)) out.push(n);
+  }
+  return out.length >= 2 ? out : [];
+}
+
+/**
+ * Questions the record pipeline should not answer as a city report:
+ * two-city comparisons, non-water topics that happen to name a city, and
+ * places outside the United States. Each gets one honest line and
+ * follow-ups that lead back to something Taproot can answer.
+ */
+async function answerSpecial(question: string, input: AskInput, deps: PipelineDeps): Promise<ValidatedApiResponse | null> {
+  const redirect = async (markdown: string, followUps: string[]): Promise<ValidatedApiResponse> => {
+    const base = await answerCore({ question: 'hello' }, deps);
+    return { ...base, scope: 'redirect', answer: { markdown, followUps: followUps.length ? followUps : EXAMPLE_FOLLOW_UPS, focus: 'general', author: 'template' } };
+  };
+  const compared = comparedPlaces(question);
+  if (compared.length >= 2) {
+    return redirect(
+      `I look at one city at a time for now. Pick one to start, then ask about the other.`,
+      compared.slice(0, 3).map((c) => `Is ${c} water safe to drink?`),
+    );
+  }
+  if (classifyScope(question) === 'off_topic' && OFF_TOPIC_RE.test(question)) {
+    const place = placeIn(question);
+    return redirect(
+      `I only answer questions about U.S. tap water, so I can't help with that.`,
+      place ? [`Is ${place} water safe to drink?`, `Where does ${place} water come from?`] : EXAMPLE_FOLLOW_UPS,
+    );
+  }
+  if (COUNTRY_RE.test(question) && !/\b(new mexico)\b/i.test(question)) {
+    return redirect(`Taproot only covers U.S. public water systems, using EPA records. I can't speak to water outside the United States.`, EXAMPLE_FOLLOW_UPS);
+  }
+  void input;
+  return null;
+}
+
+/** Note when a bare world-city name resolved to a small US namesake. */
+function worldCityNote(out: ValidatedApiResponse, question: string): void {
+  const g = out.groundTruth;
+  const name = (g.displayName ?? '').toLowerCase();
+  const st = g.profile?.state;
+  if (!out.answer || !st || !WORLD_CITIES.has(name)) return;
+  if (new RegExp(`,\\s*${st}\\b`).test(question)) return;
+  out.answer.markdown = `Taproot covers U.S. water only, so this is ${g.displayName}, ${st}. ${out.answer.markdown}`;
 }
 
 async function answerCore(
@@ -216,8 +289,12 @@ async function answerCore(
   const candidates = findSystemCandidates(question);
   // Conversation context: no city named, no coordinates, no other place ->
   // keep talking about the system from the previous turn.
+  // A question that names any US place or ZIP ("Does Phoenix have PFAS?")
+  // starts a new subject, even mid-conversation.
+  const namesPlace = /\b\d{5}\b/.test(question) || findPlaceInText(question) !== null;
   const contextHit =
     !namedHit &&
+    !namesPlace &&
     candidates.length === 0 &&
     input.lat === undefined &&
     typeof input.contextPwsid === 'string' &&
@@ -237,6 +314,7 @@ async function answerCore(
     input.lat === undefined &&
     typeof input.contextPwsid === 'string' &&
     !detectPlaceQuery(question) &&
+    !namesPlace &&
     hasProfile(input.contextPwsid)
   ) {
     const row = indexRow(input.contextPwsid);

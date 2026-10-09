@@ -65,7 +65,7 @@ function signals(p: WaterSystemProfile, city: string): Signal[] {
     label: top ? top.a.label.replace(/\s*\(.*\)$/, '') : 'Other tests',
     value: top ? `${Math.max(1, Math.round(top.r * 100))}%` : '–',
     ratio: top ? top.r : null,
-    state: top ? 'typical, of limit' : 'No lab data',
+    state: top ? 'typical level vs limit' : 'No lab data',
     ask: top && topic ? `What about ${topic.name.toLowerCase()} in ${city}?` : null,
     tone: toneFor(top ? top.r : null),
   });
@@ -81,7 +81,7 @@ function Dial({ s, i, seen, onAsk }: { s: Signal; i: number; seen: boolean; onAs
   const body = (
     <>
       <svg viewBox="-44 -44 88 88" className="size-[92px] -rotate-90" aria-hidden="true">
-        <circle r={R} fill="none" stroke="var(--muted)" strokeWidth={6} />
+        <circle r={R} fill="none" stroke="color-mix(in oklab, var(--foreground) 12%, transparent)" strokeWidth={6} />
         {s.ratio !== null && (
           <motion.circle
             r={R}

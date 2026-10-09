@@ -272,15 +272,20 @@ export function resolveNationalSystem(question: string): NationalHit | null {
   if (nationalIndex().length === 0) return null;
   const zip = (question ?? '').match(/\b(\d{5})(?:-\d{4})?\b/);
   if (zip) {
-    const rows = systemsForZip(zip[1]);
-    if (rows.length > 0) return { row: rows[0], label: `ZIP ${zip[1]}`, center: zipCenter(zip[1]) ?? systemCenter(rows[0]), alternatives: [] };
+    // SDWIS zip-served lists are noisy (Hoboken lists Manhattan's 10001), so
+    // keep only systems in the ZIP's own state, read from the nearest place.
+    const c = zipCenter(zip[1]);
+    const zipState = zipToState(zip[1]);
+    const rows = systemsForZip(zip[1]).filter((r) => !zipState || r.state === zipState || r.pwsid.startsWith(zipState));
+    if (rows.length > 0) return { row: rows[0], label: `ZIP ${zip[1]}`, center: c ?? systemCenter(rows[0]), alternatives: [] };
   }
   if (zip) {
     // SDWIS rarely lists served ZIPs: fall back to the nearest places to
     // the ZIP centroid that have a system.
     const c = zipCenter(zip[1]);
     if (c) {
-      const near = nearestPlaces(c[1], c[0], 8);
+      const st = zipToState(zip[1]);
+      const near = nearestPlaces(c[1], c[0], 16).filter((pl) => !st || pl.state === st);
       for (const pl of near) {
         const rows = systemsForPlace(pl.name, pl.state);
         if (rows.length > 0) return { row: rows[0], label: pl.name, center: c, alternatives: [] };
@@ -304,7 +309,13 @@ export function resolveNationalSystem(question: string): NationalHit | null {
     row: top.row,
     label: place.name,
     center: [top.p.lon, top.p.lat],
-    alternatives: options.slice(1, 4).map((o) => `${place.name}, ${o.p.state}`),
+    // Only offer places big enough to be a plausible meaning (Portland, ME
+    // next to Portland, OR; not a 5,000-person Phoenix, OR next to Phoenix, AZ).
+    alternatives: options
+      .slice(1)
+      .filter((o) => o.row.population >= top.row.population * 0.08)
+      .slice(0, 3)
+      .map((o) => `${place.name}, ${o.p.state}`),
   };
 }
 
@@ -327,4 +338,22 @@ export function serviceArea(pwsid: string): ServiceArea | null {
     areaKm2: g.km2,
     sourceUrl: String(shard?.meta.url ?? 'https://www.epa.gov/ground-water-and-drinking-water/public-water-system-service-areas'),
   };
+}
+
+/** USPS ZIP3 prefix ranges to state (first three digits of a ZIP code). */
+const ZIP3: Array<[number, number, string]> = [
+  [5, 5, 'NY'], [6, 9, 'PR'], [10, 27, 'MA'], [28, 29, 'RI'], [30, 38, 'NH'], [39, 49, 'ME'], [50, 59, 'VT'], [60, 69, 'CT'],
+  [70, 89, 'NJ'], [100, 149, 'NY'], [150, 196, 'PA'], [197, 199, 'DE'], [200, 205, 'DC'], [206, 219, 'MD'], [220, 246, 'VA'],
+  [247, 268, 'WV'], [270, 289, 'NC'], [290, 299, 'SC'], [300, 319, 'GA'], [320, 349, 'FL'], [350, 369, 'AL'], [370, 385, 'TN'],
+  [386, 397, 'MS'], [398, 399, 'GA'], [400, 427, 'KY'], [430, 459, 'OH'], [460, 479, 'IN'], [480, 499, 'MI'], [500, 528, 'IA'],
+  [530, 549, 'WI'], [550, 567, 'MN'], [569, 569, 'DC'], [570, 577, 'SD'], [580, 588, 'ND'], [590, 599, 'MT'], [600, 629, 'IL'],
+  [630, 658, 'MO'], [660, 679, 'KS'], [680, 693, 'NE'], [700, 714, 'LA'], [716, 729, 'AR'], [730, 749, 'OK'], [750, 799, 'TX'],
+  [800, 816, 'CO'], [820, 831, 'WY'], [832, 838, 'ID'], [840, 847, 'UT'], [850, 865, 'AZ'], [870, 884, 'NM'], [885, 885, 'TX'],
+  [889, 898, 'NV'], [900, 961, 'CA'], [967, 968, 'HI'], [969, 969, 'GU'], [970, 979, 'OR'], [980, 994, 'WA'], [995, 999, 'AK'],
+];
+
+export function zipToState(zip: string): string | null {
+  const n = Number(zip.slice(0, 3));
+  if (!Number.isFinite(n)) return null;
+  return ZIP3.find(([a, b]) => n >= a && n <= b)?.[2] ?? null;
 }

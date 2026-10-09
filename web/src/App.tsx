@@ -36,13 +36,16 @@ function HeaderButton({
   label,
   onClick,
   children,
+  buttonRef,
 }: {
   label: string;
   onClick: () => void;
   children: React.ReactNode;
+  buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={onClick}
       aria-label={label}
@@ -67,11 +70,14 @@ export default function App() {
   const [paletteOpen, setPaletteOpen] = useCommandPalette();
   const { resolvedTheme, setTheme } = useTheme();
   const abortRef = useRef<AbortController | null>(null);
+  // Synchronous lock: two Enters in the same frame both see busy=false.
+  const busyRef = useRef(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const lastQuestion = useRef('');
 
   const empty = messages.length === 0;
   const contextPwsid =
-    [...messages].reverse().find((m) => m.role === 'assistant' && m.answer && m.answer.pwsid !== 'UNKNOWN')?.answer
+    [...messages].reverse().find((m) => m.role === 'assistant' && m.answer && m.answer.scope === 'water' && m.answer.pwsid !== 'UNKNOWN')?.answer
       ?.pwsid ?? undefined;
 
   useEffect(() => {
@@ -85,6 +91,7 @@ export default function App() {
   async function run(q: string) {
     const controller = new AbortController();
     abortRef.current = controller;
+    busyRef.current = true;
     setBusy(true);
     lastQuestion.current = q;
     setMessages((m) => [...m.map((x) => ({ ...x, fresh: false })), { id: nextId++, role: 'user', text: q }]);
@@ -99,19 +106,23 @@ export default function App() {
       });
       setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer: { ...answer, question: q }, fresh: true, elapsedMs: performance.now() - started }]);
     } catch (e) {
-      if (!controller.signal.aborted) {
+      if (controller.signal.aborted) {
+        setMessages((m) => [...m, { id: nextId++, role: 'assistant', stopped: true }]);
+      } else {
         const msg = e instanceof Error ? e.message : 'Lookup failed. Check your connection and retry.';
         toast.error(msg, { action: { label: 'Retry', onClick: () => void send(lastQuestion.current) } });
       }
     } finally {
       abortRef.current = null;
+      busyRef.current = false;
       setBusy(false);
     }
   }
 
   function send(question: string) {
     const q = question.trim().slice(0, 2000);
-    if (!q || busy) return;
+    if (!q || busy || busyRef.current) return;
+    busyRef.current = true;
     if (empty) {
       // America.gov-style hand-off: the start view dissolves, then the
       // conversation surface fades in with the question already placed.
@@ -249,7 +260,7 @@ export default function App() {
               <span className="hidden sm:inline">New chat</span>
             </HeaderButton>
           )}
-          <HeaderButton label="Menu" onClick={() => setMenuOpen(true)}>
+          <HeaderButton label="Menu" buttonRef={menuButtonRef} onClick={() => setMenuOpen(true)}>
             <MenuIcon className="size-[18px]" />
             <span className="hidden sm:inline">Menu</span>
           </HeaderButton>
@@ -301,7 +312,14 @@ export default function App() {
       )}
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="right" className="w-[320px] gap-0 sm:max-w-[360px]">
+        <SheetContent
+          side="right"
+          className="w-[min(320px,86vw)] gap-0 sm:max-w-[360px]"
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            menuButtonRef.current?.focus();
+          }}
+        >
           <SheetHeader>
             <SheetTitle className="font-display text-2xl font-medium">Menu</SheetTitle>
             <SheetDescription className="sr-only">New chat, recent questions and display settings</SheetDescription>

@@ -62,7 +62,7 @@ export function SourceList({ sources, open }: { sources: SourceItem[]; open: boo
       style={{ gridTemplateRows: open ? '1fr' : '0fr', opacity: open ? 1 : 0, transitionTimingFunction: 'var(--ease-out-quint)' }}
       aria-hidden={!open}
     >
-      <div className="overflow-hidden">
+      <div className="overflow-hidden" {...(open ? {} : { inert: '' as unknown as boolean })}>
         <ul className="mt-2 flex flex-col rounded-2xl border border-border p-1.5" aria-label="Sources">
           {sources.map((s, i) => (
             <li key={s.href} style={open ? { animation: `kit-fade-up 300ms var(--ease-out-quint) ${i * 40}ms both` } : undefined}>
@@ -78,7 +78,7 @@ export function SourceList({ sources, open }: { sources: SourceItem[]; open: boo
                   <span className="block truncate text-[14.5px] font-medium leading-snug group-hover:underline group-hover:underline-offset-2">{s.title}</span>
                   <span className="block truncate text-[13px] text-muted-foreground">{s.publisher}</span>
                 </span>
-                <span className="hidden shrink-0 font-mono text-[11.5px] text-[var(--tertiary)] sm:block">{hostOf(s.href)}</span>
+                {s.publisher !== hostOf(s.href) && <span className="hidden shrink-0 font-mono text-[11.5px] text-[var(--tertiary)] sm:block">{hostOf(s.href)}</span>}
                 <ExternalLinkIcon className="size-3.5 shrink-0 text-[var(--tertiary)]" aria-hidden="true" />
               </a>
             </li>
