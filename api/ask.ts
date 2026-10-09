@@ -132,6 +132,9 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
   const baseUrl = process.env.AI_BASE_URL ?? 'https://api.openai.com/v1';
   const model = process.env.AI_MODEL ?? 'gpt-4o-mini';
   const apiMode = process.env.AI_API_MODE === 'chat-completions' ? 'chat-completions' : 'responses';
+  const effortEnv = process.env.AI_REASONING_EFFORT;
+  const reasoningEffort =
+    effortEnv === 'none' || effortEnv === 'low' || effortEnv === 'medium' || effortEnv === 'high' ? effortEnv : undefined;
   const jevKey = process.env.JEV_API_KEY ?? '';
   const jevBaseUrl = process.env.JEV_BASE_URL ?? 'https://opencode.ai/zen';
   const jevModel = process.env.JEV_MODEL ?? 'jev-1.13-free';
@@ -196,7 +199,7 @@ export default async function handler(req: AskRequest, res: AskResponse): Promis
           ? {
               narratorKind: 'llm' as const,
               narrate: async (schematic, q) => {
-                const draft = await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode }, fetch as never, 25000, q ?? question);
+                const draft = await llmNarrate(schematic, { baseUrl, apiKey, model, api: apiMode, ...(reasoningEffort ? { reasoningEffort } : {}) }, fetch as never, 25000, q ?? question);
                 return draft ? { narrative: draft, kind: 'llm' as const } : { narrative: narrateGroundTruth(schematic), kind: 'template' as const };
               },
             }

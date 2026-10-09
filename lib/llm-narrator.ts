@@ -14,6 +14,8 @@ export interface LlmConfig {
   model: string;
   /** 'chat-completions' (OpenAI) or 'responses' (Zen GPT endpoint). */
   api?: 'chat-completions' | 'responses';
+  /** Reasoning effort for gpt-5/6/o-series models (default 'low'). */
+  reasoningEffort?: 'none' | 'low' | 'medium' | 'high';
 }
 
 export interface LlmFetchInit {
@@ -27,6 +29,7 @@ export type LlmFetch = (url: string, init: LlmFetchInit) => Promise<{
   ok: boolean;
   status: number;
   json: () => Promise<unknown>;
+  text?: () => Promise<string>;
 }>;
 
 /** Ground-truth facts plus the user question. No coordinates, no PWSID digits beyond the ID itself. */
@@ -158,12 +161,18 @@ export async function llmNarrate(
   try {
     const root = config.baseUrl.replace(/\/$/, '');
     const url = api === 'responses' ? `${root}/responses` : `${root}/chat/completions`;
+    // Reasoning models (gpt-5.x, gpt-6.x, o-series) reject `temperature`
+    // while reasoning is on and spend output tokens on reasoning first.
+    // Sending temperature: 0 to gpt-6-luna was a silent 400 -> template.
+    const reasoning = isReasoningModel(config.model);
+    const sampling = reasoning ? {} : { temperature: 0 };
     const body =
       api === 'responses'
         ? {
             model: config.model,
-            temperature: 0,
-            max_output_tokens: 1200,
+            ...sampling,
+            ...(reasoning ? { reasoning: { effort: config.reasoningEffort ?? 'low' } } : {}),
+            max_output_tokens: reasoning ? 4000 : 1200,
             input: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
               { role: 'user', content: buildFactsMessage(schematic, question) },
@@ -171,8 +180,10 @@ export async function llmNarrate(
           }
         : {
             model: config.model,
-            temperature: 0,
-            max_tokens: 1200,
+            ...sampling,
+            ...(reasoning
+              ? { reasoning_effort: config.reasoningEffort ?? 'low', max_completion_tokens: 4000 }
+              : { max_tokens: 1200 }),
             messages: [
               { role: 'system', content: WATER_INTELLIGENCE_SYSTEM_PROMPT },
               { role: 'user', content: buildFactsMessage(schematic, question) },
@@ -184,15 +195,36 @@ export async function llmNarrate(
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Surface the provider's reason in the function logs instead of
+      // silently falling back to the template.
+      let detail = '';
+      try {
+        detail = res.text ? (await res.text()).slice(0, 300) : '';
+      } catch {
+        /* ignore */
+      }
+      console.error(`[llm-narrator] ${config.model} HTTP ${res.status}: ${detail}`);
+      return null;
+    }
     const data: unknown = await res.json();
     const content = api === 'responses' ? extractResponsesText(data) : extractChatText(data);
-    if (!content) return null;
+    if (!content) {
+      console.error(`[llm-narrator] ${config.model} returned no text`);
+      return null;
+    }
     const parsed: unknown = JSON.parse(stripFences(content));
+    if (!isNarrative(parsed)) console.error(`[llm-narrator] ${config.model} output is not a narrative object`);
     return isNarrative(parsed) ? parsed : null;
-  } catch {
+  } catch (err) {
+    console.error(`[llm-narrator] ${config.model} failed: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** gpt-5.x / gpt-6.x / o-series reasoning models: no temperature, reasoning effort instead. */
+export function isReasoningModel(model: string): boolean {
+  return /^(gpt-5|gpt-6|o\d)/i.test(model.replace(/^openai\//, ''));
 }
