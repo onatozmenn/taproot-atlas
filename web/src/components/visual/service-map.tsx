@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapIcon } from 'lucide-react';
 import type { WaterSystemProfile } from '../../../../types/water-intelligence';
 import type { TapAnswer } from '../../api';
 import { loadMaplibre } from '../RealMap';
 import { num, people, titleCase } from '../report/format';
 import { VisualFrame } from './frame';
+import { StaticMap } from './static-map';
 
 const STYLE = 'https://tiles.openfreemap.org/styles/positron';
 type Ring = number[][];
@@ -77,7 +77,6 @@ function arc(a: [number, number], b: [number, number], steps = 48): number[][] {
 export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; p: WaterSystemProfile; compact?: boolean }) {
   const el = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
   const sa = p.serviceArea!;
   const rings = ringsOf(sa.geometry);
   const centre = centreOf(rings);
@@ -217,7 +216,7 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.pwsid, attempt]);
+  }, [p.pwsid]);
 
   const facts = [
     p.population ? `${people(p.population)} people` : '',
@@ -234,22 +233,16 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
       sourceUrl={sa.sourceUrl}
       bleed
     >
-      <div className={compact ? 'relative h-[240px]' : 'relative h-[320px]'}>
+      <div className={compact ? 'relative h-[240px]' : 'relative h-[320px]'}>{/* WebGL map, or the SVG fallback when it can't start */}
         {failed ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 bg-[var(--muted)] px-6 text-center text-[14px] text-muted-foreground">
-            <MapIcon className="size-5" />
-            The map couldn't load. The boundary is still in the EPA record.
-            <button
-              type="button"
-              onClick={() => {
-                setFailed(false);
-                setAttempt((a) => a + 1);
-              }}
-              className="press mt-1 rounded-full border px-4 py-1.5 font-medium text-foreground hover:bg-secondary"
-            >
-              Retry the map
-            </button>
-          </div>
+          <StaticMap
+            rings={rings}
+            sources={sources.map((x) => ({ label: x.label, at: [x.at[0], x.at[1]] as [number, number] }))}
+            centre={centre}
+            modeled={sa.method === 'modeled'}
+            height={compact ? 240 : 320}
+            label={`Map of the area ${titleCase(p.name)} serves`}
+          />
         ) : (
           // Inline positioning: MapLibre's own `.maplibregl-map` rule sets
           // position:relative, which beats Tailwind's `absolute` and

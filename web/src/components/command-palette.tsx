@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -25,26 +26,36 @@ interface CommandPaletteProps {
 }
 
 export function CommandPalette({ open, onOpenChange, onPick }: CommandPaletteProps) {
+  const [text, setText] = useState('');
+  const pick = (q: string) => {
+    onPick(q);
+    onOpenChange(false);
+    setText('');
+  };
+  const typed = text.trim();
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} aria-label="Ask anything">
-      <CommandInput placeholder="Ask about tap water…" />
-      <CommandList>
-        <CommandEmpty>No matching question. Press Enter to ask it anyway.</CommandEmpty>
-        <CommandGroup heading="Example questions">
-          {EXAMPLE_QUESTIONS.map((q) => (
-            <CommandItem
-              key={q}
-              value={q}
-              onSelect={() => {
-                onPick(q);
-                onOpenChange(false);
-              }}
-            >
-              {q}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
+    <CommandDialog open={open} onOpenChange={onOpenChange} title="Ask anything" description="Type a tap-water question or pick an example.">
+      {/* cmdk's parts must live inside a <Command> root, or the palette crashes on open. */}
+      <Command>
+        <CommandInput placeholder="Ask about tap water…" value={text} onValueChange={setText} />
+        <CommandList>
+          <CommandEmpty>Type a question to ask it.</CommandEmpty>
+          {typed && (
+            <CommandGroup heading="Ask">
+              <CommandItem value={`ask:${typed}`} onSelect={() => pick(typed)}>
+                Ask “{typed}”
+              </CommandItem>
+            </CommandGroup>
+          )}
+          <CommandGroup heading="Example questions">
+            {EXAMPLE_QUESTIONS.map((q) => (
+              <CommandItem key={q} value={q} onSelect={() => pick(q)}>
+                {q}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </Command>
     </CommandDialog>
   );
 }

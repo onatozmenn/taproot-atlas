@@ -62,5 +62,7 @@ export function titleCase(s: string): string {
     .toLowerCase()
     .replace(/(^|[\s/(-])(\p{L})/gu, (_m, p: string, c: string) => p + c.toUpperCase())
     .replace(/\b(Of|And|The|For|In)\b/g, (w) => w.toLowerCase())
-    .replace(/^./, (c) => c.toUpperCase());
+    .replace(/^./, (c) => c.toUpperCase())
+    // Agency acronyms in parentheses stay upper case: "(MWRA)", not "(Mwra)".
+    .replace(/\(([a-z]{2,6})\)/gi, (_m, a: string) => `(${a.toUpperCase()})`);
 }

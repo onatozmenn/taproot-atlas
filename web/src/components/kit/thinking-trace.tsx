@@ -107,7 +107,7 @@ export function ThinkingTrace({ steps, working, activeLabel, doneLabel, elapsedM
         className="grid transition-[grid-template-rows,opacity] duration-500"
         style={{ gridTemplateRows: open ? '1fr' : '0fr', opacity: open ? 1 : 0, transitionTimingFunction: 'var(--ease-out-quint)' }}
       >
-        <div className="overflow-hidden">
+        <div className="overflow-hidden" {...(open ? {} : { inert: '' as unknown as boolean, 'aria-hidden': true })}>
           <div className="relative ml-[6px] mt-1 pl-4">
             <span aria-hidden="true" className="absolute left-[3px] top-0 w-px bg-border" style={{ height: rail ? rail - 6 : 0, transition: 'height 500ms var(--ease-out-quint)' }} />
             <ol ref={railRef} className="flex flex-col gap-0.5 py-1" aria-label="Steps">

@@ -28,9 +28,11 @@ const TOPICS: Topic[] = [
   { key: 'nitrate', name: 'Nitrate', words: /\bnitr(ate|ite)s?\b/i, analytes: ['NITRATE', 'HYBRID NITRATE', 'NITRITE', 'NITRATE-NITRITE'] },
   { key: 'arsenic', name: 'Arsenic', words: /\barsenic\b/i, analytes: ['ARSENIC'] },
   { key: 'dbp', name: 'Disinfection byproducts', words: /\b(tthm|trihalomethanes?|haa5|haloacetic|byproducts?|by-products?|chloroform)\b/i, analytes: ['TTHM', 'TOTAL TRIHALOMETHANES (TTHM)', 'TOTAL HALOACETIC ACIDS (HAA5)', 'HALOACETIC ACIDS (HAA5)', 'CHLOROFORM', 'BROMODICHLOROMETHANE', 'BROMOFORM', 'DIBROMOCHLOROMETHANE'] },
-  { key: 'fluoride', name: 'Fluoride', words: /\bfluorid(e|ation)\b/i, analytes: ['FLUORIDE'] },
+  { key: 'fluoride', name: 'Fluoride', words: /\b(fluorid\w*|fluorine)\b/i, analytes: ['FLUORIDE'] },
   { key: 'chlorine', name: 'Chlorine', words: /\b(chlorine|chloramines?|disinfect\w*)\b/i, analytes: ['CHLORINE', 'CHLORAMINE', 'FREE RESIDUAL CHLORINE', 'TOTAL CHLORINE', 'RESIDUAL CHLORINE', 'CHLORINE DIOXIDE'] },
   { key: 'radio', name: 'Radioactivity', words: /\b(radium|uranium|radioactiv\w*|radionuclides?|gross alpha)\b/i, analytes: ['COMBINED RADIUM (-226 & -228)', 'COMBINED URANIUM', 'GROSS ALPHA, EXCL. RADON & U', 'GROSS BETA PARTICLE ACTIVITY'] },
+  { key: 'hardness', name: 'Hardness', words: /\b(hardness|hard water|softener|soft water|calcium|magnesium|limescale|tds|total dissolved solids)\b/i, analytes: ['HARDNESS, TOTAL (AS CACO3)', 'HARDNESS', 'CALCIUM', 'MAGNESIUM', 'TOTAL DISSOLVED SOLIDS'] },
+  { key: 'aesthetic', name: 'Taste and odor', words: /\b(taste|tastes|smell|smells|odou?r|ph|colou?r|cloudy|murky|rotten egg)\b/i, analytes: ['PH', 'COLOR', 'ODOR', 'IRON', 'MANGANESE', 'SULFATE'] },
   { key: 'lithium', name: 'Lithium', words: /\blithium\b/i, analytes: ['LITHIUM'] },
   { key: 'coliform', name: 'Bacteria', words: /\b(coliform|bacteria|e\.?\s?coli|microb\w*|germs?|boil)\b/i, analytes: [] },
   { key: 'solvents', name: 'Industrial solvents', words: /\b(tce|pce|trichloroethylene|tetrachloroethylene|benzene|vinyl chloride|solvents?|vocs?)\b/i, analytes: ['TRICHLOROETHYLENE', 'TETRACHLOROETHYLENE', 'BENZENE', 'VINYL CHLORIDE', 'CARBON TETRACHLORIDE', '1,2-DICHLOROETHANE'] },
@@ -165,6 +167,11 @@ function answerAnalytes(city: string, p: WaterSystemProfile, t: Topic): string[]
         : t.key === 'chlorine'
           ? p.treatment.filter((x) => /chlor|hypochlor|ozon|ultraviolet|uv/i.test(x.process))
           : [];
+    if (t.key === 'hardness' || t.key === 'aesthetic') {
+      return [
+        `**EPA doesn't track ${t.key === 'hardness' ? 'hardness' : 'taste, smell or pH'} for ${city}.** It has no federal health limit, so it isn't in the national files I read. The utility's yearly water quality report usually lists it.`,
+      ];
+    }
     return treat.length > 0
       ? [`I don't have ${t.name.toLowerCase()} lab results for ${city}, but the utility lists ${list(treat.map((x) => x.process.toLowerCase()))} as a treatment step.`]
       : [`I don't have ${t.name.toLowerCase()} results for ${city} in EPA's national monitoring files.`];
@@ -217,7 +224,7 @@ function answerPathway(city: string, s: WaterOriginSchematic, p: WaterSystemProf
     plants > 0 ? `**Treatment**: ${plants} plant${plants === 1 ? '' : 's'}` : '',
     `**Your tap**${p.connections ? `: one of ${fmtN(p.connections)} connections` : ''}`,
   ].filter(Boolean);
-  return [`${poss(city)} water takes ${steps.length} steps to reach you.`, '', ...steps.map((x, i) => `${i + 1}. ${x}`)];
+  return [`Here's how ${poss(city)} water reaches you.`, '', ...steps.map((x, i) => `${i + 1}. ${x}`)];
 }
 
 function answerCompliance(city: string, p: WaterSystemProfile): string[] {
@@ -241,7 +248,11 @@ function answerOverview(city: string, p: WaterSystemProfile, safety: boolean): s
   const cap = (x: string) => (pre ? x : x.charAt(0).toUpperCase() + x.slice(1));
   if (flags.length === 0 && notes.length === 0) return [`${pre}**${cap(`nothing in EPA's records for ${city} is above a federal limit.`)}**`];
   if (flags.length === 0) {
-    return [`${pre}**${cap(`nothing in ${poss(city)} EPA records is above a federal limit**`)}; ${notes.length === 1 ? 'one thing is' : `${notes.length} things are`} worth a look.`];
+    const first = notes[0].text.replace(/\.$/, '');
+    return [
+      `${pre}**${cap(`nothing in ${poss(city)} EPA records is above a federal limit.**`)}`,
+      `Worth a look: ${/^[A-Z][a-z]/.test(first) ? first.charAt(0).toLowerCase() + first.slice(1) : first}.`,
+    ];
   }
   return [`${pre}**${cap(`${poss(city)} records flag ${flags.length === 1 ? 'one thing' : `${flags.length} things`}.`)}**`, flags[0].text];
 }

@@ -1,5 +1,6 @@
 import { CheckIcon, CopyIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { TapAnswer } from '../../api';
@@ -90,9 +91,11 @@ export function AnswerActions({ answer, copyText }: { answer: TapAnswer; copyTex
     try {
       await navigator.clipboard.writeText(copyText);
       setCopied(true);
+      toast.success('Answer copied');
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       setCopied(false);
+      toast.error('Could not copy. Select the text and copy it instead.');
     }
   }
 

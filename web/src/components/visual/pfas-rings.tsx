@@ -31,18 +31,22 @@ export function PfasRings({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
     .slice(0, 6);
   const tested = p.lab.filter((a) => a.group === 'pfas').length;
   const above = rows.filter((r) => (r.ratio ?? 0) > 1).length;
+  const anyLimit = rows.some((r) => r.lim !== null);
+  const maxV = Math.max(...rows.map((r) => r.v), 1);
   const window = (p.pfas.window ?? '').match(/(\d{4}).*?(\d{4})/);
 
   return (
     <VisualFrame
       eyebrow="PFAS · highest sample vs the 2024 federal limit"
       headline={
-        rows.length === 0 ? 'None detected' : above > 0 ? `${above} above the limit` : 'None above the limit'
+        rows.length === 0 ? 'None detected' : above > 0 ? `${above} above the limit` : anyLimit ? 'None above the limit' : `${rows.length} found, none regulated`
       }
       sub={
         rows.length === 0
           ? `${tested || 29} compounds tested across ${p.pfas.samples} rounds; none turned up.`
-          : `${rows.length} of ${tested} compounds turned up. The dashed ring is the limit; a disc that spills over it is above.`
+          : anyLimit
+            ? `${rows.length} of ${tested} compounds turned up. The dashed ring is the limit; a disc that spills over it is above.`
+            : `${rows.length} of ${tested} compounds turned up, none with a federal limit. Bigger discs mean more was measured.`
       }
       source={`EPA UCMR 5${window ? ` · ${window[1] === window[2] ? window[1] : `${window[1]}-${window[2]}`}` : ''} · measured in ng/L, parts per trillion`}
       sourceUrl={sourceUrl}
@@ -63,12 +67,14 @@ export function PfasRings({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
       ) : (
         <div ref={ref} className="grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-3">
           {rows.map(({ a, v, lim, ratio }, i) => {
-            const r = ratio === null ? 9 : Math.min(RMAX, Math.max(3, R0 * Math.sqrt(ratio)));
+            // No limit to compare against: size by amount relative to the largest find.
+            const r = ratio === null ? Math.max(4, 18 * Math.sqrt(v / maxV)) : Math.min(RMAX, Math.max(3, R0 * Math.sqrt(ratio)));
             const over = (ratio ?? 0) > 1;
             const c = ratio === null ? TONE.faint : over ? TONE.alert : TONE.water;
             return (
               <div key={a.name} className="flex flex-col items-center text-center">
                 <svg viewBox="-60 -60 120 120" className="size-[124px] overflow-visible" role="img" aria-label={`${a.label}: ${num(v)} ng/L${lim ? ` vs ${num(lim)} ng/L limit` : ', no federal limit'}`}>
+                  <title>{`${a.label}: highest ${num(v)} ng/L${lim ? `, limit ${num(lim)} ng/L` : ', no federal limit'}`}</title>
                   {over && !reduce && seen && (
                     <motion.circle
                       r={R0}

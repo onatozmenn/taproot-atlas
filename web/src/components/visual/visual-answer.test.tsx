@@ -80,12 +80,11 @@ describe('VisualAnswer picks one figure per question', () => {
     expect(screen.getByText(/stops to your glass/)).toBeTruthy();
   });
 
-  it('map: a failed load shows the fallback with a retry', async () => {
+  it('map: a failed load falls back to the SVG map', async () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as never);
     vi.mocked(loadMaplibre).mockRejectedValueOnce(new Error('no webgl'));
     render(<VisualAnswer answer={answerFor('CO0116001', 'Where does Denver water come from?', 'source')} />);
-    expect(await screen.findByText(/couldn't load/, {}, { timeout: 3000 })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Retry the map/ })).toBeTruthy();
+    expect(await screen.findByRole('img', { name: /Map of the area/ }, { timeout: 3000 })).toBeTruthy();
   });
 
   it('map: a stalled basemap times out into the fallback', async () => {
@@ -102,11 +101,10 @@ describe('VisualAnswer picks one figure per question', () => {
     }
     vi.mocked(loadMaplibre).mockResolvedValueOnce({ Map: FakeMap } as never);
     render(<VisualAnswer answer={answerFor('CO0116001', 'Where does Denver water come from?', 'source')} />);
-    expect(screen.queryByText(/couldn't load/)).toBeNull();
+    expect(screen.queryByRole('img', { name: /Map of the area/ })).toBeNull();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(16000);
     });
-    expect(screen.getByText(/couldn't load/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Retry the map/ })).toBeTruthy();
+    expect(screen.getByRole('img', { name: /Map of the area/ })).toBeTruthy();
   });
 });
