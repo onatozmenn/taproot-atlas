@@ -48,9 +48,8 @@ export function offTopicNarrative(): {
   complianceNote: string;
 } {
   return {
-    overview: 'I only answer questions about U.S. tap-water records, and I could not find one in that message.',
-    metricsSummary:
-      'If you have a tap-water question, ask where it comes from, what public lab reports say is in it, or how it reaches your tap, in plain English words.',
+    overview: "That one is outside what I can answer. I answer from U.S. tap-water records: where water comes from, what's in it, and how it reaches your tap.",
+    metricsSummary: 'You can also ask what a term in an answer means, like ppb or action level.',
     complianceNote: 'Every answer stays inside the public records - nothing more.',
   };
 }

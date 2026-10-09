@@ -21,6 +21,7 @@ import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
+import { findGlossaryEntry, glossaryFollowUps, CONTEXT_FOLLOW_UP_RE } from './glossary.js';
 import { findSystemByText, findSystemCandidates, getDirectorySystem, detectPlaceQuery, listDirectorySystems } from './systems.js';
 import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
 import { fetchTreatment, describeTreatment, readTreatmentFixture } from './treatment.js';
@@ -227,6 +228,18 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
     const base = await answerCore({ question: 'hello' }, deps);
     return { ...base, scope: 'redirect', answer: { markdown, followUps: followUps.length ? followUps : EXAMPLE_FOLLOW_UPS, focus: 'general', author: 'template' } };
   };
+  // "what is ppb?" after a lead answer is part of the conversation, not
+  // off-topic: answer the term in plain words and keep the city context.
+  const asksAboutRecords =
+    /\b\d{5}\b/.test(question) ||
+    placeIn(question) !== null ||
+    /\b(levels? (?:of|in)|how much|is there|my water|our water|my tap|in (?:the |my |our )?(?:tap )?water)\b/i.test(question);
+  const term = asksAboutRecords ? null : findGlossaryEntry(question);
+  if (term) {
+    const ctx = typeof input.contextPwsid === 'string' ? input.contextPwsid : '';
+    const place = ctx ? (getDirectorySystem(ctx)?.city ?? titleCity(indexRow(ctx)?.citiesServed[0] ?? '')) || null : null;
+    return redirect(term.answer, glossaryFollowUps(term, place));
+  }
   const compared = comparedPlaces(question);
   if (compared.length >= 2) {
     return redirect(
@@ -246,6 +259,10 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
   }
   void input;
   return null;
+}
+
+function titleCity(raw: string): string {
+  return raw.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }
 
 /** Note when a bare world-city name resolved to a small US namesake. */
@@ -627,7 +644,12 @@ async function answerCore(
   // water, everything else follows the deterministic classifier. Off-topic
   // and greeting questions return the redirect without invoking the model,
   // so "merhaba" can never become a water report and no model cost is spent.
-  const scope = namedHit || (nationalHit && !input.contextPwsid) || (nationalHit && classifyScope(question) !== 'greeting') ? 'water' : classifyScope(question);
+  // "is that bad?" / "should I worry?" right after an answer refers to it.
+  const contextFollowUp = Boolean(contextHit || (nationalHit && input.contextPwsid)) && CONTEXT_FOLLOW_UP_RE.test(question.trim());
+  const scope =
+    namedHit || contextFollowUp || (nationalHit && !input.contextPwsid) || (nationalHit && classifyScope(question) !== 'greeting')
+      ? 'water'
+      : classifyScope(question);
   if (scope !== 'water') {
     const redirect = scope === 'greeting' ? greetingNarrative() : offTopicNarrative();
     return {
