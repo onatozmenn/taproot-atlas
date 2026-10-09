@@ -153,6 +153,13 @@ const ENTRIES: GlossaryEntry[] = [
     followUps: ['How is {place} water treated?'],
   },
   {
+    id: 'risk-score',
+    match: /\b(risk score|risk forecast|taproot forecast|forecast)\b/i,
+    answer:
+      'Taproot’s forecast is the chance that a water system gets a new health-based violation next year. A model trained on 15 years of EPA records weighs violation history, missed tests, lead results, inspections and system size. Tested on later years, its top 10% caught about 6 in 10 of the next year’s violations.',
+    followUps: ["What's the violation risk for {place} water?"],
+  },
+  {
     id: 'violation',
     match: /\b(health-based violations?|monitoring violations?|reporting violations?)\b/i,
     answer:

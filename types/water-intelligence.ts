@@ -225,7 +225,39 @@ export interface WaterSystemProfile {
   findings: Array<{ level: 'alert' | 'watch' | 'ok'; topic: 'pfas' | 'lead' | 'violations' | 'lab' | 'source' | string; text: string }>;
   /** EPA service-area polygon (reported or modeled), when published. */
   serviceArea?: { geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: unknown }; method: 'reported' | 'modeled'; areaKm2: number; sourceUrl: string } | null;
+  /** Taproot forecast: chance of a new health-based violation next year (lib/risk.ts). */
+  risk?: RiskScore | null;
   provenance: { sdwisQuarter: string | null; sdwisUrl: string; syr4Url: string; ucmr5Url: string; captureTime: string; echoReportUrl: string };
+}
+
+export interface RiskDriver {
+  /** Feature id, e.g. "mr_10y". */
+  f: string;
+  /** Plain-English feature name. */
+  label: string;
+  /** Feature value at the cutoff (counts, ppb, years); null when not recorded. */
+  value: number | null;
+  /** Whether this factor pushed the forecast up or down. */
+  dir: 'up' | 'down';
+  /** Contribution in log-odds (SHAP), signed. */
+  w: number;
+}
+
+export interface RiskScore {
+  /** Calibrated probability of >=1 new health-based violation in `year`. */
+  probability: number;
+  /** Share of the ~9,700 scored systems with a lower forecast (0-1). */
+  percentile: number;
+  year: number;
+  /** National base rate for the same target. */
+  baseRate: number;
+  tier: 'high' | 'elevated' | 'typical' | 'low';
+  drivers: RiskDriver[];
+  /** Backtest headline for the figure: share of next-year violations caught by the top 10%. */
+  backtest: { modelRecallTop10: number; ettRecallTop10: number; auc: number; years: string };
+  method: string;
+  /** Systems per log-probability bin, 0.1% to 100% (lib/risk-text.ts riskBin). */
+  distribution?: number[];
 }
 
 export interface WaterOriginSchematic {

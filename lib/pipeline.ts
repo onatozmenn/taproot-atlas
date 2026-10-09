@@ -21,6 +21,7 @@ import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
+import { RISK_ASK_RE } from './risk.js';
 import { findGlossaryEntry, glossaryFollowUps, CONTEXT_FOLLOW_UP_RE } from './glossary.js';
 import { findSystemByText, findSystemCandidates, getDirectorySystem, detectPlaceQuery, listDirectorySystems } from './systems.js';
 import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
@@ -739,10 +740,12 @@ async function answerCore(
       scope: 'water' as const,
       validationStatus,
       answer: {
-        markdown: modelAnswer ?? narrative.overview,
+        // Forecast questions keep the deterministic wording: the model
+        // narrates records, it never restates or reinterprets the score.
+        markdown: RISK_ASK_RE.test(question) && composed.markdown ? composed.markdown : modelAnswer ?? narrative.overview,
         followUps: composed.followUps,
         focus: composed.focus,
-        author: 'llm' as const,
+        author: RISK_ASK_RE.test(question) && composed.markdown ? ('template' as const) : ('llm' as const),
       },
     };
   }

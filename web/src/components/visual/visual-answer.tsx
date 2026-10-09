@@ -5,11 +5,12 @@ import { LabMeter } from './lab-meter';
 import { LeadDrops } from './lead-drops';
 import { PfasRings } from './pfas-rings';
 import { RecordSignals } from './record-signals';
+import { RiskForecast } from './risk-forecast';
 import { ServiceMap } from './service-map';
 import { SourceJourney } from './source-journey';
 import { ViolationRiver } from './violation-river';
 
-export type VisualKind = 'lead' | 'pfas' | 'lab' | 'bacteria' | 'violations' | 'journey' | 'map' | 'signals';
+export type VisualKind = 'risk' | 'lead' | 'pfas' | 'lab' | 'bacteria' | 'violations' | 'journey' | 'map' | 'signals';
 
 const LAB_ANALYTES: Record<string, string[]> = {
   copper: ['COPPER', 'COPPER, FREE'],
@@ -35,6 +36,7 @@ export function visualKind(answer: TapAnswer): { kind: VisualKind; topic?: { key
   const q = answer.question ?? '';
   const t = detectTopics(q)[0];
   if (t && p) {
+    if (t.key === 'risk') return p.risk ? { kind: 'risk' } : { kind: 'signals' };
     if (t.key === 'lead') return p.leadSummary ? { kind: 'lead' } : { kind: 'signals' };
     if (t.key === 'pfas') return { kind: 'pfas' };
     if (t.key === 'coliform') return { kind: 'bacteria', topic: t };
@@ -56,6 +58,8 @@ export function VisualAnswer({ answer, onAsk }: { answer: TapAnswer; onAsk?: (q:
   const city = answer.placeName || p.name;
   const { kind, topic } = visualKind(answer);
   switch (kind) {
+    case 'risk':
+      return <RiskForecast p={p} sourceUrl={url} />;
     case 'lead':
       return <LeadDrops p={p} sourceUrl={url} />;
     case 'pfas':
