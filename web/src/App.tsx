@@ -136,6 +136,24 @@ export default function App() {
     void run(q);
   }
 
+  // `#/ask?q=…` (from the triage queue or an in-answer link) asks once, then clears.
+  useEffect(() => {
+    const take = () => {
+      const h = window.location.hash;
+      if (!h.startsWith('#/ask')) return;
+      const q = new URLSearchParams(h.split('?')[1] ?? '').get('q');
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      if (q) sendRef.current(q);
+    };
+    take();
+    window.addEventListener('hashchange', take);
+    return () => window.removeEventListener('hashchange', take);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const sendRef = useRef(send);
+  sendRef.current = send;
+
   function stop() {
     abortRef.current?.abort();
   }

@@ -17,6 +17,7 @@ const EXAMPLE_QUESTIONS = [
   'How does my water reach my tap?',
   'Los Angeles water?',
   'Miami tap water?',
+  'Which systems in Texas are most at risk?',
 ];
 
 interface CommandPaletteProps {
@@ -47,6 +48,17 @@ export function CommandPalette({ open, onOpenChange, onPick }: CommandPalettePro
               </CommandItem>
             </CommandGroup>
           )}
+          <CommandGroup heading="Views">
+            <CommandItem
+              value="view:triage priority queue utilities regulators"
+              onSelect={() => {
+                onOpenChange(false);
+                window.location.hash = '#/triage';
+              }}
+            >
+              Open the triage queue (for utilities and state programs)
+            </CommandItem>
+          </CommandGroup>
           <CommandGroup heading="Example questions">
             {EXAMPLE_QUESTIONS.map((q) => (
               <CommandItem key={q} value={q} onSelect={() => pick(q)}>
