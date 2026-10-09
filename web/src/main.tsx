@@ -7,8 +7,14 @@ import App from './App';
 import './index.css';
 
 const KitGallery = lazy(() => import('./components/kit/kit-gallery'));
+const TriageView = lazy(() => import('./components/triage/triage-view'));
 
-/** `/#/kit` opens the Taproot Kit gallery; everything else is the chat. */
+function triageState(hash: string): string | null {
+  const st = new URLSearchParams(hash.split('?')[1] ?? '').get('state');
+  return st && /^[A-Za-z]{2}$/.test(st) ? st.toUpperCase() : null;
+}
+
+/** `/#/kit` opens the Kit gallery, `/#/triage` the priority queue; everything else is the chat. */
 function Root() {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
@@ -20,6 +26,13 @@ function Root() {
     return (
       <Suspense fallback={null}>
         <KitGallery />
+      </Suspense>
+    );
+  }
+  if (hash.startsWith('#/triage')) {
+    return (
+      <Suspense fallback={null}>
+        <TriageView initialState={triageState(hash)} />
       </Suspense>
     );
   }

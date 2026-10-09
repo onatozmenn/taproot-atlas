@@ -22,6 +22,7 @@ import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
 import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
 import { RISK_ASK_RE } from './risk.js';
+import { TRIAGE_ASK_RE, stateInText, triage } from './triage.js';
 import { findGlossaryEntry, glossaryFollowUps, CONTEXT_FOLLOW_UP_RE } from './glossary.js';
 import { findSystemByText, findSystemCandidates, getDirectorySystem, detectPlaceQuery, listDirectorySystems } from './systems.js';
 import { findDrinkingPoints, type DrinkingPoint } from './osm.js';
@@ -235,6 +236,8 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
     /\b\d{5}\b/.test(question) ||
     placeIn(question) !== null ||
     /\b(levels? (?:of|in)|how much|is there|my water|our water|my tap|in (?:the |my |our )?(?:tap )?water)\b/i.test(question);
+  const queue = triageAnswer(question);
+  if (queue) return redirect(queue.markdown, queue.followUps);
   const term = asksAboutRecords ? null : findGlossaryEntry(question);
   if (term) {
     const ctx = typeof input.contextPwsid === 'string' ? input.contextPwsid : '';
@@ -260,6 +263,35 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
   }
   void input;
   return null;
+}
+
+/** "Which systems in Ohio are most at risk?" -> the top of the priority queue. */
+function triageAnswer(question: string): { markdown: string; followUps: string[] } | null {
+  if (!TRIAGE_ASK_RE.test(question)) return null;
+  const st = stateInText(question);
+  // A single city ("is Flint at risk?") is a forecast question, not a queue.
+  if (!st && placeIn(question) !== null) return null;
+  const t = triage({ state: st ?? undefined, limit: 3 });
+  if (!t || t.rows.length === 0) return null;
+  const where = t.stateName ?? 'the U.S.';
+  const top = t.rows[0];
+  const chance = (p: number) => (p >= 0.95 ? 'a better-than-95% chance' : p < 0.01 ? 'under a 1% chance' : `a ${Math.round(p * 100)}% chance`);
+  const people = t.summary.flaggedPeople >= 1_000_000 ? `${Math.round(t.summary.flaggedPeople / 100_000) / 10} million` : t.summary.flaggedPeople.toLocaleString('en-US');
+  const scopeHref = `#/triage${t.state ? `?state=${t.state}` : ''}`;
+  const markdown = [
+    `**${titleCity(top.n)} (${top.c ? `${top.c}, ` : ''}${top.st}) tops ${t.stateName ? `${where}'s` : 'the national'} queue**, with ${chance(top.p)} of a new health-based violation in ${t.meta.year}.`,
+    t.summary.flagged > 0
+      ? `${t.summary.flagged.toLocaleString('en-US')} of ${t.inScope.toLocaleString('en-US')} scored systems${t.stateName ? ` in ${where}` : ''} fall in the national top 10%, serving ${people} people, and ${t.summary.notOnEttList.toLocaleString('en-US')} of those score under 11 on EPA's enforcement-targeting formula, so it would not flag them yet.`
+      : `None of ${t.inScope.toLocaleString('en-US')} scored systems in ${where} fall in the national top 10%.`,
+    `[Open the ${t.stateName ?? 'national'} triage queue](${scopeHref})`,
+  ].join(' ');
+  const followUps = t.rows
+    .filter((r) => r.c)
+    .slice(0, 2)
+    .map((r) => `What's the risk of a violation in ${r.c}, ${r.st} next year?`);
+  if (!t.state) followUps.push('Which systems in Texas are most at risk?');
+  else if (followUps.length === 0) followUps.push('Which water systems are riskiest nationwide?');
+  return { markdown, followUps };
 }
 
 function titleCity(raw: string): string {

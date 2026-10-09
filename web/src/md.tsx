@@ -25,7 +25,7 @@ function parseInline(s: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   // Tokenize: `code`, [text](url), **bold**, *italic*. React escapes all text
   // nodes, and link hrefs are validated — no innerHTML anywhere.
-  const re = /(`[^`]+`|\[[^\]]+\]\(https?:[^)\s]+\)|\*\*[^*]+\*\*|\*[^*\n]+\*)/g;
+  const re = /(`[^`]+`|\[[^\]]+\]\((?:https?:[^)\s]+|#\/[A-Za-z0-9/?=&_-]+)\)|\*\*[^*]+\*\*|\*[^*\n]+\*)/g;
   let last = 0;
   let m: RegExpExecArray | null;
   const pushText = (t: string) => {
@@ -37,8 +37,17 @@ function parseInline(s: string): React.ReactNode[] {
     if (tok.startsWith('`')) {
       out.push(<code key={nextKey('c')}>{tok.slice(1, -1)}</code>);
     } else if (tok.startsWith('[')) {
+      const inApp = tok.match(/^\[([^\]]+)\]\((#\/[A-Za-z0-9/?=&_-]+)\)$/);
       const lm = tok.match(/^\[([^\]]+)\]\((https?:[^)\s]+)\)$/);
-      if (lm) {
+      if (inApp) {
+        // In-app view (the triage queue): same tab, hash route.
+        out.push(
+          <a key={nextKey('a')} href={inApp[2]} className="in-app-link">
+            {inApp[1]}
+            <span aria-hidden="true"> →</span>
+          </a>,
+        );
+      } else if (lm) {
         const href = toSafeHref(lm[2]);
         if (href) {
           out.push(

@@ -8,6 +8,10 @@
     "api/ask.ts": {
       "includeFiles": "data/national/**",
       "maxDuration": 60
+    },
+    "api/triage.ts": {
+      "includeFiles": "data/national/triage.json.gz",
+      "maxDuration": 15
     }
   }
 }
