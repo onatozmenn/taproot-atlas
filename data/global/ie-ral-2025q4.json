@@ -1,0 +1,325 @@
+[
+{
+"code": "0300PUB1066",
+"county": "Clare",
+"name": "West Clare RWS (New WTP)",
+"pop": 9382,
+"reasons": [
+"audit",
+"thm"
+]
+},
+{
+"code": "0300PUB1022",
+"county": "Clare",
+"name": "West Clare RWS (Old WTP)",
+"pop": 3194,
+"reasons": [
+"audit",
+"thm"
+]
+},
+{
+"code": "0500PUB4205",
+"county": "Cork",
+"name": "Castletownbere",
+"pop": 2461,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "0500PUB3303",
+"county": "Cork",
+"name": "Glashaboy",
+"pop": 25583,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "0500PUB2307",
+"county": "Cork",
+"name": "Macroom",
+"pop": 4697,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "0500PUB1601",
+"county": "Cork",
+"name": "Newmarket",
+"pop": 10602,
+"reasons": [
+"cryptosporidium"
+]
+},
+{
+"code": "0500PUB4108",
+"county": "Cork",
+"name": "Whiddy Island",
+"pop": 43,
+"reasons": [
+"hse"
+]
+},
+{
+"code": "0500PUB2407",
+"county": "Cork",
+"name": "Whitegate Regional",
+"pop": 10291,
+"reasons": [
+"audit",
+"turbidity"
+]
+},
+{
+"code": "0600PUB1050",
+"county": "Donegal",
+"name": "Milford",
+"pop": 3827,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "1200PUB1024",
+"county": "Galway",
+"name": "Inisboffin",
+"pop": 185,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "1300PUB1042",
+"county": "Kerry",
+"name": "An Mhin Aird No.",
+"pop": 436,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "1300PUB1046",
+"county": "Kerry",
+"name": "Caragh Lake",
+"pop": 1976,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "1300PUB1204",
+"county": "Kerry",
+"name": "Listowel Regional Public Water Supply",
+"pop": 15661,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "1300PUB1009",
+"county": "Kerry",
+"name": "Lyreacrompane",
+"pop": 2460,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "1300PUB1063",
+"county": "Kerry",
+"name": "Mid Kerry/Gearha (H) 300A",
+"pop": 9992,
+"reasons": [
+"cryptosporidium"
+]
+},
+{
+"code": "1400PUB1060",
+"county": "Kildare",
+"name": "Barrow supply (Srowland WTP)",
+"pop": 76370,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "1500PUB1020",
+"county": "Kilkenny",
+"name": "South Kilkenny",
+"pop": 6442,
+"reasons": [
+"cryptosporidium"
+]
+},
+{
+"code": "1900PUB1002",
+"county": "Limerick",
+"name": "Adare",
+"pop": 2341,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "1900PUB1032",
+"county": "Limerick",
+"name": "Limerick City Environs",
+"pop": 126790,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "1900PUB1027",
+"county": "Limerick",
+"name": "Foynes/Shannon Estuary PWS",
+"pop": 7141,
+"reasons": [
+"pesticides"
+]
+},
+{
+"code": "2000PUB1010",
+"county": "Longford",
+"name": "Longford Central",
+"pop": 18474,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "2100PUB1018",
+"county": "Louth",
+"name": "Cavanhill",
+"pop": 52188,
+"reasons": [
+"audit",
+"thm"
+]
+},
+{
+"code": "2100PUB1002",
+"county": "Louth",
+"name": "Greenmount",
+"pop": 4197,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "2200PUB1020",
+"county": "Mayo",
+"name": "Louisburgh",
+"pop": 970,
+"reasons": [
+"audit"
+]
+},
+{
+"code": "2300PUB1005",
+"county": "Meath",
+"name": "Drumcondrath",
+"pop": 1225,
+"reasons": [
+"cryptosporidium",
+"thm"
+]
+},
+{
+"code": "2300PUB1051",
+"county": "Meath",
+"name": "Navan - Mid Meath Kilcarn PWS",
+"pop": 12742,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "2300PUB1009",
+"county": "Meath",
+"name": "Trim PWS",
+"pop": 12059,
+"reasons": [
+"audit",
+"thm"
+]
+},
+{
+"code": "2400PUB1002",
+"county": "Monaghan",
+"name": "Clones",
+"pop": 2998,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "2600PUB1030",
+"county": "Roscommon",
+"name": "North East Regional",
+"pop": 8759,
+"reasons": [
+"thm"
+]
+},
+{
+"code": "2900PUB0108",
+"county": "Tipperary",
+"name": "Carrick-on-Suir (Lingaun River)",
+"pop": 4171,
+"reasons": [
+"cryptosporidium"
+]
+},
+{
+"code": "2900PUB0109",
+"county": "Tipperary",
+"name": "Clonmel Poulavanogue",
+"pop": 2721,
+"reasons": [
+"cryptosporidium"
+]
+},
+{
+"code": "2900PUB0130",
+"county": "Tipperary",
+"name": "Galtee Regional",
+"pop": 11872,
+"reasons": [
+"aluminium",
+"audit",
+"turbidity"
+]
+},
+{
+"code": "2900PUB0147",
+"county": "Tipperary",
+"name": "Kilcash",
+"pop": 214,
+"reasons": [
+"cryptosporidium"
+]
+},
+{
+"code": "2800PUB1013",
+"county": "Tipperary",
+"name": "Templetuohy",
+"pop": 811,
+"reasons": [
+"cryptosporidium"
+]
+},
+{
+"code": "3100PUB1039",
+"county": "Waterford",
+"name": "Dungarvan",
+"pop": 13909,
+"reasons": [
+"turbidity"
+]
+}
+]

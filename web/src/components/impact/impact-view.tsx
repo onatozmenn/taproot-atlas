@@ -231,6 +231,9 @@ export function ImpactView() {
           <a href="#/study" className="press inline-flex h-9 items-center rounded-full border border-border px-4 text-[14px] font-medium">
             Help us test Taproot
           </a>
+          <a href="#/global" className="press inline-flex h-9 items-center rounded-full border border-border px-4 text-[14px] font-medium">
+            Beyond the U.S.
+          </a>
         </div>
         <p className="mt-6 text-[12.5px] leading-relaxed text-muted-foreground">{DATA.note}</p>
       </main>

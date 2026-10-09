@@ -76,6 +76,15 @@ export function CommandPalette({ open, onOpenChange, onPick }: CommandPalettePro
             >
               Help us test Taproot (10 minutes)
             </CommandItem>
+            <CommandItem
+              value="view:global beyond the united states ireland world"
+              onSelect={() => {
+                onOpenChange(false);
+                window.location.hash = '#/global';
+              }}
+            >
+              Taproot beyond the U.S. (Ireland and more)
+            </CommandItem>
           </CommandGroup>
           <CommandGroup heading="Example questions">
             {EXAMPLE_QUESTIONS.map((q) => (
