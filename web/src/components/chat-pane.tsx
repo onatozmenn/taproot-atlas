@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 import type { TapAnswer } from '../api';
 import { AnswerActions, sourcesFor, type SourceLink } from './chat/answer-actions';
@@ -35,6 +35,8 @@ interface ChatPaneProps {
   messages: ChatMsg[];
   busy: boolean;
   onFollowUp: (q: string) => void;
+  /** The question box, rendered in-flow as the last record of the thread. */
+  composer?: ReactNode;
 }
 
 function ScrollToEnd() {
@@ -210,7 +212,7 @@ function AssistantTurn({
   );
 }
 
-export function ChatPane({ messages, busy, onFollowUp }: ChatPaneProps) {
+export function ChatPane({ messages, busy, onFollowUp, composer }: ChatPaneProps) {
   const lastAssistantId = [...messages].reverse().find((m) => m.role === 'assistant')?.id;
   return (
     <StickToBottom className="relative min-h-0 flex-1 overflow-y-hidden" initial="smooth" resize="smooth" role="log">
@@ -234,6 +236,7 @@ export function ChatPane({ messages, busy, onFollowUp }: ChatPaneProps) {
             ),
           )}
           {busy && <LiveTrace />}
+          {composer != null && <div className="rc-col rc-ask-row">{composer}</div>}
         </div>
       </StickToBottom.Content>
       <ScrollToEnd />

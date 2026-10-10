@@ -216,11 +216,8 @@
 .rc-toend .rc-ico { width: 18px; height: 18px; }
 .rc-toend:focus-visible { outline: 3px solid var(--register-line); outline-offset: 2px; }
 
-/* Composer — a well-made government form field */
-.rc-composer-wrap { flex: none; border-top: 1px solid var(--rule); background: var(--paper); }
-.rc-composer-wrap .inner { width: 100%; max-width: 1120px; margin: 0 auto; padding: 14px 24px 16px; }
-@media (min-width: 1000px) { .rc-composer-wrap .inner { padding: 16px 40px 18px; } }
-@media (max-width: 640px) { .rc-composer-wrap .inner { padding: 10px 12px 12px; } }
+/* Composer — a well-made government form field, in-flow as the thread's last row */
+.rc-ask-row { scroll-margin-bottom: 12px; }
 .rc-composer { background: var(--paper); }
 .rc-cmp-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
 .rc-cmp-label label { font: 700 15px/1.2 var(--font-sans); letter-spacing: -.01em; color: var(--ink); }
