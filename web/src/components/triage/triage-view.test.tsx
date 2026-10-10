@@ -38,7 +38,8 @@ describe('Triage view', () => {
     expect(screen.getByText(/Fairness check/)).toBeTruthy();
     const first = screen.getAllByRole('button', { expanded: false })[0];
     fireEvent.click(first);
-    expect(screen.getByText(/Suggested first step/)).toBeTruthy();
+    expect(screen.getByText('Why it’s flagged')).toBeTruthy();
+    expect(screen.getAllByText(/Suggested first step/).length).toBeGreaterThan(0);
     // Tremor pieces: slider, bar list, risk scale, ten-year tracker
     expect(screen.getByRole('slider', { name: /Systems your team can reach/ })).toBeTruthy();
     expect(screen.getByText('Taproot forecast')).toBeTruthy();

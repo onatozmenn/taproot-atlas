@@ -1,12 +1,10 @@
-import { AlertTriangleIcon, ArrowUpRightIcon, ChevronDownIcon, EyeOffIcon, MessageCircleIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { driverText } from '../../../../lib/risk-text';
 import type { RiskDriver } from '../../../../types/water-intelligence';
-import { Logo } from '../Logo';
 import { TONE } from '../visual/frame';
 import { BarList, Callout, CategoryBar, Slider, Tracker, type TrackerBlockProps } from '../tremor';
-import { SparkBarChart } from '../tremor/spark-chart';
+import { ExtLink, IcoAlert, IcoAsk, IcoDown, IcoInfo, IcoRetry, Masthead, RecordHeader } from './record-page';
 
 /* Taproot Triage — the regulator / utility view of the forecast.
    Route: /#/triage?state=OH. One question: where should the next visit go? */
@@ -121,12 +119,14 @@ export const ordinal = (n: number) => {
   return `${n}${t >= 11 && t <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 };
 
-/** Three tiers so colour carries meaning down the queue: red, amber, grey. */
+/** Three tiers so colour carries meaning down the queue: red (health-based
+    risk is high), ochre (elevated), ink (typical). */
 export const RISK_TIERS = [
-  { min: 0.5, label: '50% or more', color: TONE.alert },
-  { min: 0.15, label: '15–50%', color: TONE.watch },
-  { min: 0, label: 'under 15%', color: TONE.faint },
+  { min: 0.5, label: '50% or more', name: 'High', word: 'high', cls: 'h', color: TONE.alert },
+  { min: 0.15, label: '15–50%', name: 'Elevated', word: 'elevated', cls: 'e', color: TONE.watch },
+  { min: 0, label: 'under 15%', name: 'Typical', word: 'typical', cls: '', color: TONE.faint },
 ] as const;
+const tierOf = (p: number) => RISK_TIERS.find((t) => p >= t.min) ?? RISK_TIERS[2];
 export const riskTone = (p: number) => (RISK_TIERS.find((t) => p >= t.min) ?? RISK_TIERS[2]).color;
 
 function drivers(r: TriageRow): RiskDriver[] {
@@ -147,22 +147,6 @@ async function fetchTriage(params: Record<string, string>): Promise<TriageData> 
   return (await res.json()) as TriageData;
 }
 
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      className={cn(
-        'press h-9 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition-colors sm:h-8 sm:px-3',
-        on ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:text-foreground',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 /** "If you can reach N systems, how much of next year's trouble do you meet?" */
 function Capacity({ data }: { data: TriageData }) {
   const scope = data.inScope;
@@ -171,29 +155,51 @@ function Capacity({ data }: { data: TriageData }) {
   useEffect(() => setN(Math.max(1, Math.round(scope * 0.05))), [scope]);
   const c = data.meta.curve;
   const share = n / scope;
+  const pct = Math.round(share * 1000) / 10;
   const model = caught(c.model, c.share_visited, share);
   const ett = caught(c.ett, c.share_visited, share);
   const repeat = caught(c.repeat, c.share_visited, share);
+  const ticks = [1, Math.round(scope * 0.05), Math.round(scope * 0.1), Math.round(scope * 0.2), maxN].filter((t, i, a) => t >= 1 && t <= maxN && a.indexOf(t) === i);
   return (
-    <section className="rounded-[28px] border bg-card px-5 py-5 sm:px-6" aria-label="Capacity planner">
-      <p className="text-[13px] font-medium text-muted-foreground">If your team can reach</p>
-      <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
-        <span className="font-display text-[34px] font-medium leading-none tabular-nums">{n.toLocaleString('en-US')}</span>
-        <span className="text-[15px] text-muted-foreground">
-          of {scope.toLocaleString('en-US')} systems ({Math.round(share * 1000) / 10}%) this year
+    <section aria-label="Capacity planner">
+      <div className="rp-plan-h">
+        <b>Inspect {pct}% of systems</b>
+        <span className="rp-lbl">
+          ≈ {n.toLocaleString('en-US')} of {scope.toLocaleString('en-US')} visits
         </span>
       </div>
       <Slider
-        className="mt-2"
+        className="mt-1"
         min={1}
         max={maxN}
         step={1}
         value={[n]}
+        ticks={ticks}
         onValueChange={(v) => setN(v[0] ?? 1)}
         aria-label="Systems your team can reach"
         ariaLabelThumb="Systems your team can reach"
       />
-      <p className="mt-2 text-[15px] leading-snug">
+      <div className="rp-slab" aria-hidden="true">
+        <span>0%</span>
+        <span>10%</span>
+        <span>20%</span>
+        <span>30%</span>
+      </div>
+      <p className="rp-lbl" style={{ margin: '22px 0 6px' }}>
+        Next-year violators reached
+      </p>
+      <BarList
+        sortOrder="none"
+        maxValue={1}
+        showAnimation
+        valueFormatter={(v) => `${Math.round(v * 100)}%`}
+        data={[
+          { key: 'model', name: 'Taproot forecast', short: 'Taproot', value: model, strong: true },
+          { key: 'repeat', name: 'Last year’s violators', short: 'Repeat last year', value: repeat },
+          { key: 'ett', name: 'EPA targeting formula', short: 'EPA ETT', value: ett },
+        ]}
+      />
+      <p className="mt-3 text-[14px] leading-snug">
         Taking them in Taproot’s order meets about <strong>{Math.round(model * 100)}%</strong> of next year’s new health-based violations
         {data.expected >= 5 ? (
           <> (≈{Math.round(model * data.expected)} of {Math.round(data.expected)} expected)</>
@@ -202,26 +208,14 @@ function Capacity({ data }: { data: TriageData }) {
         ) : null}
         .
       </p>
-      <BarList
-        className="mt-3"
-        sortOrder="none"
-        maxValue={1}
-        showAnimation
-        valueFormatter={(v) => `${Math.round(v * 100)}%`}
-        data={[
-          { key: 'model', name: 'Taproot forecast', short: 'Taproot', value: model, color: TONE.water, strong: true },
-          { key: 'repeat', name: 'Last year’s violators', short: 'Last year’s', value: repeat, color: TONE.faint },
-          { key: 'ett', name: 'EPA targeting formula', short: 'EPA formula', value: ett, color: TONE.faint },
-        ]}
-      />
-      <p className="mt-3 text-[12.5px] text-muted-foreground">
-        One backtest ({c.years}, all U.S. systems Taproot scores), read at the share of systems you can reach: each method visits its own top {Math.round(share * 1000) / 10}%.
+      <p className="rp-note mt-2">
+        One backtest ({c.years}, all U.S. systems Taproot scores), read at the share of systems you can reach: each method visits its own top {pct}%.
       </p>
     </section>
   );
 }
 
-/** Ten calendar years of the system's record as Tremor Tracker blocks. */
+/** Ten calendar years of health-based violations as Tracker cells (count inside, □ when clean). */
 export function historyBlocks(r: Pick<TriageRow, 'hy' | 'my'>, years: number[]): TrackerBlockProps[] {
   if (!r.hy || !r.my) return [];
   return years.map((y, i) => {
@@ -230,104 +224,144 @@ export function historyBlocks(r: Pick<TriageRow, 'hy' | 'my'>, years: number[]):
     const parts = [hb ? `${hb} health-based` : '', mr ? `${mr} missed-test or reporting` : ''].filter(Boolean);
     return {
       key: y,
-      color: hb ? TONE.alert : mr ? TONE.watch : 'color-mix(in oklab, var(--level-ok) 55%, transparent)',
+      color: hb ? TONE.alert : undefined,
+      label: hb ? String(hb) : undefined,
       tooltip: `${y}: ${parts.length ? `${parts.join(', ')} violation${hb + mr === 1 ? '' : 's'}` : 'no violations recorded'}`,
     };
   });
 }
 
+/** Health-based violations a year as square columns with real-pixel counts. */
+function YearColumns({ values, years }: { values: number[]; years: number[] }) {
+  const max = Math.max(1, ...values);
+  return (
+    <div>
+      <div className="rp-spark" aria-hidden="true">
+        {values.map((v, i) => (
+          <div key={years[i] ?? i}>
+            {v > 0 && <b>{v}</b>}
+            <i style={{ height: `${(v / max) * 72}px` }} />
+          </div>
+        ))}
+      </div>
+      <div className="rp-spark-yr" aria-hidden="true">
+        <span>{years[0]}</span>
+        <span>{years[years.length - 1]}</span>
+      </div>
+    </div>
+  );
+}
+
 function Row({ r, rank, actions, year, years }: { r: TriageRow; rank: number; actions: Record<Action, string>; year: number; years: number[] }) {
   const [open, setOpen] = useState(false);
-  const spark = useMemo(() => (r.hy ? years.map((y, i) => ({ y: String(y), hb: r.hy![i] ?? 0 })) : null), [r.hy, years]);
   const blocks = useMemo(() => historyBlocks(r, years), [r, years]);
   const hbTotal = r.hy ? r.hy.reduce((a, b) => a + b, 0) : 0;
-  const tone = riskTone(r.p);
+  const tier = tierOf(r.p);
+  const misses = r.ett < 11 && r.p >= 0.05;
   const ask = `What's the risk of a new violation at ${nice(r.n)} next year?`;
+  const detailId = `tri-${r.id}`;
   return (
-    <li className="border-b border-border last:border-b-0">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="press flex w-full items-start gap-2.5 px-1 py-3.5 text-left sm:items-center sm:gap-3">
-        <span className="mt-0.5 w-6 shrink-0 text-right font-mono text-[12px] tabular-nums text-[var(--tertiary)] sm:mt-0 sm:w-7">{rank}</span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline gap-3">
-            <span className="line-clamp-2 min-w-0 flex-1 text-[15.5px] font-semibold leading-tight">{nice(r.n)}</span>
-            <span className="flex shrink-0 flex-col items-end">
-              <span className="text-[17px] font-semibold tabular-nums" style={{ color: tone }}>
-                {pctText(r.p)}
-              </span>
-            </span>
+    <li className={cn('rp-qli', open && 'open')}>
+      <div className="rp-qrow">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={open ? detailId : undefined} className="rp-qbtn rp-qcols">
+          <span className="rk">
+            {String(rank).padStart(2, '0')}
+            <IcoDown className="rp-ico" />
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
-            <span className="whitespace-nowrap">
-              {r.c ? `${r.c}, ` : ''}
-              {r.st} · {people(r.pop)} people
+          <span className="nm">
+            <b>{nice(r.n)}</b>
+            <span>
+              {r.id}
+              {r.c ? ` · ${r.c}, ${r.st}` : ` · ${r.st}`}
             </span>
-            <span className="whitespace-nowrap rounded-full bg-muted px-2 py-0.5 text-foreground">{ACTION_SHORT[r.a]}</span>
-            {r.ett < 11 && r.p >= 0.05 && (
-              <span className="whitespace-nowrap rounded-full px-2 py-0.5 text-foreground" style={{ background: 'color-mix(in oklab, var(--level-watch) 22%, transparent)' }}>
-                EPA formula misses it
-              </span>
-            )}
-            {(r.svi ?? 0) >= VULNERABLE && <span className="whitespace-nowrap rounded-full bg-muted px-2 py-0.5">High vulnerability</span>}
-          </span>
-          <span className="mt-2 flex items-end gap-3">
-            <span className="mb-[3px] block h-1 min-w-0 flex-1 rounded-full bg-muted">
-              <span className="block h-1 rounded-full" style={{ width: `${Math.max(2, r.p * 100)}%`, background: tone }} />
-            </span>
-            {spark && hbTotal > 0 && (
-              <span className="flex shrink-0 items-end gap-1.5" title={`Health-based violations a year, ${years[0]}–${years[years.length - 1]}`}>
-                <span className="text-[10.5px] leading-none text-[var(--tertiary)]">{String(years[0]).slice(2)}–{String(years[years.length - 1]).slice(2)}</span>
-                <SparkBarChart data={spark} index="y" categories={['hb']} colors={[TONE.alert]} className="h-4 w-14" aria-hidden="true" />
+            {(r.svi ?? 0) >= VULNERABLE && (
+              <span className="rp-qtags">
+                <span className="rp-mark typ" data-on="true">
+                  High vulnerability
+                </span>
               </span>
             )}
           </span>
-        </span>
-        <ChevronDownIcon className={cn('mt-1 size-4 shrink-0 text-muted-foreground transition-transform sm:mt-0', open && 'rotate-180')} />
-      </button>
+          <span className="ppl">
+            {r.pop.toLocaleString('en-US')} people<span>{r.src === 'S' ? 'surface water' : 'groundwater'}</span>
+          </span>
+          <span className={cn('risk', tier.cls)}>
+            <b>{pctText(r.p)}</b>
+            <span>{tier.word}</span>
+          </span>
+          <span className={cn('ett', misses && r.ett === 0 && 'z')} title={misses ? 'EPA’s targeting formula would not flag this system yet (score under 11)' : undefined}>
+            <span className="m">EPA ETT</span>
+            {r.ett}
+          </span>
+          <span className="step">
+            <span>Suggested first step</span>
+            {actions[r.a]}
+          </span>
+        </button>
+        <div className="act">
+          <a href={`#/ask?q=${encodeURIComponent(ask)}&pwsid=${encodeURIComponent(r.id)}`} className={cn('rp-btn', open ? 'primary' : '')} aria-label={`Ask Taproot about ${nice(r.n)}`}>
+            <IcoAsk />
+            Ask Taproot
+          </a>
+        </div>
+      </div>
       {open && (
-        <div className="animate-rich-content-in pb-4 pl-8 pr-1 sm:pl-10">
-          <p className="text-[14px]">
-            <span className="text-muted-foreground">Suggested first step: </span>
-            <strong>{actions[r.a]}</strong>
-          </p>
+        <div className="rp-qdetail" id={detailId}>
+          <div>
+            <h5>Why it’s flagged</h5>
+            <ul>
+              {drivers(r).map((d) => (
+                <li key={d.f} className="rp-drv">
+                  <span>{driverText(d)}</span>
+                  <b className={d.dir === 'up' ? undefined : 'dn'} aria-label={d.dir === 'up' ? 'raises risk' : 'lowers risk'}>
+                    {d.dir === 'up' ? '↑' : '↓'}
+                  </b>
+                </li>
+              ))}
+            </ul>
+          </div>
           {blocks.length > 0 && (
-            <div className="mt-3">
-              <p className="text-[12.5px] text-muted-foreground">Record by year: red health-based, amber missed tests or reports, green clean. Tap a year.</p>
-              <Tracker data={blocks} className="mt-1.5 h-7" hoverEffect />
-              <div className="mt-1 flex justify-between text-[11px] tabular-nums text-[var(--tertiary)]">
+            <div>
+              <h5>
+                10-year tracker · {years[0]}–{years[years.length - 1]}
+              </h5>
+              <div className="rp-trkrow">
+                <span>Health</span>
+                <Tracker data={blocks} defaultBackgroundColor="" className="h-7" hoverEffect aria-label="Health-based violations by year; tap a year" />
+              </div>
+              <div className="rp-trkrow" aria-hidden="true">
+                <span>Missed</span>
+                <div className="rp-trk h-7">
+                  {years.map((y, i) => {
+                    const m = r.my?.[i] ?? 0;
+                    return (
+                      <span key={y} className="rp-trk-b" style={{ cursor: 'default' }}>
+                        <span data-empty={m ? undefined : true} data-outline={m ? true : undefined}>
+                          {m || ''}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="rp-trkyr">
                 <span>{years[0]}</span>
                 <span>{years[years.length - 1]}</span>
               </div>
             </div>
           )}
-          <ul className="mt-3 space-y-1 text-[14px]">
-            {drivers(r).map((d) => (
-              <li key={d.f}>
-                <span style={{ color: d.dir === 'up' ? TONE.alert : TONE.ok }}>{d.dir === 'up' ? '↑ ' : '↓ '}</span>
-                {driverText(d)}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-[12.5px] text-muted-foreground">
-            {Math.round(r.p * 1000) / 10}% chance of a new health-based violation in {year} · EPA targeting score {r.ett}
-            {r.svi !== null ? ` · county vulnerability ${ordinal(Math.round(r.svi * 100))} percentile` : ''} · {r.id}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <a
-              href={`#/ask?q=${encodeURIComponent(ask)}&pwsid=${encodeURIComponent(r.id)}`}
-              className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3 text-[13px] font-medium text-background"
-            >
-              <MessageCircleIcon className="size-3.5" />
-              Ask Taproot about this system
-            </a>
-            <a
-              href={`https://echo.epa.gov/detailed-facility-report?fid=${encodeURIComponent(r.id)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="press inline-flex h-8 items-center gap-1 rounded-full px-3 text-[13px] font-medium text-[var(--link)]"
-            >
-              EPA record
-              <ArrowUpRightIcon className="size-3.5" />
-            </a>
+          {r.hy && hbTotal > 0 && (
+            <div>
+              <h5>Health-based violations by year</h5>
+              <YearColumns values={r.hy} years={years} />
+            </div>
+          )}
+          <div className="rp-qmeta">
+            <p>
+              {Math.round(r.p * 1000) / 10}% chance of a new health-based violation in {year} · EPA targeting score {r.ett}
+              {r.svi !== null ? ` · county vulnerability ${ordinal(Math.round(r.svi * 100))} percentile` : ''} · {r.id}
+            </p>
+            <ExtLink href={`https://echo.epa.gov/detailed-facility-report?fid=${encodeURIComponent(r.id)}`}>EPA record</ExtLink>
           </div>
         </div>
       )}
@@ -341,6 +375,7 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
   const [hidden, setHidden] = useState(false);
   const [vulnerable, setVulnerable] = useState(false);
   const [limit, setLimit] = useState(25);
+  const [reload, setReload] = useState(0);
   const [data, setData] = useState<TriageData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -374,156 +409,255 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
     return () => {
       live = false;
     };
-  }, [state, action, hidden, vulnerable, limit]);
+  }, [state, action, hidden, vulnerable, limit, reload]);
 
   const where = state ? STATES[state] : 'the U.S.';
+  const year = data?.meta.year ?? 2026;
   const fair = useMemo(() => {
     const f = data?.meta.fairness ?? [];
     return { high: f.find((x) => x.svi === 'high'), low: f.find((x) => x.svi === 'low') };
   }, [data]);
+  const rows = data?.rows ?? [];
+  const top = rows[0];
+  const low = rows.length > 1 ? rows[rows.length - 1] : undefined;
 
   return (
-    <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-2.5 border-b border-border bg-background/85 px-5 backdrop-blur">
-        <a href="#/" className="press flex items-center gap-2.5 rounded-full pr-2" aria-label="Back to Taproot Atlas">
-          <Logo size={26} />
-          <span className="font-display text-[20px] font-medium tracking-tight">Taproot Triage</span>
-        </a>
-        <a href="#/" className="press ml-auto rounded-full px-3 py-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground">
-          Back to chat
-        </a>
-      </header>
+    <div className="rp">
+      <RecordHeader page="Triage queue" />
 
-      <main className="mx-auto w-full max-w-[672px] px-5 pb-24 pt-10">
-        <p className="text-[13px] font-medium text-muted-foreground">For state programs, utilities and technical-assistance teams</p>
-        <h1 className="mt-1 font-display text-[36px] font-medium leading-[1.08] tracking-[-0.01em] sm:text-[42px]">Where should the next visit go?</h1>
-        <p className="mt-3 text-[16px] leading-snug text-muted-foreground">
-          Every community water system serving 3,300+ people, ranked by Taproot’s forecast of a new health-based violation in {data?.meta.year ?? 2026}. A priority list
-          for inspections, help and funding, not a verdict on anyone’s water.
-        </p>
+      <main className="rp-main">
+        <Masthead
+          kicker={['Regulator view', state ? `${STATES[state]} · ${state}` : 'All states']}
+          title={
+            <>
+              {state ? STATES[state] : 'U.S.'} triage queue <em>· {year} forecast</em>
+            </>
+          }
+          dek={
+            <>
+              Every community water system serving 3,300+ people, ranked by Taproot’s forecast of a new health-based violation in {year}. A priority list for inspections, help and
+              funding, not a verdict on anyone’s water.
+            </>
+          }
+          meta={[
+            { k: 'For', v: 'State programs · utilities · TA teams' },
+            { k: 'Scope', v: data ? `${data.inScope.toLocaleString('en-US')} systems` : '—' },
+            { k: 'Forecast', v: `${year} · health-based` },
+            { k: 'Backtest', v: data?.meta.curve.years ?? '—' },
+          ]}
+        />
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          <label className="sr-only" htmlFor="triage-state">
-            State
-          </label>
-          <select
-            id="triage-state"
-            value={state ?? ''}
-            onChange={(e) => {
-              setState(e.target.value || null);
-              setLimit(25);
-            }}
-            className="h-9 rounded-full border border-border bg-background px-3 text-[14px] font-medium"
-          >
-            <option value="">All states</option>
-            {Object.entries(STATES).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-          <Chip on={hidden} onClick={() => setHidden((h) => !h)}>
-            EPA formula misses it
-          </Chip>
-          <Chip on={vulnerable} onClick={() => setVulnerable((v) => !v)}>
-            High social vulnerability
-          </Chip>
+        <div className="flex flex-col gap-2.5">
+          <div className="rp-filters">
+            <label className="sr-only" htmlFor="triage-state">
+              State
+            </label>
+            <select
+              id="triage-state"
+              value={state ?? ''}
+              onChange={(e) => {
+                setState(e.target.value || null);
+                setLimit(25);
+              }}
+              className="rp-select"
+            >
+              <option value="">All states</option>
+              {Object.entries(STATES).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+            <button type="button" className="rp-tog" aria-pressed={hidden} onClick={() => setHidden((h) => !h)}>
+              EPA formula misses it
+            </button>
+            <button type="button" className="rp-tog" aria-pressed={vulnerable} onClick={() => setVulnerable((v) => !v)}>
+              High social vulnerability
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="rp-lbl hidden shrink-0 sm:inline">First step</span>
+            <div className="rp-chiprow min-w-0" role="group" aria-label="Suggested first step">
+              <button type="button" className="rp-tog" aria-pressed={action === ''} onClick={() => setAction('')}>
+                Any issue
+              </button>
+              {(['monitoring', 'lead', 'dbp', 'micro', 'chem', 'deficiency', 'surface', 'enforcement', 'watch'] as Action[]).map((a) => (
+                <button key={a} type="button" className="rp-tog" aria-pressed={action === a} onClick={() => setAction(action === a ? '' : a)}>
+                  {ACTION_SHORT[a]}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <div
-          className="-mx-5 mt-2 flex gap-1.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden [&>button]:shrink-0"
-          role="group"
-          aria-label="Suggested first step"
-        >
-          <Chip on={action === ''} onClick={() => setAction('')}>
-            Any issue
-          </Chip>
-          {(['monitoring', 'lead', 'dbp', 'micro', 'chem', 'deficiency', 'surface', 'enforcement', 'watch'] as Action[]).map((a) => (
-            <Chip key={a} on={action === a} onClick={() => setAction(action === a ? '' : a)}>
-              {ACTION_SHORT[a]}
-            </Chip>
-          ))}
-        </div>
-
-        {hidden && (
-          <Callout className="mt-4" variant="warning" icon={EyeOffIcon} title="Showing systems EPA’s formula would not flag yet">
-            Their Enforcement Targeting Tool score is under 11, so a formula-driven inspection list skips them, but Taproot’s forecast still ranks them.
-          </Callout>
-        )}
 
         {error && (
-          <Callout className="mt-8" variant="error" icon={AlertTriangleIcon} title="The queue didn’t load">
-            {error} Check your connection, then change a filter to try again.
+          <Callout
+            variant="error"
+            icon={IcoAlert}
+            title="The queue didn’t load"
+            action={
+              <button type="button" className="rp-btn" onClick={() => setReload((k) => k + 1)}>
+                <IcoRetry />
+                Retry
+              </button>
+            }
+          >
+            {error} Showing nothing rather than stale rows.
           </Callout>
         )}
 
         {data && (
           <>
-            <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-              {[
-                [data.summary.flagged.toLocaleString('en-US'), `in the national top 10%, in ${where}`],
-                [people(data.summary.flaggedPeople), 'people those systems serve'],
-                [data.summary.notOnEttList.toLocaleString('en-US'), 'of them EPA’s formula would not flag yet'],
-              ].map(([v, l]) => (
-                <div key={l} className="flex items-baseline gap-3 rounded-3xl bg-muted px-4 py-3 sm:block sm:py-4">
-                  <p className="min-w-[4.5rem] shrink-0 font-display text-[26px] font-medium leading-none tabular-nums sm:w-auto">{v}</p>
-                  <p className="text-[13px] leading-snug text-muted-foreground sm:mt-1.5 sm:text-[12.5px]">{l}</p>
+            <div className="rp-grid c4" role="list" aria-label="Summary">
+              {(
+                [
+                  ['Scored', data.inScope.toLocaleString('en-US'), `systems in ${where}`, ''],
+                  ['Flagged', data.summary.flagged.toLocaleString('en-US'), 'in the national top 10%', 'red'],
+                  ['People', data.summary.flaggedPeople.toLocaleString('en-US'), 'people those systems serve', ''],
+                  ['Expected', (Math.round(data.expected * 10) / 10).toLocaleString('en-US'), `violations expected ${state ? 'statewide' : 'nationwide'}`, ''],
+                ] as const
+              ).map(([k, v, l, tone]) => (
+                <div key={k} className="rp-tile" role="listitem">
+                  <span className="rp-lbl">{k}</span>
+                  <div className={cn('rp-tile-v', tone)}>{v}</div>
+                  <p>{l}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6">
-              <Capacity data={data} />
+            <div className="rp-tri-row">
+              <div>
+                <span className="rp-lbl">Risk scale</span>
+                <CategoryBar
+                  className="mt-3"
+                  values={[15, 35, 50]}
+                  colors={['', TONE.watch, TONE.alert]}
+                  showLabels={false}
+                  legend={RISK_TIERS.slice()
+                    .reverse()
+                    .map((t) => ({ name: t.name, range: t.min === 0 ? '<15%' : t.min === 0.15 ? '15–50%' : '≥50%', color: t.cls ? t.color : undefined }))}
+                  ticks={rows.map((r) => ({ value: r.p * 100, title: `${nice(r.n)} ${pctText(r.p)}` }))}
+                  aria-label="Risk colour scale: under 15% typical, 15 to 50% elevated in ochre, 50% or more high in red"
+                />
+                {top && (
+                  <p className="rp-mono mt-1 text-[11px] leading-snug text-ink-2">
+                    ▲ {nice(top.n)} {pctText(top.p)}
+                    {low ? ` · ${nice(low.n)} ${pctText(low.p)}` : ''}
+                  </p>
+                )}
+                <p className="rp-note mt-3">Chance of a new health-based violation in {data.meta.year}. Ticks: systems in the queue below.</p>
+              </div>
+              <div>
+                <Capacity data={data} />
+              </div>
             </div>
 
-            <section className="mt-8" aria-label="Priority queue">
-              <div className="flex items-baseline justify-between">
-                <h2 className="font-display text-[24px] font-medium tracking-tight">Priority queue</h2>
-                <span className="text-[13px] text-muted-foreground">
-                  {loading ? 'Updating…' : `${Math.min(data.rows.length, data.matched).toLocaleString('en-US')} of ${data.matched.toLocaleString('en-US')}`}
+            {hidden ? (
+              <Callout
+                variant="default"
+                icon={IcoInfo}
+                title="Showing systems EPA’s formula would not flag yet"
+                action={
+                  <button type="button" className="rp-btn" onClick={() => setHidden(false)}>
+                    Show all
+                  </button>
+                }
+              >
+                Their Enforcement Targeting Tool score is under 11, so a formula-driven inspection list skips them, but Taproot’s forecast still ranks them.
+              </Callout>
+            ) : data.summary.notOnEttList > 0 ? (
+              <Callout
+                variant="default"
+                icon={IcoInfo}
+                title="EPA formula misses it"
+                action={
+                  <button type="button" className="rp-btn" onClick={() => setHidden(true)}>
+                    Show {data.summary.notOnEttList.toLocaleString('en-US')}
+                  </button>
+                }
+              >
+                {data.summary.notOnEttList.toLocaleString('en-US')} of the systems Taproot flags in {where} have an EPA targeting score under 11, so a formula-driven list would not
+                visit them yet.
+              </Callout>
+            ) : null}
+
+            <section aria-label="Priority queue" className="flex flex-col gap-3">
+              <div className="rp-qtitle">
+                <h2>Priority queue</h2>
+                <span className="rp-lbl" aria-live="polite">
+                  {loading ? 'Updating…' : `Sorted by risk · ${Math.min(data.rows.length, data.matched).toLocaleString('en-US')} of ${data.matched.toLocaleString('en-US')}`}
                 </span>
               </div>
-              <div className="mt-2">
-                <p className="text-[12.5px] text-muted-foreground">Chance of a new health-based violation in {data.meta.year}, and the colour each row takes:</p>
-                <CategoryBar className="mt-2" values={[15, 35, 50]} colors={[TONE.faint, TONE.watch, TONE.alert]} labelSuffix="%" aria-label="Risk colour scale: under 15% grey, 15 to 50% amber, 50% or more red" />
-              </div>
               {data.rows.length === 0 ? (
-                <p className="mt-4 text-[15px] text-muted-foreground">No systems match these filters in {where}.</p>
+                <p className="border-t-2 border-ink pt-4 text-[15px] text-ink-2">No systems match these filters in {where}.</p>
               ) : (
-                <ol className={cn('mt-2', loading && 'opacity-60')}>
-                  {data.rows.map((r, i) => (
-                    <Row key={r.id} r={r} rank={i + 1} actions={data.meta.actions} year={data.meta.year} years={data.meta.history_years ?? []} />
-                  ))}
-                </ol>
+                <div className="rp-queue">
+                  <div className="rp-qhead" aria-hidden="true">
+                    <div className="rp-qcols">
+                      <span>#</span>
+                      <span>System</span>
+                      <span>People · source</span>
+                      <span>{data.meta.year} risk</span>
+                      <span>EPA ETT</span>
+                      <span>First step</span>
+                    </div>
+                    <span />
+                  </div>
+                  <ol className={cn(loading && 'opacity-60')}>
+                    {data.rows.map((r, i) => (
+                      <Row key={r.id} r={r} rank={i + 1} actions={data.meta.actions} year={data.meta.year} years={data.meta.history_years ?? []} />
+                    ))}
+                  </ol>
+                </div>
               )}
               {data.matched > data.rows.length && (
-                <button type="button" onClick={() => setLimit((l) => Math.min(500, l + 50))} className="press mt-4 h-9 w-full rounded-full border border-border text-[14px] font-medium">
+                <button type="button" onClick={() => setLimit((l) => Math.min(500, l + 50))} className="rp-btn quiet block">
                   Show more
                 </button>
               )}
             </section>
 
             {fair.high && fair.low && (
-              <section className="mt-10 rounded-[28px] border bg-card px-5 py-5 sm:px-6" aria-label="Fairness check">
-                <p className="text-[13px] font-medium text-muted-foreground">Fairness check</p>
-                <p className="mt-1 text-[16px] leading-snug">
-                  Nationally, in the most socially vulnerable third of counties, the forecast’s top 10% caught <strong>{Math.round(fair.high.recall_top10 * 100)}%</strong> of next-year
-                  violations, against <strong>{Math.round(fair.low.recall_top10 * 100)}%</strong> in the least vulnerable third. Violations there are also more common (
-                  {Math.round(fair.high.base_rate * 1000) / 10}% vs {Math.round(fair.low.base_rate * 1000) / 10}% a year), so the queue leans toward the communities that need it.
-                </p>
-                <p className="mt-2 text-[12.5px] text-muted-foreground">{data.meta.svi_source}.</p>
+              <section className="rp-grid c2 thin" aria-label="Fairness check">
+                <div className="rp-cell">
+                  <span className="rp-lbl">Fairness check · CDC SVI</span>
+                  <p className="rp-fair-h">
+                    Catches <b>{Math.round(fair.high.recall_top10 * 100)}%</b> of violators in high-vulnerability counties vs <b>{Math.round(fair.low.recall_top10 * 100)}%</b> in low
+                  </p>
+                  <BarList
+                    className="mt-4"
+                    sortOrder="none"
+                    maxValue={1}
+                    valueFormatter={(v) => `${Math.round(v * 100)}%`}
+                    data={[
+                      { key: 'high', name: 'High vulnerability', short: 'High SVI', value: fair.high.recall_top10, strong: true },
+                      { key: 'low', name: 'Low vulnerability', short: 'Low SVI', value: fair.low.recall_top10 },
+                    ]}
+                  />
+                </div>
+                <div className="rp-cell">
+                  <p className="rp-prose text-[16px]">
+                    Nationally, in the most socially vulnerable third of counties, the forecast’s top 10% caught <strong>{Math.round(fair.high.recall_top10 * 100)}%</strong> of next-year
+                    violations, against <strong>{Math.round(fair.low.recall_top10 * 100)}%</strong> in the least vulnerable third. Violations there are also more common (
+                    {Math.round(fair.high.base_rate * 1000) / 10}% vs {Math.round(fair.low.base_rate * 1000) / 10}% a year), so the queue leans toward the communities that need it.
+                  </p>
+                  <p className="rp-note mt-3">{data.meta.svi_source}.</p>
+                </div>
               </section>
             )}
 
-            <a href="#/impact" className="press mt-8 inline-flex h-9 items-center rounded-full border border-border px-4 text-[14px] font-medium">
-              What this list would have caught in 2025 →
-            </a>
-            <p className="mt-8 text-[12.5px] leading-relaxed text-muted-foreground">
+            <div className="rp-actions">
+              <a href="#/impact" className="rp-btn">
+                What this list would have caught in 2025 →
+              </a>
+            </div>
+            <p className="rp-foot">
               Forecast: Taproot model on EPA SDWIS records (violations, lead and copper results, inspections, system inventory), backtested on {data.meta.curve.years}.{' '}
               {data.meta.ett_note} Suggested steps are starting points drawn from each system’s record, not engineering advice.
             </p>
           </>
         )}
-        {!data && loading && !error && <p className="mt-8 text-[14px] text-muted-foreground">Loading the queue…</p>}
+        {!data && loading && !error && <p className="rp-lbl">Loading the queue…</p>}
       </main>
     </div>
   );

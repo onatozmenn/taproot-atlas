@@ -58,7 +58,7 @@ describe('Resident city', () => {
 describe('Impact view', () => {
   it('leads with the latest backtest year and lets you switch years', () => {
     render(<ImpactView />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/January 2025 .* 201 of the 303/);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/In 2025, .* 201 of the 303/);
     fireEvent.click(screen.getByRole('tab', { name: '2023' }));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/2023/);
     expect(screen.getByText(/What this does not show/)).toBeTruthy();
