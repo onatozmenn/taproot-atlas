@@ -212,12 +212,17 @@
 @media (max-width: 640px) { .rc-clar-f .rc-btn { flex: 1; height: 44px; } .rc-clar-f .hint { flex-basis: 100%; } }
 
 /* Scroll to end */
-.rc-toend { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px 0 12px; background: var(--ink); color: var(--paper); font: 600 13px/1 var(--font-sans); z-index: 5; }
+.rc-toend { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px 0 12px; background: var(--ink); color: var(--paper); font: 600 13px/1 var(--font-sans); z-index: 5; white-space: nowrap; }
 .rc-toend .rc-ico { width: 18px; height: 18px; }
 .rc-toend:focus-visible { outline: 3px solid var(--register-line); outline-offset: 2px; }
 
 /* Composer — a well-made government form field, in-flow as the thread's last row */
 .rc-ask-row { scroll-margin-bottom: 12px; }
+/* Dock: the question box sticks to the viewport bottom while the thread
+   scrolls, ChatGPT-style — but stays inside the record column on a fade,
+   never a separate full-bleed bar. */
+.rc-dock { position: sticky; bottom: 0; z-index: 4; scroll-margin-bottom: 12px; padding: 26px 0 14px; background: linear-gradient(to bottom, transparent, var(--paper) 42%); }
+.rc-dock > .rc-toend { bottom: calc(100% + 10px); }
 .rc-composer { background: var(--paper); }
 .rc-cmp-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
 .rc-cmp-label label { font: 700 15px/1.2 var(--font-sans); letter-spacing: -.01em; color: var(--ink); }
