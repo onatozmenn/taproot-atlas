@@ -60,10 +60,16 @@ describe('VisualAnswer picks one figure per question', () => {
 
   it('violations: tapping a stone reads it in plain words', async () => {
     render(<VisualAnswer answer={answerFor('TX1010013', 'Any violations in Houston?', 'compliance')} />);
-    const stones = screen.getAllByRole('button');
+    const stones = screen.getAllByRole('button').filter((b) => b.tagName.toLowerCase() === 'g');
     expect(stones.length).toBeGreaterThan(0);
     fireEvent.click(stones[stones.length - 1]);
     expect(await screen.findByText(/· (fixed|still open|resolved)/, {}, { timeout: 3000 })).toBeTruthy();
+  });
+
+  it('violations: a ten-year Tracker strip under the river, one block a year', () => {
+    render(<VisualAnswer answer={answerFor('TX1010013', 'Any violations in Houston?', 'compliance')} />);
+    const years = screen.getAllByRole('button').filter((b) => /^\d{4}: /.test(b.getAttribute('aria-label') ?? ''));
+    expect(years).toHaveLength(10);
   });
 
   it('safety: four dials, and a dial asks a follow-up', () => {

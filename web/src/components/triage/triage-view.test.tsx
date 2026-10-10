@@ -39,6 +39,22 @@ describe('Triage view', () => {
     const first = screen.getAllByRole('button', { expanded: false })[0];
     fireEvent.click(first);
     expect(screen.getByText(/Suggested first step/)).toBeTruthy();
+    // Tremor pieces: slider, bar list, risk scale, ten-year tracker
+    expect(screen.getByRole('slider', { name: /Systems your team can reach/ })).toBeTruthy();
+    expect(screen.getByText('Taproot forecast')).toBeTruthy();
+    expect(screen.getByLabelText(/Risk colour scale/)).toBeTruthy();
+    const years = screen.getAllByRole('button').filter((b) => /^20\d\d: /.test(b.getAttribute('aria-label') ?? ''));
+    expect(years).toHaveLength(10);
+  });
+
+  it('turns the capacity slider with the keyboard', async () => {
+    mockApi();
+    render(<TriageView initialState="OH" />);
+    await waitFor(() => expect(screen.getByText('Priority queue')).toBeTruthy());
+    const slider = screen.getByRole('slider', { name: /Systems your team can reach/ });
+    const before = Number(slider.getAttribute('aria-valuenow'));
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    await waitFor(() => expect(Number(slider.getAttribute('aria-valuenow'))).toBe(before + 1));
   });
 
   it('filters to systems EPA formula would not flag', async () => {
@@ -47,5 +63,6 @@ describe('Triage view', () => {
     await waitFor(() => expect(screen.getByText('Priority queue')).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: 'EPA formula misses it' }));
     await waitFor(() => expect(f.mock.calls.some((c) => String(c[0]).includes('hidden=1'))).toBe(true));
+    expect(screen.getByText(/Showing systems EPA’s formula would not flag yet/)).toBeTruthy();
   });
 });

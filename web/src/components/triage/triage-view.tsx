@@ -1,11 +1,12 @@
-import { motion, useReducedMotion } from 'motion/react';
-import { ArrowUpRightIcon, ChevronDownIcon, MessageCircleIcon } from 'lucide-react';
+import { AlertTriangleIcon, ArrowUpRightIcon, ChevronDownIcon, EyeOffIcon, MessageCircleIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { driverText } from '../../../../lib/risk-text';
 import type { RiskDriver } from '../../../../types/water-intelligence';
 import { Logo } from '../Logo';
 import { TONE } from '../visual/frame';
+import { BarList, Callout, CategoryBar, Slider, Tracker, type TrackerBlockProps } from '../tremor';
+import { SparkBarChart } from '../tremor/spark-chart';
 
 /* Taproot Triage — the regulator / utility view of the forecast.
    Route: /#/triage?state=OH. One question: where should the next visit go? */
@@ -31,6 +32,8 @@ export interface TriageRow {
   dv: Array<number | null>;
   dd: Array<'up' | 'down'>;
   dl: string[];
+  hy?: number[];
+  my?: number[];
 }
 
 export interface TriageData {
@@ -42,6 +45,7 @@ export interface TriageData {
     fairness: Array<{ svi: string; base_rate: number; recall_top10: number; flag_rate: number; systems: number }>;
     svi_source: string;
     ett_note: string;
+    history_years?: number[];
   };
   state: string | null;
   stateName: string | null;
@@ -161,7 +165,6 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 
 /** "If you can reach N systems, how much of next year's trouble do you meet?" */
 function Capacity({ data }: { data: TriageData }) {
-  const reduce = useReducedMotion();
   const scope = data.inScope;
   const maxN = Math.max(1, Math.round(scope * 0.3));
   const [n, setN] = useState(() => Math.max(1, Math.round(scope * 0.05)));
@@ -171,11 +174,6 @@ function Capacity({ data }: { data: TriageData }) {
   const model = caught(c.model, c.share_visited, share);
   const ett = caught(c.ett, c.share_visited, share);
   const repeat = caught(c.repeat, c.share_visited, share);
-  const bars: Array<[string, number, string, string]> = [
-    ['Taproot forecast', model, TONE.water, 'Taproot'],
-    ['Last year’s violators', repeat, TONE.faint, 'Last year’s'],
-    ['EPA targeting formula', ett, TONE.faint, 'EPA formula'],
-  ];
   return (
     <section className="rounded-[28px] border bg-card px-5 py-5 sm:px-6" aria-label="Capacity planner">
       <p className="text-[13px] font-medium text-muted-foreground">If your team can reach</p>
@@ -185,16 +183,17 @@ function Capacity({ data }: { data: TriageData }) {
           of {scope.toLocaleString('en-US')} systems ({Math.round(share * 1000) / 10}%) this year
         </span>
       </div>
-      <input
-        type="range"
+      <Slider
+        className="mt-2"
         min={1}
         max={maxN}
-        value={n}
-        onChange={(e) => setN(Number(e.target.value))}
+        step={1}
+        value={[n]}
+        onValueChange={(v) => setN(v[0] ?? 1)}
         aria-label="Systems your team can reach"
-        className="mt-4 w-full accent-[var(--link)]"
+        ariaLabelThumb="Systems your team can reach"
       />
-      <p className="mt-4 text-[15px] leading-snug">
+      <p className="mt-2 text-[15px] leading-snug">
         Taking them in Taproot’s order meets about <strong>{Math.round(model * 100)}%</strong> of next year’s new health-based violations
         {data.expected >= 5 ? (
           <> (≈{Math.round(model * data.expected)} of {Math.round(data.expected)} expected)</>
@@ -203,20 +202,18 @@ function Capacity({ data }: { data: TriageData }) {
         ) : null}
         .
       </p>
-      <div className="mt-3 space-y-2">
-        {bars.map(([label, v, color, short]) => (
-          <div key={label} className="grid grid-cols-[6.5rem_1fr_2.75rem] items-center gap-3 text-[13px] sm:grid-cols-[11rem_1fr_3rem]">
-            <span className="text-muted-foreground" title={label}>
-              <span className="sm:hidden">{short}</span>
-              <span className="hidden sm:inline">{label}</span>
-            </span>
-            <div className="h-2 rounded-full bg-muted">
-              <motion.div className="h-2 rounded-full" style={{ background: color }} initial={reduce ? false : { width: 0 }} animate={{ width: `${v * 100}%` }} transition={{ duration: 0.5 }} />
-            </div>
-            <span className="text-right tabular-nums">{Math.round(v * 100)}%</span>
-          </div>
-        ))}
-      </div>
+      <BarList
+        className="mt-3"
+        sortOrder="none"
+        maxValue={1}
+        showAnimation
+        valueFormatter={(v) => `${Math.round(v * 100)}%`}
+        data={[
+          { key: 'model', name: 'Taproot forecast', short: 'Taproot', value: model, color: TONE.water, strong: true },
+          { key: 'repeat', name: 'Last year’s violators', short: 'Last year’s', value: repeat, color: TONE.faint },
+          { key: 'ett', name: 'EPA targeting formula', short: 'EPA formula', value: ett, color: TONE.faint },
+        ]}
+      />
       <p className="mt-3 text-[12.5px] text-muted-foreground">
         One backtest ({c.years}, all U.S. systems Taproot scores), read at the share of systems you can reach: each method visits its own top {Math.round(share * 1000) / 10}%.
       </p>
@@ -224,8 +221,26 @@ function Capacity({ data }: { data: TriageData }) {
   );
 }
 
-function Row({ r, rank, actions, year }: { r: TriageRow; rank: number; actions: Record<Action, string>; year: number }) {
+/** Ten calendar years of the system's record as Tremor Tracker blocks. */
+export function historyBlocks(r: Pick<TriageRow, 'hy' | 'my'>, years: number[]): TrackerBlockProps[] {
+  if (!r.hy || !r.my) return [];
+  return years.map((y, i) => {
+    const hb = r.hy![i] ?? 0;
+    const mr = r.my![i] ?? 0;
+    const parts = [hb ? `${hb} health-based` : '', mr ? `${mr} missed-test or reporting` : ''].filter(Boolean);
+    return {
+      key: y,
+      color: hb ? TONE.alert : mr ? TONE.watch : 'color-mix(in oklab, var(--level-ok) 55%, transparent)',
+      tooltip: `${y}: ${parts.length ? `${parts.join(', ')} violation${hb + mr === 1 ? '' : 's'}` : 'no violations recorded'}`,
+    };
+  });
+}
+
+function Row({ r, rank, actions, year, years }: { r: TriageRow; rank: number; actions: Record<Action, string>; year: number; years: number[] }) {
   const [open, setOpen] = useState(false);
+  const spark = useMemo(() => (r.hy ? years.map((y, i) => ({ y: String(y), hb: r.hy![i] ?? 0 })) : null), [r.hy, years]);
+  const blocks = useMemo(() => historyBlocks(r, years), [r, years]);
+  const hbTotal = r.hy ? r.hy.reduce((a, b) => a + b, 0) : 0;
   const tone = riskTone(r.p);
   const ask = `What's the risk of a new violation at ${nice(r.n)} next year?`;
   return (
@@ -235,8 +250,10 @@ function Row({ r, rank, actions, year }: { r: TriageRow; rank: number; actions: 
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline gap-3">
             <span className="line-clamp-2 min-w-0 flex-1 text-[15.5px] font-semibold leading-tight">{nice(r.n)}</span>
-            <span className="shrink-0 text-[17px] font-semibold tabular-nums" style={{ color: tone }}>
-              {pctText(r.p)}
+            <span className="flex shrink-0 flex-col items-end">
+              <span className="text-[17px] font-semibold tabular-nums" style={{ color: tone }}>
+                {pctText(r.p)}
+              </span>
             </span>
           </span>
           <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
@@ -252,8 +269,16 @@ function Row({ r, rank, actions, year }: { r: TriageRow; rank: number; actions: 
             )}
             {(r.svi ?? 0) >= VULNERABLE && <span className="whitespace-nowrap rounded-full bg-muted px-2 py-0.5">High vulnerability</span>}
           </span>
-          <span className="mt-2 block h-1 w-full rounded-full bg-muted">
-            <span className="block h-1 rounded-full" style={{ width: `${Math.max(2, r.p * 100)}%`, background: tone }} />
+          <span className="mt-2 flex items-end gap-3">
+            <span className="mb-[3px] block h-1 min-w-0 flex-1 rounded-full bg-muted">
+              <span className="block h-1 rounded-full" style={{ width: `${Math.max(2, r.p * 100)}%`, background: tone }} />
+            </span>
+            {spark && hbTotal > 0 && (
+              <span className="flex shrink-0 items-end gap-1.5" title={`Health-based violations a year, ${years[0]}–${years[years.length - 1]}`}>
+                <span className="text-[10.5px] leading-none text-[var(--tertiary)]">{String(years[0]).slice(2)}–{String(years[years.length - 1]).slice(2)}</span>
+                <SparkBarChart data={spark} index="y" categories={['hb']} colors={[TONE.alert]} className="h-4 w-14" aria-hidden="true" />
+              </span>
+            )}
           </span>
         </span>
         <ChevronDownIcon className={cn('mt-1 size-4 shrink-0 text-muted-foreground transition-transform sm:mt-0', open && 'rotate-180')} />
@@ -264,7 +289,17 @@ function Row({ r, rank, actions, year }: { r: TriageRow; rank: number; actions: 
             <span className="text-muted-foreground">Suggested first step: </span>
             <strong>{actions[r.a]}</strong>
           </p>
-          <ul className="mt-2 space-y-1 text-[14px]">
+          {blocks.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[12.5px] text-muted-foreground">Record by year: red health-based, amber missed tests or reports, green clean. Tap a year.</p>
+              <Tracker data={blocks} className="mt-1.5 h-7" hoverEffect />
+              <div className="mt-1 flex justify-between text-[11px] tabular-nums text-[var(--tertiary)]">
+                <span>{years[0]}</span>
+                <span>{years[years.length - 1]}</span>
+              </div>
+            </div>
+          )}
+          <ul className="mt-3 space-y-1 text-[14px]">
             {drivers(r).map((d) => (
               <li key={d.f}>
                 <span style={{ color: d.dir === 'up' ? TONE.alert : TONE.ok }}>{d.dir === 'up' ? '↑ ' : '↓ '}</span>
@@ -409,7 +444,17 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
           ))}
         </div>
 
-        {error && <p className="mt-8 rounded-2xl bg-muted px-4 py-3 text-[14px]">{error}</p>}
+        {hidden && (
+          <Callout className="mt-4" variant="warning" icon={EyeOffIcon} title="Showing systems EPA’s formula would not flag yet">
+            Their Enforcement Targeting Tool score is under 11, so a formula-driven inspection list skips them, but Taproot’s forecast still ranks them.
+          </Callout>
+        )}
+
+        {error && (
+          <Callout className="mt-8" variant="error" icon={AlertTriangleIcon} title="The queue didn’t load">
+            {error} Check your connection, then change a filter to try again.
+          </Callout>
+        )}
 
         {data && (
           <>
@@ -420,7 +465,7 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
                 [data.summary.notOnEttList.toLocaleString('en-US'), 'of them EPA’s formula would not flag yet'],
               ].map(([v, l]) => (
                 <div key={l} className="flex items-baseline gap-3 rounded-3xl bg-muted px-4 py-3 sm:block sm:py-4">
-                  <p className="w-16 shrink-0 font-display text-[26px] font-medium leading-none tabular-nums sm:w-auto">{v}</p>
+                  <p className="min-w-[4.5rem] shrink-0 font-display text-[26px] font-medium leading-none tabular-nums sm:w-auto">{v}</p>
                   <p className="text-[13px] leading-snug text-muted-foreground sm:mt-1.5 sm:text-[12.5px]">{l}</p>
                 </div>
               ))}
@@ -437,21 +482,16 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
                   {loading ? 'Updating…' : `${Math.min(data.rows.length, data.matched).toLocaleString('en-US')} of ${data.matched.toLocaleString('en-US')}`}
                 </span>
               </div>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">
-                <span>Chance of a new health-based violation in {data.meta.year}:</span>
-                {RISK_TIERS.map((t) => (
-                  <span key={t.label} className="inline-flex items-center gap-1.5">
-                    <span className="size-2 rounded-full" style={{ background: t.color }} />
-                    {t.label}
-                  </span>
-                ))}
-              </p>
+              <div className="mt-2">
+                <p className="text-[12.5px] text-muted-foreground">Chance of a new health-based violation in {data.meta.year}, and the colour each row takes:</p>
+                <CategoryBar className="mt-2" values={[15, 35, 50]} colors={[TONE.faint, TONE.watch, TONE.alert]} labelSuffix="%" aria-label="Risk colour scale: under 15% grey, 15 to 50% amber, 50% or more red" />
+              </div>
               {data.rows.length === 0 ? (
                 <p className="mt-4 text-[15px] text-muted-foreground">No systems match these filters in {where}.</p>
               ) : (
                 <ol className={cn('mt-2', loading && 'opacity-60')}>
                   {data.rows.map((r, i) => (
-                    <Row key={r.id} r={r} rank={i + 1} actions={data.meta.actions} year={data.meta.year} />
+                    <Row key={r.id} r={r} rank={i + 1} actions={data.meta.actions} year={data.meta.year} years={data.meta.history_years ?? []} />
                   ))}
                 </ol>
               )}

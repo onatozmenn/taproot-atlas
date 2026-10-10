@@ -5,8 +5,25 @@ import type { ProfileViolation, WaterSystemProfile } from '../../../../types/wat
 import { day } from '../report/format';
 import { TONE, VisualFrame, useOnScreen } from './frame';
 import { useBoxWidth } from '../kit/motion';
+import { Tracker, type TrackerBlockProps } from '../tremor';
 
 const YEARS = 10;
+const SEVERITY: ViolationKind[] = ['limit', 'treatment', 'testing', 'notice'];
+
+/** One Tremor Tracker block per calendar year, coloured by the year's most serious record. */
+export function yearBlocks(kindsByYear: Map<number, ViolationKind[]>, startYear: number, years = YEARS): TrackerBlockProps[] {
+  return Array.from({ length: years }, (_, i) => {
+    const y = startYear + i;
+    const ks = kindsByYear.get(y) ?? [];
+    const worst = SEVERITY.find((k) => ks.includes(k));
+    const parts = SEVERITY.filter((k) => ks.includes(k)).map((k) => `${ks.filter((x) => x === k).length} ${KIND[k].label.toLowerCase()}`);
+    return {
+      key: y,
+      color: worst ? KIND[worst].color : 'color-mix(in oklab, var(--level-ok) 50%, transparent)',
+      tooltip: `${y}: ${parts.length ? parts.join(', ') : 'no violations'}`,
+    };
+  });
+}
 
 const KIND: Record<ViolationKind, { label: string; lane: number; color: string }> = {
   limit: { label: 'Above a limit', lane: 0, color: TONE.alert },
@@ -90,6 +107,14 @@ export function ViolationRiver({
   const health = items.filter((i) => i.v.healthBased).length;
   const openN = items.filter((i) => i.open).length;
   const chosen = placed.find((i) => i.v.id + i.k === sel) ?? null;
+  const blocks = useMemo(() => {
+    const m = new Map<number, ViolationKind[]>();
+    for (const it of items) {
+      const y = new Date(it.v.begin!).getUTCFullYear();
+      m.set(y, [...(m.get(y) ?? []), it.pv.kind]);
+    }
+    return yearBlocks(m, startYear);
+  }, [items, startYear]);
   const fiveAgo = `${now.getUTCFullYear() - 5}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
   const last5 = items.filter((i) => i.v.begin! >= fiveAgo);
 
@@ -217,6 +242,12 @@ export function ViolationRiver({
         })}
       </svg>
       </div>
+      {items.length > 0 && (
+        <div className="mt-1">
+          <p className="sr-only">Year by year</p>
+          <Tracker data={blocks} className="h-7 px-[14px]" hoverEffect aria-label="Each year's most serious record; tap a year for counts" />
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {chosen ? (
