@@ -236,10 +236,14 @@ export function ChatPane({ messages, busy, onFollowUp, composer }: ChatPaneProps
             ),
           )}
           {busy && <LiveTrace />}
-          {composer != null && <div className="rc-col rc-ask-row">{composer}</div>}
+          {composer != null && (
+            <div className="rc-col rc-dock">
+              <ScrollToEnd />
+              {composer}
+            </div>
+          )}
         </div>
       </StickToBottom.Content>
-      <ScrollToEnd />
     </StickToBottom>
   );
 }
