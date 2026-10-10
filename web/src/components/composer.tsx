@@ -73,7 +73,10 @@ export function Composer(props: ComposerProps) {
   }, [props.input]);
 
   useEffect(() => {
-    if (props.autoFocus) taRef.current?.focus();
+    // Touch screens: focusing on load throws up the keyboard and hides the
+    // starter questions, so only auto-focus where there is a fine pointer.
+    const fine = typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia('(pointer: fine)').matches : true;
+    if (props.autoFocus && fine) taRef.current?.focus();
   }, [props.autoFocus]);
 
   function submit() {

@@ -4,6 +4,7 @@ import { plainViolation, type ViolationKind } from '../../../../lib/plain-violat
 import type { ProfileViolation, WaterSystemProfile } from '../../../../types/water-intelligence';
 import { day } from '../report/format';
 import { TONE, VisualFrame, useOnScreen } from './frame';
+import { useBoxWidth } from '../kit/motion';
 
 const YEARS = 10;
 
@@ -58,8 +59,8 @@ export function ViolationRiver({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [p.pwsid, filter],
   );
-  const W = 640;
-  const H = 200;
+  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640);
+  const H = W < 420 ? 210 : 200;
   const riverTop = 34;
   const riverBot = 160;
   const laneY = (lane: number) => riverTop + 18 + lane * ((riverBot - riverTop - 36) / 3);
@@ -69,18 +70,21 @@ export function ViolationRiver({
     const out: Array<(typeof items)[number] & { cx: number; cy: number }> = [];
     for (const it of [...items].sort((a, b) => (a.v.begin! < b.v.begin! ? -1 : 1))) {
       const lane = KIND[it.pv.kind].lane;
-      const cx = x(it.v.begin!);
+      let cx = x(it.v.begin!);
       let cy = laneY(lane);
       let n = 0;
-      while (out.some((o) => Math.abs(o.cx - cx) < 7 && Math.abs(o.cy - cy) < 7) && n < 6) {
+      // Phones squeeze ten years into ~300 px, so stones may fan further.
+      const maxFan = W < 420 ? 8 : 6;
+      while (out.some((o) => Math.abs(o.cx - cx) < 7 && Math.abs(o.cy - cy) < 7) && n < maxFan) {
         n++;
         cy = laneY(lane) + (n % 2 ? -1 : 1) * Math.ceil(n / 2) * 6;
       }
+      if (n === maxFan) cx += 3.5; // still crowded: nudge sideways so it shows as a cluster, not one stone
       out.push({ ...it, cx, cy });
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items]);
+  }, [items, W]);
 
   const counts = (Object.keys(KIND) as ViolationKind[]).map((k) => ({ k, n: items.filter((i) => i.pv.kind === k).length }));
   const health = items.filter((i) => i.v.healthBased).length;
@@ -118,6 +122,7 @@ export function ViolationRiver({
       source={`EPA SDWIS via ECHO${older > 0 && items.length > 0 ? ` · ${older} older record${older === 1 ? '' : 's'} not drawn` : ''}`}
       sourceUrl={sourceUrl}
     >
+      <div ref={boxRef}>
       <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full overflow-visible" role="img" aria-label={`${items.length} violations since ${startYear}, ${health} health-based`}>
         <defs>
           <linearGradient id="river" x1="0" y1="0" x2="1" y2="0">
@@ -157,7 +162,7 @@ export function ViolationRiver({
           return (
             <g key={yr}>
               <line x1={xx} x2={xx} y1={riverBot + 6} y2={riverBot + 11} stroke="var(--border)" />
-              {(yr - startYear) % 2 === 0 || yr === now.getUTCFullYear() ? (
+              {(yr - startYear) % (W < 420 ? 3 : 2) === 0 ? (
                 <text x={xx} y={H - 12} textAnchor="start" className="fill-[var(--tertiary)] text-[11px]">
                   {yr}
                 </text>
@@ -211,6 +216,7 @@ export function ViolationRiver({
           );
         })}
       </svg>
+      </div>
 
       <AnimatePresence mode="wait">
         {chosen ? (
@@ -241,8 +247,8 @@ export function ViolationRiver({
             exit={{ opacity: 0 }}
             className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground"
           >
-            {counts.map(({ k, n }) => (
-              <li key={k} className="flex items-center gap-1.5" style={{ opacity: n === 0 ? 0.45 : 1 }}>
+            {counts.filter(({ n }) => n > 0).map(({ k, n }) => (
+              <li key={k} className="flex items-center gap-1.5">
                 <svg viewBox="-7 -7 14 14" className="size-3.5" aria-hidden="true">
                   <Mark kind={k} r={4} color={KIND[k].color} open={false} />
                 </svg>

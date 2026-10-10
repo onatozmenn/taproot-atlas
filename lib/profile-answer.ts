@@ -288,8 +288,10 @@ function followUps(city: string, p: WaterSystemProfile, focus: AnswerIntent, ask
     if (!out.includes(q)) out.push(q);
   };
   if (p.pfas.aboveMcl.length > 0 && !asked.has('pfas')) push(`Which PFAS were found in ${city}?`);
-  if (p.risk && !asked.has('risk') && p.risk.tier !== 'low') push(`What's the risk of a violation in ${city} next year?`);
   if (!asked.has('lead')) push(`Is there lead in ${city} water?`);
+  // The forecast is a priority score for inspectors; offer it to residents
+  // only where it says something (well above average), and in plain words.
+  if (p.risk && !asked.has('risk') && p.risk.tier === 'high') push(`How likely is a new violation in ${city} next year?`);
   const dbp = p.lab.find((a) => /TTHM|HAA5/.test(a.name) && a.status === 'max_above_benchmark');
   if (dbp && !asked.has('dbp')) push(`What are disinfection byproducts in ${city}?`);
   if (focus !== 'source') push(`Where does ${city} water come from?`);

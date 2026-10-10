@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { WaterSystemProfile } from '../../../../types/water-intelligence';
 import { month, num } from '../report/format';
 import { CountUp, TONE, VisualFrame, useOnScreen } from './frame';
+import { useBoxWidth } from '../kit/motion';
 
 const AL = 15;
 
@@ -32,8 +33,8 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
   const reduce = useReducedMotion();
   const [hover, setHover] = useState<number | null>(null);
   const l = p.leadSummary!;
-  const W = 640;
-  const H = 230;
+  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640);
+  const H = W < 420 ? 210 : 230;
   const padL = 8;
   const padR = 8;
   const top = 26;
@@ -52,7 +53,7 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
   const yearMarks = s
     .map((d, i) => ({ i, yr: d.end.slice(0, 4) }))
     .filter((d, i, arr) => i === 0 || d.yr !== arr[i - 1].yr)
-    .filter((_, k, arr) => arr.length <= 7 || k % Math.ceil(arr.length / 7) === 0 || k === arr.length - 1);
+    .filter((_, k, arr) => arr.length <= (W < 420 ? 4 : 7) || k % Math.ceil(arr.length / (W < 420 ? 4 : 7)) === 0 || k === arr.length - 1);
   const h = hover !== null ? s[hover] : null;
 
   return (
@@ -71,7 +72,7 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
       source={`EPA SDWIS lead and copper results · ${s.length} most recent rounds`}
       sourceUrl={sourceUrl}
     >
-      <div className="relative">
+      <div className="relative" ref={boxRef}>
         <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full overflow-visible" role="img" aria-label={`Lead results by testing round; latest ${num(latest)} ppb against a 15 ppb action level`}>
           <defs>
             <linearGradient id="lead-above" x1="0" y1="0" x2="0" y2="1">

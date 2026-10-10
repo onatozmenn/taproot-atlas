@@ -99,7 +99,17 @@ export function StaticMap({ rings, sources = [], centre, modeled, height, label 
   return (
     <div ref={box} className="relative overflow-hidden bg-[var(--muted)]" style={{ height }} role="img" aria-label={label}>
       {view?.tiles.map((t) => (
-        <img key={t.key} src={t.src} alt="" draggable={false} loading="lazy" className="pointer-events-none absolute select-none" style={{ left: t.left, top: t.top, width: TILE, height: TILE }} />
+        <img
+          key={t.key}
+          src={t.src}
+          alt=""
+          draggable={false}
+          loading="lazy"
+          // A tile that fails to load disappears instead of drawing a broken-image frame.
+          onError={(e) => {
+            e.currentTarget.style.visibility = 'hidden';
+          }}
+          className="pointer-events-none absolute select-none" style={{ left: t.left, top: t.top, width: TILE, height: TILE }} />
       ))}
       {view && (
         <svg className="absolute inset-0" width="100%" height={height} aria-hidden="true">

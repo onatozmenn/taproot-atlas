@@ -45,6 +45,16 @@ describe('Study flow', () => {
   });
 });
 
+describe('Resident city', () => {
+  it('asks for one city first and names it in every task', () => {
+    render(<StudyView />);
+    fireEvent.click(screen.getByText('I drink tap water'));
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Denver, CO' } });
+    fireEvent.click(screen.getByText('Use it'));
+    expect(screen.getByText(/Denver, CO’s tap water/)).toBeTruthy();
+  });
+});
+
 describe('Impact view', () => {
   it('leads with the latest backtest year and lets you switch years', () => {
     render(<ImpactView />);

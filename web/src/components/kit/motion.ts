@@ -49,3 +49,23 @@ export function useStages(delays: number[], active = true): number {
   }, [stage, delays, active]);
   return stage;
 }
+
+/**
+ * Pixel width of a chart's box, so an SVG can draw in real pixels and its
+ * labels stay readable on a 390 px phone instead of shrinking with a fixed
+ * 640-unit viewBox. Falls back to `fallback` before layout (tests, SSR).
+ */
+export function useBoxWidth<T extends HTMLElement>(fallback = 640, min = 280, max = 760): [(el: T | null) => void, number] {
+  const [el, setEl] = useState<T | null>(null);
+  const [w, setW] = useState(fallback);
+  useEffect(() => {
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([e]) => {
+      const next = Math.round(Math.min(max, Math.max(min, e.contentRect.width)));
+      if (next > 0) setW((cur) => (Math.abs(cur - next) > 2 ? next : cur));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [el, min, max]);
+  return [setEl, w];
+}
