@@ -8,7 +8,7 @@ import { InfoDialogs, type InfoDialogKind } from './components/chat/info-dialogs
 import { CommandPalette, useCommandPalette } from './components/command-palette';
 import { Composer } from './components/composer';
 import { Logo } from './components/Logo';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './components/ui/sheet';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from './components/tremor';
 import { cn } from './lib/utils';
 
 let nextId = 1;
@@ -332,20 +332,19 @@ export default function App() {
         </main>
       )}
 
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent
-          side="right"
-          className="w-[min(320px,86vw)] gap-0 sm:max-w-[360px]"
+      <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
+        <DrawerContent
+          className="gap-0 px-1 sm:px-2"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
             menuButtonRef.current?.focus();
           }}
         >
-          <SheetHeader>
-            <SheetTitle className="font-display text-2xl font-medium">Menu</SheetTitle>
-            <SheetDescription className="sr-only">New chat, other Taproot pages, recent questions and display settings</SheetDescription>
-          </SheetHeader>
-          <nav className="flex flex-col gap-1 px-3">
+          <DrawerHeader className="px-3">
+            <DrawerTitle className="font-display text-2xl font-medium">Menu</DrawerTitle>
+            <DrawerDescription className="sr-only">New chat, other Taproot pages, recent questions and display settings</DrawerDescription>
+          </DrawerHeader>
+          <nav className="flex flex-col gap-1 px-1">
             <button type="button" onClick={newChat} className="press flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-secondary">
               <SquarePenIcon className="size-[18px]" /> New chat
             </button>
@@ -358,7 +357,7 @@ export default function App() {
               {resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
             </button>
           </nav>
-          <div className="mt-3 border-t px-3 pt-3">
+          <div className="mt-3 border-t px-1 pt-3">
             <h3 className="px-3 pb-1 text-sm font-medium text-muted-foreground">Explore</h3>
             <nav className="flex flex-col gap-0.5" aria-label="Explore">
               {(
@@ -379,7 +378,7 @@ export default function App() {
               ))}
             </nav>
           </div>
-          <div className="mt-3 border-t px-3 pt-4">
+          <div className="mt-3 border-t px-1 pt-4">
             <div className="flex items-center justify-between px-3 pb-2">
               <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <HistoryIcon className="size-4" /> Recent questions
@@ -416,7 +415,7 @@ export default function App() {
               </ul>
             )}
           </div>
-          <div className="mt-auto border-t p-4 text-[13px] text-muted-foreground">
+          <div className="mt-auto border-t px-4 pb-1 pt-4 text-[13px] text-muted-foreground">
             <button type="button" className="hover:underline" onClick={() => setInfo('privacy')}>
               Your privacy
             </button>
@@ -426,8 +425,8 @@ export default function App() {
             </button>
             <p className="mt-2">Reported records only. Never a real-time safety verdict.</p>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
 
       <InfoDialogs open={info} onOpenChange={setInfo} />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={(q) => send(q)} />

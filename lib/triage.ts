@@ -31,6 +31,10 @@ export interface TriageRow {
   dv: Array<number | null>;
   dd: Array<'up' | 'down'>;
   dl: string[];
+  /** Health-based violations that began in each of meta.history_years. */
+  hy?: number[];
+  /** Monitoring / reporting violations that began in each of meta.history_years. */
+  my?: number[];
 }
 
 export interface TriageMeta {
@@ -41,6 +45,7 @@ export interface TriageMeta {
   fairness: Array<{ svi: string; base_rate: number; recall_top10: number; flag_rate: number; systems: number }>;
   svi_source: string;
   ett_note: string;
+  history_years?: number[];
 }
 
 export interface TriageQuery {
