@@ -96,11 +96,15 @@ export function caught(curve: number[], xs: number[], share: number): number {
 }
 
 function nice(name: string): string {
-  if (name !== name.toUpperCase()) return name;
-  return name
-    .toLowerCase()
-    .replace(/\b[a-z]/g, (c) => c.toUpperCase())
-    .replace(/\b(Of|And|The)\b/g, (w) => w.toLowerCase())
+  const cased =
+    name === name.toUpperCase()
+      ? name
+          .toLowerCase()
+          .replace(/\b[a-z]/g, (c) => c.toUpperCase())
+          .replace(/\b(Of|And|The)\b/g, (w) => w.toLowerCase())
+      : name;
+  // Data arrives both ALL CAPS and title-cased ("Tri County Sud"); acronyms stay caps either way.
+  return cased
     .replace(/\b(Sud|Mud|Wsc|Pws|Wsd|Psd|Ynp|Gtnp|Rwd|Cwd|Wd|Pud|Hoa|Mhp|Usa|Ii|Iii|Llc|Afb)\b/g, (w) => w.toUpperCase())
     .replace(/\s*-\s*/g, ' - ');
 }
@@ -112,6 +116,14 @@ export const ordinal = (n: number) => {
   const t = n % 100;
   return `${n}${t >= 11 && t <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 };
+
+/** Three tiers so colour carries meaning down the queue: red, amber, grey. */
+export const RISK_TIERS = [
+  { min: 0.5, label: '50% or more', color: TONE.alert },
+  { min: 0.15, label: '15–50%', color: TONE.watch },
+  { min: 0, label: 'under 15%', color: TONE.faint },
+] as const;
+export const riskTone = (p: number) => (RISK_TIERS.find((t) => p >= t.min) ?? RISK_TIERS[2]).color;
 
 function drivers(r: TriageRow): RiskDriver[] {
   return r.d.map((f, i) => ({ f, label: r.dl[i] ?? f, value: r.dv[i] ?? null, dir: r.dd[i] ?? 'up', w: 0 }));
@@ -138,7 +150,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       aria-pressed={on}
       onClick={onClick}
       className={cn(
-        'press h-8 rounded-full border px-3 text-[13px] font-medium transition-colors',
+        'press h-9 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition-colors sm:h-8 sm:px-3',
         on ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:text-foreground',
       )}
     >
@@ -159,10 +171,10 @@ function Capacity({ data }: { data: TriageData }) {
   const model = caught(c.model, c.share_visited, share);
   const ett = caught(c.ett, c.share_visited, share);
   const repeat = caught(c.repeat, c.share_visited, share);
-  const bars: Array<[string, number, string]> = [
-    ['Taproot forecast', model, TONE.water],
-    ['Repeat last year’s violators', repeat, TONE.faint],
-    ['EPA targeting formula', ett, TONE.faint],
+  const bars: Array<[string, number, string, string]> = [
+    ['Taproot forecast', model, TONE.water, 'Taproot'],
+    ['Last year’s violators', repeat, TONE.faint, 'Last year’s'],
+    ['EPA targeting formula', ett, TONE.faint, 'EPA formula'],
   ];
   return (
     <section className="rounded-[28px] border bg-card px-5 py-5 sm:px-6" aria-label="Capacity planner">
@@ -192,9 +204,12 @@ function Capacity({ data }: { data: TriageData }) {
         .
       </p>
       <div className="mt-3 space-y-2">
-        {bars.map(([label, v, color]) => (
-          <div key={label} className="grid grid-cols-[minmax(0,11rem)_1fr_3rem] items-center gap-3 text-[13px]">
-            <span className="truncate text-muted-foreground">{label}</span>
+        {bars.map(([label, v, color, short]) => (
+          <div key={label} className="grid grid-cols-[6.5rem_1fr_2.75rem] items-center gap-3 text-[13px] sm:grid-cols-[11rem_1fr_3rem]">
+            <span className="text-muted-foreground" title={label}>
+              <span className="sm:hidden">{short}</span>
+              <span className="hidden sm:inline">{label}</span>
+            </span>
             <div className="h-2 rounded-full bg-muted">
               <motion.div className="h-2 rounded-full" style={{ background: color }} initial={reduce ? false : { width: 0 }} animate={{ width: `${v * 100}%` }} transition={{ duration: 0.5 }} />
             </div>
@@ -211,36 +226,40 @@ function Capacity({ data }: { data: TriageData }) {
 
 function Row({ r, rank, actions, year }: { r: TriageRow; rank: number; actions: Record<Action, string>; year: number }) {
   const [open, setOpen] = useState(false);
-  const tone = r.p >= 0.2 ? TONE.alert : r.p >= 0.05 ? TONE.watch : TONE.water;
+  const tone = riskTone(r.p);
   const ask = `What's the risk of a new violation at ${nice(r.n)} next year?`;
   return (
     <li className="border-b border-border last:border-b-0">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="press flex w-full items-center gap-3 px-1 py-3.5 text-left">
-        <span className="w-7 shrink-0 text-right font-mono text-[12px] tabular-nums text-[var(--tertiary)]">{rank}</span>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="press flex w-full items-start gap-2.5 px-1 py-3.5 text-left sm:items-center sm:gap-3">
+        <span className="mt-0.5 w-6 shrink-0 text-right font-mono text-[12px] tabular-nums text-[var(--tertiary)] sm:mt-0 sm:w-7">{rank}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15.5px] font-semibold leading-tight">{nice(r.n)}</span>
-          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
-            <span>
+          <span className="flex items-baseline gap-3">
+            <span className="line-clamp-2 min-w-0 flex-1 text-[15.5px] font-semibold leading-tight">{nice(r.n)}</span>
+            <span className="shrink-0 text-[17px] font-semibold tabular-nums" style={{ color: tone }}>
+              {pctText(r.p)}
+            </span>
+          </span>
+          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
+            <span className="whitespace-nowrap">
               {r.c ? `${r.c}, ` : ''}
               {r.st} · {people(r.pop)} people
             </span>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-foreground">{ACTION_SHORT[r.a]}</span>
-            {r.ett < 11 && r.p >= 0.05 && <span className="rounded-full px-2 py-0.5" style={{ background: 'color-mix(in oklab, var(--level-watch) 18%, transparent)' }}>Not flagged by EPA formula</span>}
-            {(r.svi ?? 0) >= VULNERABLE && <span className="rounded-full bg-muted px-2 py-0.5">High social vulnerability</span>}
+            <span className="whitespace-nowrap rounded-full bg-muted px-2 py-0.5 text-foreground">{ACTION_SHORT[r.a]}</span>
+            {r.ett < 11 && r.p >= 0.05 && (
+              <span className="whitespace-nowrap rounded-full px-2 py-0.5 text-foreground" style={{ background: 'color-mix(in oklab, var(--level-watch) 22%, transparent)' }}>
+                EPA formula misses it
+              </span>
+            )}
+            {(r.svi ?? 0) >= VULNERABLE && <span className="whitespace-nowrap rounded-full bg-muted px-2 py-0.5">High vulnerability</span>}
+          </span>
+          <span className="mt-2 block h-1 w-full rounded-full bg-muted">
+            <span className="block h-1 rounded-full" style={{ width: `${Math.max(2, r.p * 100)}%`, background: tone }} />
           </span>
         </span>
-        <span className="flex w-[84px] shrink-0 flex-col items-end">
-          <span className="text-[17px] font-semibold tabular-nums" style={{ color: tone }}>
-            {pctText(r.p)}
-          </span>
-          <span className="mt-1 h-1.5 w-full rounded-full bg-muted">
-            <span className="block h-1.5 rounded-full" style={{ width: `${Math.max(3, r.p * 100)}%`, background: tone }} />
-          </span>
-        </span>
-        <ChevronDownIcon className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
+        <ChevronDownIcon className={cn('mt-1 size-4 shrink-0 text-muted-foreground transition-transform sm:mt-0', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="animate-rich-content-in pb-4 pl-10 pr-1">
+        <div className="animate-rich-content-in pb-4 pl-8 pr-1 sm:pl-10">
           <p className="text-[14px]">
             <span className="text-muted-foreground">Suggested first step: </span>
             <strong>{actions[r.a]}</strong>
@@ -369,13 +388,17 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
             ))}
           </select>
           <Chip on={hidden} onClick={() => setHidden((h) => !h)}>
-            Not flagged by EPA formula
+            EPA formula misses it
           </Chip>
           <Chip on={vulnerable} onClick={() => setVulnerable((v) => !v)}>
             High social vulnerability
           </Chip>
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Suggested first step">
+        <div
+          className="-mx-5 mt-2 flex gap-1.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden [&>button]:shrink-0"
+          role="group"
+          aria-label="Suggested first step"
+        >
           <Chip on={action === ''} onClick={() => setAction('')}>
             Any issue
           </Chip>
@@ -390,15 +413,15 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
 
         {data && (
           <>
-            <div className="mt-8 grid grid-cols-3 gap-3">
+            <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
               {[
                 [data.summary.flagged.toLocaleString('en-US'), `in the national top 10%, in ${where}`],
                 [people(data.summary.flaggedPeople), 'people those systems serve'],
                 [data.summary.notOnEttList.toLocaleString('en-US'), 'of them EPA’s formula would not flag yet'],
               ].map(([v, l]) => (
-                <div key={l} className="rounded-3xl bg-muted px-4 py-4">
-                  <p className="font-display text-[26px] font-medium leading-none tabular-nums">{v}</p>
-                  <p className="mt-1.5 text-[12.5px] leading-snug text-muted-foreground">{l}</p>
+                <div key={l} className="flex items-baseline gap-3 rounded-3xl bg-muted px-4 py-3 sm:block sm:py-4">
+                  <p className="w-16 shrink-0 font-display text-[26px] font-medium leading-none tabular-nums sm:w-auto">{v}</p>
+                  <p className="text-[13px] leading-snug text-muted-foreground sm:mt-1.5 sm:text-[12.5px]">{l}</p>
                 </div>
               ))}
             </div>
@@ -414,6 +437,15 @@ export function TriageView({ initialState = null }: { initialState?: string | nu
                   {loading ? 'Updating…' : `${Math.min(data.rows.length, data.matched).toLocaleString('en-US')} of ${data.matched.toLocaleString('en-US')}`}
                 </span>
               </div>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">
+                <span>Chance of a new health-based violation in {data.meta.year}:</span>
+                {RISK_TIERS.map((t) => (
+                  <span key={t.label} className="inline-flex items-center gap-1.5">
+                    <span className="size-2 rounded-full" style={{ background: t.color }} />
+                    {t.label}
+                  </span>
+                ))}
+              </p>
               {data.rows.length === 0 ? (
                 <p className="mt-4 text-[15px] text-muted-foreground">No systems match these filters in {where}.</p>
               ) : (

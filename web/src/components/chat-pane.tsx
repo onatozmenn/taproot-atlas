@@ -42,7 +42,7 @@ function ScrollToEnd() {
       type="button"
       onClick={() => void scrollToBottom()}
       aria-label="Scroll to end"
-      className="press animate-option-pill-in absolute bottom-3 left-1/2 inline-flex size-10 -translate-x-1/2 items-center justify-center rounded-full border bg-card shadow-[var(--shadow-elevation-1)] hover:bg-secondary"
+      className="press animate-option-pill-in absolute bottom-3 right-3 inline-flex size-10 items-center sm:left-1/2 sm:right-auto sm:-translate-x-1/2 justify-center rounded-full border bg-card shadow-[var(--shadow-elevation-1)] hover:bg-secondary"
     >
       <ArrowDownIcon className="size-4" />
     </button>

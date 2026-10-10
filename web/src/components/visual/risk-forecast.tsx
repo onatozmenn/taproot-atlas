@@ -57,7 +57,7 @@ export function RiskForecast({ p, sourceUrl }: { p: WaterSystemProfile; sourceUr
       sourceUrl={sourceUrl}
     >
       <div ref={ref}>
-        <svg viewBox={`0 -14 ${W} ${H + 34}`} className="w-full overflow-visible" role="img" aria-label={`Forecast ${lab.prefix}${lab.value}% against all scored systems`}>
+        <svg viewBox={`0 -14 ${W} ${H + 50}`} className="w-full overflow-visible" role="img" aria-label={`Forecast ${lab.prefix}${lab.value}% against all scored systems`}>
           {dist.map((n, i) => {
             const h = Math.max(1, (n / peak) * (H - 6));
             const bx = (i / RISK_BINS) * W;
@@ -80,12 +80,12 @@ export function RiskForecast({ p, sourceUrl }: { p: WaterSystemProfile; sourceUr
           })}
           <line x1={0} x2={W} y1={H} y2={H} stroke="var(--border)" />
           {TICKS.map(([v, t]) => (
-            <text key={t} x={riskPos(v) * W} y={H + 14} textAnchor={v === 1 ? 'end' : v === 0.001 ? 'start' : 'middle'} className="fill-muted-foreground text-[9px]">
+            <text key={t} x={riskPos(v) * W} y={H + 16} textAnchor={v === 1 ? 'end' : v === 0.001 ? 'start' : 'middle'} className="fill-muted-foreground text-[11px]">
               {t}
             </text>
           ))}
           <line x1={baseX} x2={baseX} y1={4} y2={H} stroke="var(--foreground)" strokeOpacity={0.45} strokeDasharray="2 3" />
-          <text x={baseX} y={H + 26} textAnchor="middle" className="fill-muted-foreground text-[9px]">
+          <text x={baseX} y={H + 31} textAnchor="middle" className="fill-muted-foreground text-[11px]">
             U.S. average
           </text>
           <motion.g initial={reduce ? false : { y: -18, opacity: 0 }} animate={seen ? { y: 0, opacity: 1 } : undefined} transition={{ type: 'spring', stiffness: 160, damping: 14, delay: 0.55 }}>

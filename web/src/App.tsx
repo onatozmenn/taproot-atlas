@@ -1,4 +1,4 @@
-import { HistoryIcon, MenuIcon, MoonIcon, SquarePenIcon, SunIcon, Trash2Icon } from 'lucide-react';
+import { ClipboardCheckIcon, GlobeIcon, HistoryIcon, ListOrderedIcon, MenuIcon, MoonIcon, SquarePenIcon, SunIcon, TargetIcon, Trash2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -343,7 +343,7 @@ export default function App() {
         >
           <SheetHeader>
             <SheetTitle className="font-display text-2xl font-medium">Menu</SheetTitle>
-            <SheetDescription className="sr-only">New chat, recent questions and display settings</SheetDescription>
+            <SheetDescription className="sr-only">New chat, other Taproot pages, recent questions and display settings</SheetDescription>
           </SheetHeader>
           <nav className="flex flex-col gap-1 px-3">
             <button type="button" onClick={newChat} className="press flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-secondary">
@@ -358,7 +358,28 @@ export default function App() {
               {resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
             </button>
           </nav>
-          <div className="mt-4 border-t px-3 pt-4">
+          <div className="mt-3 border-t px-3 pt-3">
+            <h3 className="px-3 pb-1 text-sm font-medium text-muted-foreground">Explore</h3>
+            <nav className="flex flex-col gap-0.5" aria-label="Explore">
+              {(
+                [
+                  ['#/triage', ListOrderedIcon, 'Triage queue', 'For water teams: where to look first'],
+                  ['#/impact', TargetIcon, 'How accurate is it?', 'Checked against what happened'],
+                  ['#/global', GlobeIcon, 'Beyond the U.S.', 'Ireland and the open record format'],
+                  ['#/study', ClipboardCheckIcon, 'Help test Taproot', 'Ten minutes, anonymous'],
+                ] as const
+              ).map(([href, Icon, label, hint]) => (
+                <a key={href} href={href} onClick={() => setMenuOpen(false)} className="press flex items-start gap-3 rounded-2xl px-3 py-2 hover:bg-secondary">
+                  <Icon className="mt-0.5 size-[18px] shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-[15px] leading-tight">{label}</span>
+                    <span className="block text-[12.5px] leading-snug text-muted-foreground">{hint}</span>
+                  </span>
+                </a>
+              ))}
+            </nav>
+          </div>
+          <div className="mt-3 border-t px-3 pt-4">
             <div className="flex items-center justify-between px-3 pb-2">
               <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <HistoryIcon className="size-4" /> Recent questions

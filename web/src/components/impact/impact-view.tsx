@@ -134,7 +134,7 @@ export function ImpactView() {
 
       <main className="mx-auto w-full max-w-[672px] px-5 pb-24 pt-10">
         <p className="text-[13px] font-medium text-muted-foreground">Checked against what actually happened</p>
-        <h1 className="mt-1 font-display text-[36px] font-medium leading-[1.08] tracking-[-0.01em] sm:text-[42px]">
+        <h1 className="mt-1 text-balance font-display text-[29px] font-medium leading-[1.1] tracking-[-0.01em] sm:text-[42px] sm:leading-[1.08]">
           A list made in January {y.year} would have found {y.model_caught} of the {y.violators} systems that broke a health rule that year.
         </h1>
         <p className="mt-3 text-[16px] leading-snug text-muted-foreground">

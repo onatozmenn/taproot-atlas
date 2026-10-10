@@ -110,8 +110,9 @@ function Dial({ s, i, seen, onAsk }: { s: Signal; i: number; seen: boolean; onAs
         )}
       </svg>
       <span
-        className="absolute inset-x-0 top-2 flex h-[92px] items-center justify-center text-center font-display text-[22px] font-medium leading-none tabular-nums"
-        style={{ color: over ? s.tone : s.ratio === 0 ? TONE.ok : undefined }}
+        className="absolute inset-x-0 top-2 flex h-[92px] items-center justify-center text-center font-display font-medium leading-none tabular-nums"
+        // Longer values ("1.08×", "None") step down so they stay inside the ring.
+        style={{ color: over ? s.tone : s.ratio === 0 ? TONE.ok : undefined, fontSize: String(s.value).length >= 5 ? 17 : String(s.value).length === 4 ? 19 : 22 }}
       >
         {s.value}
       </span>

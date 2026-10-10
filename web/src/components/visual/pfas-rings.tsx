@@ -65,10 +65,10 @@ export function PfasRings({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
           </svg>
         </div>
       ) : (
-        <div ref={ref} className="grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-3">
+        <div ref={ref} className={rows.length <= 2 ? 'flex flex-wrap justify-center gap-x-10 gap-y-4 py-2' : 'grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-3'}>
           {rows.map(({ a, v, lim, ratio }, i) => {
             // No limit to compare against: size by amount relative to the largest find.
-            const r = ratio === null ? Math.max(4, 18 * Math.sqrt(v / maxV)) : Math.min(RMAX, Math.max(3, R0 * Math.sqrt(ratio)));
+            const r = ratio === null ? Math.max(6, 26 * Math.sqrt(v / maxV)) : Math.min(RMAX, Math.max(3, R0 * Math.sqrt(ratio)));
             const over = (ratio ?? 0) > 1;
             const c = ratio === null ? TONE.faint : over ? TONE.alert : TONE.water;
             return (

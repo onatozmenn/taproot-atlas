@@ -22,13 +22,13 @@ export interface StudyTask {
 
 export const TASKS: Record<Role, StudyTask[]> = {
   resident: [
-    { id: 'lead', prompt: 'Find out whether lead has been found in the tap water of a U.S. city you know (or Chicago).', open: '#/' },
-    { id: 'source', prompt: 'Find out where that city’s water comes from.', open: '#/' },
+    { id: 'lead', prompt: 'Find out whether lead has been found in {city}’s tap water.', open: '#/' },
+    { id: 'source', prompt: 'Find out where {city}’s water comes from.', open: '#/' },
     { id: 'term', prompt: 'Find out what “ppb” means.', open: '#/' },
-    { id: 'violations', prompt: 'Check whether the city’s water system had any violations in the last five years.', open: '#/' },
+    { id: 'violations', prompt: 'Check whether {city}’s water system broke any federal rules in the last five years.', open: '#/' },
     {
       id: 'forecast',
-      prompt: 'Ask Taproot about the chance of a violation in that city next year.',
+      prompt: 'Find out how likely {city}’s water system is to break a health rule next year.',
       open: '#/',
       check: {
         q: 'What does that percentage mean?',
@@ -103,6 +103,8 @@ interface StudyState {
   sus: number[];
   comment: string;
   sent: boolean;
+  /** The one U.S. city a resident uses for every task. */
+  city?: string;
 }
 
 const KEY = 'taproot:study';
@@ -142,7 +144,9 @@ function Scale({ n, value, onChange, low, high, label }: { n: number; value: num
   );
 }
 
-function TaskCard({ task, index, total, onDone }: { task: StudyTask; index: number; total: number; onDone: (r: TaskResult) => void }) {
+export const fillCity = (prompt: string, city: string) => prompt.replaceAll('{city}', city.trim() || 'Chicago');
+
+function TaskCard({ task, index, total, city, onDone }: { task: StudyTask; index: number; total: number; city: string; onDone: (r: TaskResult) => void }) {
   const [started, setStarted] = useState<number | null>(null);
   const [outcome, setOutcome] = useState<boolean | null>(null);
   const [seconds, setSeconds] = useState(0);
@@ -151,10 +155,16 @@ function TaskCard({ task, index, total, onDone }: { task: StudyTask; index: numb
   const ready = outcome !== null && ease > 0 && (!task.check || answer !== null);
   return (
     <section className="rounded-[28px] border bg-card px-5 py-6 sm:px-6" aria-label={`Task ${index + 1}`}>
-      <p className="font-mono text-[12px] tabular-nums text-[var(--tertiary)]">
-        Task {index + 1} of {total}
-      </p>
-      <p className="mt-2 text-[19px] font-medium leading-snug">{task.prompt}</p>
+      <div className="flex items-center gap-3">
+        <p className="font-mono text-[12px] tabular-nums text-[var(--tertiary)]">
+          Task {index + 1} of {total}
+        </p>
+        <div className="h-1 flex-1 rounded-full bg-muted" aria-hidden="true">
+          <div className="h-1 rounded-full bg-[var(--link)] transition-[width] duration-500" style={{ width: `${(index / (total + 1)) * 100}%` }} />
+        </div>
+      </div>
+      <p className="mt-2 text-[19px] font-medium leading-snug">{fillCity(task.prompt, city)}</p>
+      {started === null && <p className="mt-2 text-[13.5px] text-muted-foreground">Type your question the way you’d ask a friend. There’s no wrong wording.</p>}
       {started === null ? (
         <a
           href={task.open}
@@ -228,6 +238,48 @@ function TaskCard({ task, index, total, onDone }: { task: StudyTask; index: numb
   );
 }
 
+const CITY_IDEAS = ['Chicago', 'Houston', 'Phoenix', 'Atlanta'];
+
+/** One city for all five resident tasks, so "that city" never drifts. */
+function CityPick({ onPick }: { onPick: (city: string) => void }) {
+  const [v, setV] = useState('');
+  return (
+    <section className="rounded-[28px] border bg-card px-5 py-6 sm:px-6" aria-label="Pick a city">
+      <p className="text-[19px] font-medium leading-snug">Pick one U.S. city to use for all five tasks.</p>
+      <p className="mt-1.5 text-[14px] text-muted-foreground">Your own city is best. Taproot covers water systems serving 3,300 people or more.</p>
+      <form
+        className="mt-4 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (v.trim()) onPick(v.trim().slice(0, 60));
+        }}
+      >
+        <label htmlFor="study-city" className="sr-only">
+          City
+        </label>
+        <input
+          id="study-city"
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          placeholder="e.g. Denver, CO"
+          autoComplete="address-level2"
+          className="h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-[16px] focus-visible:outline-2 focus-visible:outline-[var(--link)]"
+        />
+        <button type="submit" disabled={!v.trim()} className="press h-11 shrink-0 rounded-full bg-foreground px-5 text-[14px] font-medium text-background disabled:opacity-40">
+          Use it
+        </button>
+      </form>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {CITY_IDEAS.map((c) => (
+          <button key={c} type="button" onClick={() => onPick(c)} className="press h-9 rounded-full border border-border px-3.5 text-[13.5px] font-medium hover:bg-secondary">
+            {c}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function StudyView() {
   const [s, setS] = useState<StudyState>(loadState);
   useEffect(() => {
@@ -258,7 +310,7 @@ export function StudyView() {
     };
   }, [s.results]);
 
-  const record = () => ({ kind: 'study', version: 1, pid: s.pid, role: s.role, results: s.results, sus: s.sus, susScore: score, comment: s.comment.slice(0, 1000) });
+  const record = () => ({ kind: 'study', version: 1, pid: s.pid, role: s.role, ...(s.city ? { city: s.city.slice(0, 60) } : {}), results: s.results, sus: s.sus, susScore: score, comment: s.comment.slice(0, 1000) });
 
   function submit() {
     if (score === null) return;
@@ -274,7 +326,12 @@ export function StudyView() {
           <span className="font-display text-[20px] font-medium tracking-tight">Taproot Study</span>
         </a>
         {s.role && (
-          <button type="button" onClick={() => setS(fresh())} className="press ml-auto rounded-full px-3 py-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={() => {
+              if (s.results.length === 0 || window.confirm('Start over? Your answers so far will be cleared.')) setS(fresh());
+            }}
+            className="press ml-auto rounded-full px-3 py-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground">
             Start over
           </button>
         )}
@@ -285,7 +342,7 @@ export function StudyView() {
             <p className="text-[13px] font-medium text-muted-foreground">About 10 minutes · anonymous</p>
             <h1 className="mt-1 font-display text-[36px] font-medium leading-[1.08] tracking-[-0.01em]">Help us test Taproot</h1>
             <p className="mt-3 text-[16px] leading-snug text-muted-foreground">
-              You’ll try five short tasks, rate how easy each one was, then answer ten quick questions. We test the app, not you: if something is hard, that’s our fault and
+              You’ll try five short tasks in Taproot (it opens in a second tab), rate how easy each one was, then answer ten quick statements. We test the app, not you: if something is hard, that’s our fault and
               exactly what we need to know. We record your answers and task times, nothing else.
             </p>
             <p className="mt-6 text-[15px] font-medium">Which fits you best?</p>
@@ -296,7 +353,7 @@ export function StudyView() {
                   ['professional', 'I work in water', 'Utility, state program, consultant or technical assistance.'],
                 ] as Array<[Role, string, string]>
               ).map(([r, t, d]) => (
-                <button key={r} type="button" onClick={() => setS((x) => ({ ...x, role: r, step: 0 }))} className="press rounded-3xl border border-border px-4 py-4 text-left hover:bg-secondary">
+                <button key={r} type="button" onClick={() => setS((x) => ({ ...x, role: r, step: 0, city: r === 'resident' ? undefined : x.city }))} className="press rounded-3xl border border-border px-4 py-4 text-left hover:bg-secondary">
                   <span className="block text-[16px] font-semibold">{t}</span>
                   <span className="mt-1 block text-[13.5px] text-muted-foreground">{d}</span>
                 </button>
@@ -305,8 +362,11 @@ export function StudyView() {
           </>
         )}
 
-        {inTasks && (
+        {inTasks && s.role === 'resident' && s.city === undefined && <CityPick onPick={(c) => setS((x) => ({ ...x, city: c }))} />}
+
+        {inTasks && !(s.role === 'resident' && s.city === undefined) && (
           <TaskCard
+            city={s.city ?? 'Chicago'}
             key={`${s.role}-${s.step}`}
             task={tasks[s.step]}
             index={s.step}

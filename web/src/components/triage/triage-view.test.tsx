@@ -45,7 +45,7 @@ describe('Triage view', () => {
     const f = mockApi();
     render(<TriageView />);
     await waitFor(() => expect(screen.getByText('Priority queue')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Not flagged by EPA formula' }));
+    fireEvent.click(screen.getByRole('button', { name: 'EPA formula misses it' }));
     await waitFor(() => expect(f.mock.calls.some((c) => String(c[0]).includes('hidden=1'))).toBe(true));
   });
 });

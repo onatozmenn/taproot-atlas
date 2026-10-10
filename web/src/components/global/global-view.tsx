@@ -117,7 +117,7 @@ export function GlobalView() {
 
       <main className="mx-auto w-full max-w-[672px] px-5 pb-24 pt-10">
         <p className="text-[13px] font-medium text-muted-foreground">Beyond the United States</p>
-        <h1 className="mt-1 font-display text-[36px] font-medium leading-[1.08] tracking-[-0.01em] sm:text-[42px]">
+        <h1 className="mt-1 text-balance font-display text-[29px] font-medium leading-[1.1] tracking-[-0.01em] sm:text-[42px] sm:leading-[1.08]">
           2.1 billion people lack safely managed drinking water. Most regulators can’t yet see which systems will fail next.
         </h1>
         <p className="mt-3 text-[16px] leading-snug text-muted-foreground">
@@ -125,15 +125,15 @@ export function GlobalView() {
           require. Taproot turns the records a regulator already keeps into a list of where to look first.
         </p>
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
           {[
             ['2.1 billion', 'without safely managed water in 2024', 'https://www.who.int/news/item/26-08-2025-1-in-4-people-globally-still-lack-access-to-safe-drinking-water---who--unicef'],
             ['43%', 'of countries publish urban water-quality reports', 'https://www.unwater.org/sites/default/files/2026-01/un-water_glaas2025_report_english.pdf'],
             ['21%', 'run urban surveillance at the required frequency', 'https://www.unwater.org/sites/default/files/2026-01/un-water_glaas2025_report_english.pdf'],
           ].map(([v, l, u]) => (
-            <a key={l} href={u} target="_blank" rel="noreferrer" className="press block rounded-3xl bg-muted px-4 py-4 hover:bg-secondary">
-              <p className="font-display text-[26px] font-medium leading-none tabular-nums">{v}</p>
-              <p className="mt-1.5 text-[12.5px] leading-snug text-muted-foreground">{l}</p>
+            <a key={l} href={u} target="_blank" rel="noreferrer" className="press flex items-baseline gap-3 rounded-3xl bg-muted px-4 py-3 hover:bg-secondary sm:block sm:py-4">
+              <p className="w-[7.75rem] shrink-0 whitespace-nowrap font-display text-[24px] font-medium leading-none tabular-nums sm:w-auto sm:whitespace-normal sm:text-[26px]">{v}</p>
+              <p className="text-[13px] leading-snug text-muted-foreground sm:mt-1.5 sm:text-[12.5px]">{l}</p>
             </a>
           ))}
         </div>
