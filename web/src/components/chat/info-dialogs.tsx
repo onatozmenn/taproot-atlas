@@ -6,7 +6,7 @@ export function InfoDialogs({ open, onOpenChange }: { open: Which; onOpenChange:
   return (
     <>
       <Dialog open={open === 'privacy'} onOpenChange={(o) => onOpenChange(o ? 'privacy' : null)}>
-        <DialogContent className="rounded-3xl sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold tracking-tight">Your privacy</DialogTitle>
             <DialogDescription>Taproot Atlas answers from public records. It does not need to know who you are.</DialogDescription>
@@ -28,7 +28,7 @@ export function InfoDialogs({ open, onOpenChange }: { open: Which; onOpenChange:
         </DialogContent>
       </Dialog>
       <Dialog open={open === 'how'} onOpenChange={(o) => onOpenChange(o ? 'how' : null)}>
-        <DialogContent className="rounded-3xl sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold tracking-tight">How Taproot works</DialogTitle>
             <DialogDescription>Answers come only from public water records.</DialogDescription>
