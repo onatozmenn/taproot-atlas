@@ -1,116 +1,163 @@
-import { motion, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import type { WaterSystemProfile } from '../../../../types/water-intelligence';
-import { month, num } from '../report/format';
-import { CountUp, TONE, VisualFrame, useOnScreen } from './frame';
+import { num } from '../report/format';
+import { VisualFrame } from './frame';
 import { useBoxWidth } from '../kit/motion';
 
 const AL = 15;
+const DAY = 86_400_000;
 
-/** A raindrop with its tip up, centred on (0,0), about 2r tall. */
-const drop = (r: number) =>
-  `M0 ${-r * 1.55} C ${r * 0.55} ${-r * 0.75} ${r} ${-r * 0.35} ${r} ${r * 0.2} A ${r} ${r} 0 1 1 ${-r} ${r * 0.2} C ${-r} ${-r * 0.35} ${-r * 0.55} ${-r * 0.75} 0 ${-r * 1.55} Z`;
+interface Period {
+  start: number;
+  end: number;
+  mid: number;
+  ppb: number;
+  label: string;
+  span: boolean;
+}
 
-function series(p: WaterSystemProfile) {
-  const byEnd = new Map<string, { end: string; ppb: number }>();
+/** "1992 H2", "2024", "2002–04": the reporting period the way the rule names it. */
+function periodLabel(s: Date, e: Date): string {
+  const days = (e.getTime() - s.getTime()) / DAY;
+  const y = s.getUTCFullYear();
+  if (days <= 190) return `${y} H${s.getUTCMonth() < 6 ? 1 : 2}`;
+  if (days <= 370) return String(y);
+  return `${y}–${String(e.getUTCFullYear()).slice(2)}`;
+}
+
+function series(p: WaterSystemProfile): Period[] {
+  const by = new Map<string, Period>();
   for (const l of p.lead) {
-    const end = l.end ?? l.start;
-    if (!end) continue;
-    const prev = byEnd.get(end);
-    if (!prev || l.ppb > prev.ppb) byEnd.set(end, { end, ppb: l.ppb });
+    const endIso = l.end ?? l.start;
+    const startIso = l.start ?? l.end;
+    if (!endIso || !startIso) continue;
+    const s = new Date(`${startIso.slice(0, 10)}T00:00:00Z`);
+    const e = new Date(`${endIso.slice(0, 10)}T00:00:00Z`);
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) continue;
+    const k = `${startIso}|${endIso}`;
+    const prev = by.get(k);
+    if (prev && prev.ppb >= l.ppb) continue;
+    by.set(k, {
+      start: s.getTime(),
+      end: e.getTime() + DAY,
+      mid: (s.getTime() + e.getTime() + DAY) / 2,
+      ppb: l.ppb,
+      label: periodLabel(s, e),
+      span: (e.getTime() - s.getTime()) / DAY > 400,
+    });
   }
-  return [...byEnd.values()].sort((a, b) => a.end.localeCompare(b.end)).slice(-18);
+  return [...by.values()].sort((a, b) => a.end - b.end || a.start - b.start);
+}
+
+/** Round up to a tidy axis maximum with 4–6 gridlines. */
+function niceMax(v: number): { max: number; step: number } {
+  for (const step of [5, 10, 20, 50, 100]) {
+    const m = Math.ceil(v / step) * step;
+    if (m / step <= 6) return { max: m, step };
+  }
+  return { max: Math.ceil(v / 200) * 200, step: 200 };
 }
 
 /**
- * Lead as drops hanging from the action level's waterline. Every testing
- * period is one drop on a stem; the wavy red line is the 15 ppb action
- * level, so a drop that breaks the surface is a period above it.
+ * Lead at the tap as a register chart: one ink stem per reporting period,
+ * multi-year periods as bars over a dotted stem, the 15 ppb action level as
+ * a 1.5px ink rule. Only a period over the action level turns red.
  */
 export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: string }) {
   const s = series(p);
-  const [ref, seen] = useOnScreen<SVGSVGElement>();
-  const reduce = useReducedMotion();
   const [hover, setHover] = useState<number | null>(null);
   const l = p.leadSummary!;
-  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640);
-  const H = W < 420 ? 210 : 230;
-  const padL = 8;
-  const padR = 8;
-  const top = 26;
-  const base = H - 34;
-  const ymax = Math.max(AL * 2, Math.max(...s.map((x) => x.ppb)) * 1.15);
-  const y = (v: number) => base - (Math.min(v, ymax) / ymax) * (base - top);
-  const step = (W - padL - padR) / Math.max(s.length, 1);
-  const x = (i: number) => padL + step * (i + 0.5);
-  const yAL = y(AL);
-  const tone = (v: number) => (v > AL ? TONE.alert : v >= 10 ? TONE.watch : TONE.water);
-  const latest = l.latestPpb;
-  const wave = Array.from({ length: 40 }, (_, i) => {
-    const xx = -40 + i * 25;
-    return `${i === 0 ? 'M' : 'L'}${xx} ${yAL + Math.sin(i * 0.9) * 2.2}`;
-  }).join(' ');
-  const yearMarks = s
-    .map((d, i) => ({ i, yr: d.end.slice(0, 4) }))
-    .filter((d, i, arr) => i === 0 || d.yr !== arr[i - 1].yr)
-    .filter((_, k, arr) => arr.length <= (W < 420 ? 4 : 7) || k % Math.ceil(arr.length / (W < 420 ? 4 : 7)) === 0 || k === arr.length - 1);
+  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640, 220);
+  const narrow = W < 460;
+  const H = narrow ? 232 : 262;
+  const L = 26;
+  const R = W - 6;
+  const top = 34;
+  const bot = H - 40;
+  const peak = Math.max(AL, ...s.map((x) => x.ppb));
+  const { max: ymax, step } = niceMax(Math.max(20, peak * 1.12));
+  const Y = (v: number) => bot - (Math.min(v, ymax) / ymax) * (bot - top);
+  const firstYear = s.length ? new Date(s[0].start).getUTCFullYear() : 1990;
+  const y0 = Math.floor(firstYear / 5) * 5;
+  const t0 = Date.UTC(y0, 0, 1);
+  const t1 = Math.max(s.length ? s[s.length - 1].end : Date.now(), Date.now()) + 120 * DAY;
+  const X = (t: number) => L + ((t - t0) / (t1 - t0)) * (R - L);
+  const latest = s[s.length - 1];
+  const latestPpb = l.latestPpb;
+  const over = s.map((x, i) => ({ x, i })).filter(({ x }) => x.ppb > AL);
+  const worst = over.length ? over.reduce((a, b) => (b.x.ppb > a.x.ppb ? b : a)) : null;
+  const tickEvery = narrow && new Date(t1).getUTCFullYear() - y0 > 30 ? 10 : 5;
+  const years: number[] = [];
+  for (let y = y0; Date.UTC(y, 0, 1) <= t1; y += tickEvery) years.push(y);
   const h = hover !== null ? s[hover] : null;
+  const yAL = Y(AL);
+
+  // Latest-period label with a leader, kept clear of the action-level rule.
+  let latestLabel: { x: number; y: number; px: number; py: number } | null = null;
+  if (latest) {
+    const px = X(latest.mid);
+    const py = Y(latest.ppb) - 8;
+    let ly = latest.ppb > AL ? Math.max(top - 6, py - 18) : Math.min(py - 18, yAL + 18);
+    if (Math.abs(ly - yAL) < 12) ly = yAL + 18;
+    if (ly > py - 6) ly = Math.max(top, py - 20);
+    latestLabel = { x: Math.min(px - 26, R - 40), y: ly, px, py };
+  }
+  // The action-level label sits on the side away from the red over-limit label.
+  const worstRight = worst ? X(worst.x.mid) < W * 0.62 : false;
+  const alEnd = narrow ? worstRight || !worst : false;
+  const alX = narrow ? (alEnd ? R : L + 4) : worst && worstRight && X(worst.x.mid) > L + (R - L) * 0.12 ? Math.min(R - 170, X(worst.x.mid) + 170) : L + (R - L) * 0.28;
+  const tableRows = s.slice(s.length <= 24 ? 0 : -18);
+  const span = s.length ? `${s[0].label.slice(0, 4)}–${latest.label}` : '';
 
   return (
     <VisualFrame
-      eyebrow="Lead at the tap · 90th percentile of homes tested"
-      headline={
-        <>
-          <CountUp value={latest} /> <span className="text-[0.6em] text-muted-foreground">ppb</span>
-        </>
-      }
+      fig={2}
+      eyebrow="Lead, 90th percentile"
+      record={p.pwsid}
+      hero={num(latestPpb)}
+      unit="ppb"
+      headline={latestPpb > AL ? '— over the 15 ppb action level' : '— under the 15 ppb action level'}
       sub={
-        latest > AL
-          ? `Above the 15 ppb action level in the latest round. The utility must act to cut corrosion and replace lead lines.`
-          : `${l.periodsAboveActionLevel > 0 ? `Under the line now; ${l.periodsAboveActionLevel} of ${l.periods} rounds broke it.` : `Every one of ${l.periods} rounds stayed under the line.`}`
+        latestPpb > AL
+          ? 'Above the action level in the latest round. The utility must act to cut corrosion and replace lead lines.'
+          : l.periodsAboveActionLevel > 0
+            ? `Under the line now; ${l.periodsAboveActionLevel} of ${l.periods} rounds broke it.`
+            : `Every one of ${l.periods} rounds stayed under the line.`
       }
-      source={`EPA SDWIS lead and copper results · ${s.length} most recent rounds`}
+      note="9 in 10 homes sampled were at or below this level — the measure the rule uses."
+      source={`LCR ${span}`}
       sourceUrl={sourceUrl}
     >
       <div className="relative" ref={boxRef}>
-        <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full overflow-visible" role="img" aria-label={`Lead results by testing round; latest ${num(latest)} ppb against a 15 ppb action level`}>
-          <defs>
-            <linearGradient id="lead-above" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="var(--level-alert)" stopOpacity="0.07" />
-              <stop offset="1" stopColor="var(--level-alert)" stopOpacity="0" />
-            </linearGradient>
-            <clipPath id="lead-clip">
-              <rect x="0" y="0" width={W} height={H} />
-            </clipPath>
-          </defs>
-          {/* danger zone above the waterline */}
-          <rect x="0" y={top - 10} width={W} height={Math.max(0, yAL - top + 10)} fill="url(#lead-above)" />
-          {/* baseline */}
-          <line x1={0} x2={W} y1={base} y2={base} stroke="var(--border)" />
-          {/* the waterline: action level */}
-          <g clipPath="url(#lead-clip)">
-            <motion.path
-              d={wave}
-              fill="none"
-              stroke="var(--level-alert)"
-              strokeWidth={1.5}
-              strokeDasharray="5 5"
-              initial={reduce ? false : { x: 0 }}
-              animate={reduce ? undefined : { x: [0, -(2 * Math.PI * 25) / 0.9] }}
-              transition={{ duration: 6, ease: 'linear', repeat: Infinity }}
-            />
-          </g>
-          <text x={padL + 4} y={yAL - 8} textAnchor="start" className="fill-[var(--level-alert)] text-[11.5px] font-medium">
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block h-auto w-full overflow-visible" role="img" aria-label={`Lead results by testing round; latest ${num(latestPpb)} ppb against a 15 ppb action level`}>
+          {/* grid */}
+          {Array.from({ length: ymax / step + 1 }, (_, k) => k * step).map((v) =>
+            v === AL ? null : (
+              <g key={v}>
+                {v > 0 && <line x1={L} x2={R} y1={Y(v)} y2={Y(v)} stroke="var(--rule)" />}
+                <text x={L - 6} y={Y(v) + 4} textAnchor="end">
+                  {v}
+                </text>
+              </g>
+            ),
+          )}
+          {/* the action level: 1.5px ink rule */}
+          <line x1={L} x2={R} y1={yAL} y2={yAL} stroke="var(--ink)" strokeWidth={1.5} />
+          <text x={L - 6} y={yAL + 4} textAnchor="end" className="t-ink t-b">
+            15
+          </text>
+          <text x={alX} y={yAL - 6} textAnchor={alEnd ? 'end' : 'start'} className="t-ink t-b t-up t-halo">
             Action level · 15 ppb
           </text>
+          {/* periods */}
           {s.map((d, i) => {
-            const c = tone(d.ppb);
-            const isLast = i === s.length - 1;
-            const r = isLast ? 7.5 : 5.5;
-            const cy = y(d.ppb);
+            const col = d.ppb > AL ? 'var(--notice)' : 'var(--ink)';
+            const cx = X(d.mid);
+            const cy = Y(d.ppb);
+            const on = hover === i;
             return (
               <g
-                key={d.end}
+                key={`${d.start}-${d.end}`}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(i)}
@@ -124,50 +171,79 @@ export function LeadDrops({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: 
                   e.preventDefault();
                   (e.currentTarget.parentElement?.querySelector(`[data-drop="${to}"]`) as SVGGElement | null)?.focus();
                 }}
-                className="cursor-default outline-none focus-visible:[&_path]:stroke-foreground focus-visible:[&_path]:[stroke-width:2]"
-                aria-label={`${month(d.end)}: ${num(d.ppb)} ppb`}
+                className="cursor-default outline-none"
+                aria-label={`${d.label}: ${num(d.ppb)} ppb`}
               >
-                <rect x={x(i) - step / 2} y={top - 10} width={step} height={base - top + 10} fill="transparent" />
-                <motion.line
-                  x1={x(i)}
-                  x2={x(i)}
-                  y1={base}
-                  y2={cy}
-                  stroke={c}
-                  strokeOpacity={hover === i ? 0.9 : 0.35}
-                  strokeWidth={1.5}
-                  initial={reduce ? false : { pathLength: 0 }}
-                  animate={seen ? { pathLength: 1 } : undefined}
-                  transition={{ duration: 0.7, delay: 0.15 + i * 0.045, ease: [0.22, 1, 0.36, 1] }}
-                />
-                <motion.g
-                  initial={reduce ? false : { opacity: 0, y: -18 }}
-                  animate={seen ? { opacity: 1, y: 0 } : undefined}
-                  transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.35 + i * 0.045 }}
-                >
-                  <path d={drop(hover === i ? r + 1.5 : r)} transform={`translate(${x(i)} ${cy - r * 0.2})`} fill={c} />
-                </motion.g>
-                {isLast && (
-                  <text x={x(i)} y={cy - r * 2.1 - 4} textAnchor="middle" className="text-[12px] font-semibold" fill={c}>
-                    {num(d.ppb)}
+                <rect x={cx - 6} y={top - 10} width={12} height={bot - top + 10} fill="transparent" />
+                {d.span ? (
+                  <>
+                    <rect x={X(d.start) + 1} y={cy - 1.25} width={Math.max(2, X(d.end) - X(d.start) - 2)} height={2.5} fill={col} />
+                    <line x1={cx} x2={cx} y1={cy} y2={bot} stroke={col} strokeDasharray="1 2" />
+                  </>
+                ) : (
+                  <>
+                    <line x1={cx} x2={cx} y1={cy} y2={bot} stroke={col} strokeWidth={1.5} />
+                    <path d={`M${cx} ${cy - 6.5}c2.2 2.8 3.4 4.4 3.4 6.2a3.4 3.4 0 0 1-6.8 0c0-1.8 1.2-3.4 3.4-6.2z`} fill={col} />
+                  </>
+                )}
+                {on && <rect x={cx - 6} y={cy - 10} width={12} height={bot - cy + 10} fill="none" stroke="var(--register)" strokeWidth={1.5} />}
+              </g>
+            );
+          })}
+          {/* baseline + time axis */}
+          <line x1={L} x2={R} y1={bot} y2={bot} stroke="var(--ink)" />
+          {years.map((yr) => (
+            <g key={yr}>
+              <line x1={X(Date.UTC(yr, 0, 1))} x2={X(Date.UTC(yr, 0, 1))} y1={bot} y2={bot + 5} stroke="var(--ink)" />
+              <text x={X(Date.UTC(yr, 0, 1))} y={bot + 18} textAnchor="middle">
+                {yr}
+              </text>
+            </g>
+          ))}
+          {/* direct labels */}
+          {worst && (() => {
+            const wx = X(worst.x.mid);
+            const right = wx < W * 0.62;
+            const tx = right ? wx + 8 : wx - 8;
+            const anchor = right ? 'start' : 'end';
+            const ty = Y(worst.x.ppb) + 2;
+            return (
+              <g pointerEvents="none">
+                <text x={tx} y={ty} textAnchor={anchor} className="t-red t-b t-halo">
+                  {num(worst.x.ppb)} ppb · {worst.x.label}
+                </text>
+                {!narrow && (
+                  <text x={tx} y={ty + 13} textAnchor={anchor} className="t-red t-halo">
+                    over the action level
                   </text>
                 )}
               </g>
             );
-          })}
-          {yearMarks.map(({ i, yr }) => (
-            <text key={`${yr}-${i}`} x={x(i)} y={H - 12} textAnchor="middle" className="fill-[var(--tertiary)] text-[11px]">
-              {yr}
-            </text>
-          ))}
+          })()}
+          {latestLabel && latest && worst?.i !== s.length - 1 && (
+            <g pointerEvents="none">
+              <path d={`M${latestLabel.x + 4} ${latestLabel.y - 4}H${latestLabel.px}V${latestLabel.py - 2}`} fill="none" stroke="var(--ink)" />
+              <text x={latestLabel.x} y={latestLabel.y} textAnchor="end" className="t-ink t-b t-halo">
+                {num(latest.ppb)} ppb · {latest.label}
+              </text>
+            </g>
+          )}
+          <text x={L} y={H - 4} className="t-up">
+            {narrow ? 'ppb · one mark per period' : 'ppb · one mark per reporting period · bars span multi-year periods'}
+          </text>
         </svg>
-        <div
-          aria-live="polite"
-          className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-full bg-foreground px-3 py-1 text-[12.5px] font-medium text-background transition-[opacity,left] duration-200"
-          style={{ opacity: h ? 1 : 0, left: `${hover === null ? 50 : Math.min(88, Math.max(12, (x(hover) / W) * 100))}%` }}
-        >
-          {h ? `${month(h.end)} · ${num(h.ppb)} ppb` : '\u00a0'}
+        <div aria-live="polite" className="rf-tag" style={{ opacity: h ? 1 : 0, left: `${hover === null ? 50 : Math.min(84, Math.max(16, (X(s[hover].mid) / W) * 100))}%` }}>
+          {h ? `${h.label} · ${num(h.ppb)} ppb` : '\u00a0'}
         </div>
+      </div>
+      <span className="rf-lbl rf-ltab-h">Table 2 · 90th percentile, ppb, by reporting period</span>
+      <div className="rf-ltab">
+        {tableRows.map((d) => (
+          <div key={`${d.start}-${d.end}`} className="rf-lt" data-over={d.ppb > AL || undefined}>
+            <span>{d.label}</span>
+            <b>{num(d.ppb)}</b>
+          </div>
+        ))}
       </div>
     </VisualFrame>
   );

@@ -40,25 +40,26 @@ describe('VisualAnswer picks one figure per question', () => {
     expect(visualKind(answerFor('AZ0407025', 'Is Phoenix water safe?', 'general')).kind).toBe('signals');
   });
 
-  it('lead: drops against the action-level waterline', () => {
+  it('lead: stems against the action-level rule, with the period table', () => {
     render(<VisualAnswer answer={answerFor('IL0316000', 'Is there lead in Chicago water?')} />);
     expect(screen.getByText(/Action level · 15 ppb/)).toBeTruthy();
     expect(screen.getByRole('img', { name: /Lead results by testing round/ })).toBeTruthy();
+    expect(screen.getByText(/Table 2 · 90th percentile/)).toBeTruthy();
   });
 
-  it('PFAS: rings flag compounds over the limit', () => {
+  it('PFAS: a ring per sample, red where a compound is over its limit', () => {
     render(<VisualAnswer answer={answerFor('AZ0407100', 'PFAS in Tempe?')} />);
     expect(screen.getByText(/above the limit/)).toBeTruthy();
     expect(screen.getAllByText(/× limit/).length).toBeGreaterThan(0);
   });
 
-  it('lab: a tube with the federal limit', () => {
+  it('lab: a register bar against the federal limit', () => {
     render(<VisualAnswer answer={answerFor('CA3410020', 'nitrate in Sacramento')} />);
     expect(screen.getByText(/of the limit/)).toBeTruthy();
     expect(screen.getAllByText(/limit 10 mg\/L/).length).toBeGreaterThan(0);
   });
 
-  it('violations: tapping a stone reads it in plain words', async () => {
+  it('violations: tapping a span reads it in plain words', async () => {
     render(<VisualAnswer answer={answerFor('TX1010013', 'Any violations in Houston?', 'compliance')} />);
     const stones = screen.getAllByRole('button').filter((b) => b.tagName.toLowerCase() === 'g');
     expect(stones.length).toBeGreaterThan(0);
@@ -72,18 +73,21 @@ describe('VisualAnswer picks one figure per question', () => {
     expect(years).toHaveLength(10);
   });
 
-  it('safety: four dials, and a dial asks a follow-up', () => {
+  it('safety: four register cells, and a cell asks a follow-up', () => {
     const onAsk = vi.fn();
     render(<VisualAnswer answer={answerFor('AZ0407025', 'Is Phoenix water safe?', 'general')} onAsk={onAsk} />);
-    expect(screen.getByText(/four checks against federal limits/)).toBeTruthy();
+    expect(screen.getByRole('group', { name: /four checks against federal limits/ })).toBeTruthy();
+    expect(screen.getByText(/Fig\. 1 · Record signals/)).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /Ask about it$/ })).toHaveLength(4);
     fireEvent.click(screen.getByRole('button', { name: /^Lead:/ }));
     expect(onAsk).toHaveBeenCalledWith('Is there lead in Test City water?');
   });
 
-  it('pathway: a pipe of stops ending at your tap', () => {
+  it('pathway: source, treatment and your tap as three register columns', () => {
     render(<VisualAnswer answer={answerFor('TX2270001', 'How does Austin water reach my tap?', 'pathway')} />);
     expect(screen.getByText('Your tap')).toBeTruthy();
-    expect(screen.getByText(/stops to your glass/)).toBeTruthy();
+    expect(screen.getByText('§1 Source')).toBeTruthy();
+    expect(screen.getByText('§2 Treatment')).toBeTruthy();
   });
 
   it('map: a failed load falls back to the SVG map', async () => {

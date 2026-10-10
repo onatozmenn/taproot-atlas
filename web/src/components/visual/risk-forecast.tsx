@@ -1,127 +1,103 @@
-import { motion, useReducedMotion } from 'motion/react';
-import type { RiskScore, WaterSystemProfile } from '../../../../types/water-intelligence';
-import { RISK_BINS, driverText, riskPos } from '../../../../lib/risk-text';
-import { CountUp, TONE, VisualFrame, useOnScreen } from './frame';
+import type { WaterSystemProfile } from '../../../../types/water-intelligence';
+import { RISK_BINS, driverText, riskBin, riskPos } from '../../../../lib/risk-text';
+import { VisualFrame } from './frame';
+import { useBoxWidth } from '../kit/motion';
 
-const W = 320;
-const H = 64;
-const TICKS: Array<[number, string]> = [
-  [0.001, '0.1%'],
-  [0.01, '1%'],
-  [0.1, '10%'],
-  [1, '100%'],
-];
-
-function tone(r: RiskScore): string {
-  return r.tier === 'high' ? TONE.alert : r.tier === 'elevated' ? TONE.watch : r.tier === 'low' ? TONE.ok : TONE.water;
-}
-
-function pctLabel(p: number): { value: number; decimals: number; prefix: string } {
+function pctLabel(p: number): string {
   const x = p * 100;
-  if (x < 1) return { value: 1, decimals: 0, prefix: '<' };
-  if (x > 95) return { value: 95, decimals: 0, prefix: '>' };
-  return { value: x < 10 ? Math.round(x * 10) / 10 : Math.round(x), decimals: x < 10 ? 1 : 0, prefix: '' };
+  if (x < 1) return '<1';
+  if (x > 95) return '>95';
+  return x < 10 ? String(Math.round(x * 10) / 10) : String(Math.round(x));
 }
 
 /**
- * The forecast as a place in the crowd: every scored U.S. system is a sliver
- * of the ridge (log scale), this system is the dropped pin, and the factors
- * that moved its forecast push left (lower) or right (higher) from a centre line.
+ * The forecast as a place in the crowd: every scored U.S. system is a grey
+ * bar of the distribution (log scale), this system's bar is ink and a
+ * register-blue rule says "you are here". Drivers list what moved it.
  */
-export function RiskForecast({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: string }) {
+export function RiskForecast({ p, sourceUrl, city }: { p: WaterSystemProfile; sourceUrl: string; city?: string }) {
   const r = p.risk;
-  const [ref, seen] = useOnScreen<HTMLDivElement>();
-  const reduce = useReducedMotion();
+  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640, 220);
   if (!r) return null;
-  const c = tone(r);
   const dist = r.distribution ?? [];
+  const total = dist.reduce((a, b) => a + b, 0);
   const peak = Math.max(1, ...dist);
-  const x = riskPos(r.probability) * W;
-  const baseX = riskPos(r.baseRate) * W;
   const lab = pctLabel(r.probability);
-  const maxW = Math.max(0.6, ...r.drivers.map((d) => Math.abs(d.w)));
-  const rank =
-    r.percentile >= 0.5 ? `Higher than ${Math.round(r.percentile * 100)}% of U.S. systems Taproot scores.` : `Lower than ${Math.round((1 - r.percentile) * 100)}% of U.S. systems Taproot scores.`;
+  const here = riskBin(r.probability);
+  const lower = Math.round((1 - r.percentile) * 100);
+  const higher = Math.round(r.percentile * 100);
+  const rank = r.percentile >= 0.5 ? `Higher than ${higher}% of ${total ? total.toLocaleString('en-US') : 'U.S.'} systems.` : `Lower than ${lower}% of ${total ? total.toLocaleString('en-US') : 'U.S.'} systems.`;
+  const narrow = W < 460;
+  const H = narrow ? 176 : 186;
+  const top = 36;
+  const bot = H - 34;
+  const bw = W / RISK_BINS;
+  const fx = riskPos(r.probability) * W;
+  const baseX = riskPos(r.baseRate) * W;
+  const right = fx < W * 0.6;
+  const name = (city ?? p.name).toUpperCase();
+  const tierWord = r.tier === 'high' ? 'High' : r.tier === 'elevated' ? 'Elevated' : r.tier === 'low' ? 'Low' : 'Typical';
 
   return (
     <VisualFrame
-      eyebrow={`Forecast · chance of a new health-based violation in ${r.year}`}
+      fig={8}
+      eyebrow={`Forecast · ${tierWord} risk`}
+      record={p.pwsid}
+      hero={lab}
+      unit="%"
       headline={
-        <span style={{ color: c }}>
-          {lab.prefix}
-          <CountUp value={lab.value} decimals={lab.decimals} />%
-        </span>
+        `${lab.startsWith('<') ? 'Less than 1%' : lab.startsWith('>') ? 'More than 95%' : `${lab}%`} chance of a new health-based violation in ${r.year}`
       }
       sub={`${rank} The U.S. average is ${Math.round(r.baseRate * 1000) / 10}%.`}
-      source={`Taproot model on EPA SDWIS records · backtest ${r.backtest.years}: top 10% caught ${Math.round(r.backtest.modelRecallTop10 * 100)}% of next-year violations (EPA targeting score: ${Math.round(r.backtest.ettRecallTop10 * 100)}%)`}
+      note={`Forecast from EPA records, not a test of your water. Backtest ${r.backtest.years}: the top 10% caught ${Math.round(r.backtest.modelRecallTop10 * 100)}% of next-year violators (EPA targeting score: ${Math.round(r.backtest.ettRecallTop10 * 100)}%).`}
+      source="Taproot model · SDWIS"
       sourceUrl={sourceUrl}
     >
-      <div ref={ref}>
-        <svg viewBox={`0 -14 ${W} ${H + 50}`} className="w-full overflow-visible" role="img" aria-label={`Forecast ${lab.prefix}${lab.value}% against all scored systems`}>
+      <div ref={boxRef}>
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block h-auto w-full overflow-visible" role="img" aria-label={`Forecast ${lab}% against ${total.toLocaleString('en-US')} scored systems`}>
           {dist.map((n, i) => {
-            const h = Math.max(1, (n / peak) * (H - 6));
-            const bx = (i / RISK_BINS) * W;
-            return (
-              <motion.rect
-                key={i}
-                x={bx + 0.6}
-                width={W / RISK_BINS - 1.2}
-                y={H - h}
-                height={h}
-                rx={1.5}
-                fill="var(--tertiary)"
-                fillOpacity={0.35}
-                initial={reduce ? false : { scaleY: 0 }}
-                animate={seen ? { scaleY: 1 } : undefined}
-                style={{ transformOrigin: `0px ${H}px` }}
-                transition={{ duration: 0.6, delay: i * 0.015, ease: [0.22, 1, 0.36, 1] }}
-              />
-            );
+            const h = Math.max(1, (n / peak) * (bot - top));
+            return <rect key={i} x={i * bw + 1} y={bot - h} width={Math.max(1, bw - 2)} height={h} fill={i === here ? 'var(--ink)' : 'var(--field-2)'} />;
           })}
-          <line x1={0} x2={W} y1={H} y2={H} stroke="var(--border)" />
-          {TICKS.map(([v, t]) => (
-            <text key={t} x={riskPos(v) * W} y={H + 16} textAnchor={v === 1 ? 'end' : v === 0.001 ? 'start' : 'middle'} className="fill-muted-foreground text-[11px]">
-              {t}
-            </text>
-          ))}
-          <line x1={baseX} x2={baseX} y1={4} y2={H} stroke="var(--foreground)" strokeOpacity={0.45} strokeDasharray="2 3" />
-          <text x={baseX} y={H + 31} textAnchor="middle" className="fill-muted-foreground text-[11px]">
-            U.S. average
+          <line x1={baseX} x2={baseX} y1={top - 6} y2={bot} stroke="var(--ink)" strokeDasharray="1 2" />
+          <text x={baseX + (baseX > W - 90 ? -5 : 5)} y={bot - 6} textAnchor={baseX > W - 90 ? 'end' : 'start'} className="t-ink t-halo">
+            U.S. avg
           </text>
-          <motion.g initial={reduce ? false : { y: -18, opacity: 0 }} animate={seen ? { y: 0, opacity: 1 } : undefined} transition={{ type: 'spring', stiffness: 160, damping: 14, delay: 0.55 }}>
-            <line x1={x} x2={x} y1={-4} y2={H} stroke={c} strokeWidth={2} />
-            <circle cx={x} cy={-6} r={5} fill={c} />
-          </motion.g>
+          <line x1={fx} x2={fx} y1={4} y2={bot} stroke="var(--register)" strokeWidth={2} />
+          <text x={right ? fx + 6 : fx - 6} y={13} textAnchor={right ? 'start' : 'end'} className="t-blue t-b t-halo">
+            {name.length > 22 ? name.slice(0, 21) + '…' : name}
+          </text>
+          <text x={right ? fx + 6 : fx - 6} y={27} textAnchor={right ? 'start' : 'end'} className="t-blue t-halo">
+            {r.percentile >= 0.5 ? `higher than ${higher}% of systems` : `lower than ${lower}% of systems`}
+          </text>
+          <line x1={0} x2={W} y1={bot} y2={bot} stroke="var(--ink)" />
+          <text x={0} y={bot + 18} className="t-up">
+            ← Lower risk
+          </text>
+          <text x={W} y={bot + 18} textAnchor="end" className="t-up">
+            Higher risk →
+          </text>
+          {!narrow && (
+            <text x={W / 2} y={bot + 18} textAnchor="middle" className="t-ink t-up">
+              {total.toLocaleString('en-US')} systems · {r.year} forecast
+            </text>
+          )}
         </svg>
-
         {r.drivers.length > 0 && (
-          <div className="mt-4 space-y-2.5 pb-2">
-            <p className="flex justify-between text-[12.5px] font-medium text-muted-foreground"><span>Lowers it</span><span>What moved it</span><span>Raises it</span></p>
-            {r.drivers.slice(0, 4).map((d, i) => {
-              const up = d.dir === 'up';
-              const wPct = (Math.abs(d.w) / maxW) * 50;
-              return (
-                <div key={d.f}>
-                  <p className="text-[14px] leading-snug">
-                    <span className="font-medium" style={{ color: up ? TONE.alert : TONE.ok }}>
-                      {up ? '↑ ' : '↓ '}
-                    </span>
-                    {driverText(d)}
-                  </p>
-                  <div className="relative mt-1.5 h-1.5 rounded-full bg-muted">
-                    <span className="absolute inset-y-[-3px] left-1/2 w-px bg-border" />
-                    <motion.span
-                      className="absolute inset-y-0 rounded-full"
-                      style={{ background: up ? TONE.alert : TONE.ok, [up ? 'left' : 'right']: '50%' }}
-                      initial={reduce ? false : { width: 0 }}
-                      animate={seen ? { width: `${wPct}%` } : undefined}
-                      transition={{ duration: 0.7, delay: 0.8 + i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                    />
+          <>
+            <span className="rf-lbl rf-drv-h">What moved it</span>
+            <div className="mt-1.5">
+              {r.drivers.slice(0, 4).map((d) => {
+                const t = driverText(d);
+                return (
+                  <div key={d.f} className="rf-drv">
+                    <span>{t.charAt(0).toUpperCase() + t.slice(1)}</span>
+                    <b data-dir={d.dir}>{d.dir === 'up' ? '↑ raises' : '↓ lowers'}</b>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </VisualFrame>

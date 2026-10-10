@@ -1,10 +1,13 @@
-import { motion, useReducedMotion } from 'motion/react';
 import type { LabAnalyteSummary, WaterSystemProfile } from '../../../../types/water-intelligence';
 import { num } from '../report/format';
-import { TONE, VisualFrame, useOnScreen } from './frame';
+import { VisualFrame } from './frame';
+import { useBoxWidth } from '../kit/motion';
 
-const R0 = 26; // radius of the federal-limit ring
-const RMAX = 52;
+const RANK = ['PFOA', 'PFOS', 'PFHxS', 'PFNA', 'HFPO-DA'];
+const ORDER = (l: string) => {
+  const i = RANK.findIndex((r) => l.startsWith(r));
+  return i < 0 ? 99 : i;
+};
 
 function ngL(a: LabAnalyteSummary): number {
   if (a.maxInBenchmarkUnit !== undefined) return a.maxInBenchmarkUnit;
@@ -13,110 +16,105 @@ function ngL(a: LabAnalyteSummary): number {
 }
 
 /**
- * PFAS as a disc inside a ring. The dashed ring is the federal limit; the
- * disc is the highest sample, sized by area. A disc that spills past its
- * ring is a compound above the limit, and it keeps rippling.
+ * PFAS as a register of lab results: one row per compound, one ring per
+ * sample. Hollow = sampled, not detected; ink = detected; red = detected
+ * above the 2024 federal limit. The limit sits at the right of each row.
  */
 export function PfasRings({ p, sourceUrl }: { p: WaterSystemProfile; sourceUrl: string }) {
-  const [ref, seen] = useOnScreen<HTMLDivElement>();
-  const reduce = useReducedMotion();
-  const rows = p.lab
-    .filter((a) => a.group === 'pfas' && a.detects > 0)
+  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640, 220);
+  const all = p.lab.filter((a) => a.group === 'pfas');
+  const rows = all
+    .filter((a) => a.benchmark || a.detects > 0)
     .map((a) => {
-      const v = ngL(a);
+      const v = a.detects > 0 ? ngL(a) : 0;
       const lim = a.benchmark?.value ?? null;
-      return { a, v, lim, ratio: lim ? v / lim : null };
+      return { a, v, lim, ratio: lim && a.detects > 0 ? v / lim : null };
     })
-    .sort((x, y) => (y.ratio ?? -1) - (x.ratio ?? -1) || y.v - x.v)
-    .slice(0, 6);
-  const tested = p.lab.filter((a) => a.group === 'pfas').length;
+    .sort((x, y) => (y.ratio ?? -1) - (x.ratio ?? -1) || y.a.detects - x.a.detects || (x.lim ?? 1e9) - (y.lim ?? 1e9) || ORDER(x.a.label) - ORDER(y.a.label))
+    .slice(0, 8);
+  const detected = all.filter((a) => a.detects > 0);
+  const tested = all.length;
   const above = rows.filter((r) => (r.ratio ?? 0) > 1).length;
-  const anyLimit = rows.some((r) => r.lim !== null);
-  const maxV = Math.max(...rows.map((r) => r.v), 1);
+  const anyLimit = detected.some((a) => a.benchmark);
+  const samples = p.pfas.samples || Math.max(0, ...all.map((a) => a.samples));
   const window = (p.pfas.window ?? '').match(/(\d{4}).*?(\d{4})/);
-
+  const years = window ? (window[1] === window[2] ? window[1] : `${window[1]} → ${window[2]}`) : '';
+  // Rings that fit the row: the name and limit columns take ~165px on a phone.
+  const avail = W - (W < 420 ? 165 : 230);
+  const maxRings = Math.max(4, Math.floor(avail / 13));
+  const per = samples * 11 <= avail ? 1 : Math.ceil(samples / maxRings);
+  const nRings = Math.max(1, Math.ceil(samples / per));
+  const unitText = per > 1 ? `1 ring = ${per} samples` : `${samples} samples`;
+  const headline = detected.length === 0 ? 'No PFAS detected' : above > 0 ? `${above} above the limit` : anyLimit ? 'None above the limit' : `${detected.length} found, none regulated`;
   return (
     <VisualFrame
-      eyebrow="PFAS · highest sample vs the 2024 federal limit"
-      headline={
-        rows.length === 0 ? 'None detected' : above > 0 ? `${above} above the limit` : anyLimit ? 'None above the limit' : `${rows.length} found, none regulated`
+      fig={3}
+      eyebrow={`PFAS · ${tested} compounds × ${samples} samples`}
+      record={p.pwsid}
+      hero={detected.length}
+      unit={detected.length === 1 ? 'detection' : detected.length === 0 ? 'detections' : 'compounds found'}
+      headline={headline}
+      note={
+        detected.length === 0
+          ? `Every ring is one lab result. All ${tested || 'tested'} compounds were below the lab's reporting level in every sample.`
+          : above > 0
+            ? 'Red rings are samples of a compound whose highest result is above its 2024 federal limit.'
+            : 'Filled rings are samples where the compound turned up. The limit is the 2024 federal MCL.'
       }
-      sub={
-        rows.length === 0
-          ? `${tested || 29} compounds tested across ${p.pfas.samples} rounds; none turned up.`
-          : anyLimit
-            ? `${rows.length} of ${tested} compounds turned up. The dashed ring is the limit; a disc that spills over it is above.`
-            : `${rows.length} of ${tested} compounds turned up, none with a federal limit. Bigger discs mean more was measured.`
-      }
-      source={`EPA UCMR 5${window ? ` · ${window[1] === window[2] ? window[1] : `${window[1]}-${window[2]}`}` : ''} · measured in ng/L, parts per trillion`}
+      source={`UCMR 5${years ? ` · ${years.replace(' → ', '–')}` : ''}`}
       sourceUrl={sourceUrl}
     >
-      {rows.length === 0 ? (
-        <div ref={ref} className="flex items-center justify-center py-6">
-          <svg viewBox="-70 -70 140 140" className="size-36" aria-hidden="true">
-            <circle r={R0} fill="none" stroke="var(--border)" strokeDasharray="3 4" />
-            <motion.circle
-              r={4}
-              fill="var(--level-ok)"
-              initial={reduce ? false : { scale: 0 }}
-              animate={seen ? { scale: [0, 1.4, 1] } : undefined}
-              transition={{ duration: 0.8 }}
-            />
-          </svg>
-        </div>
-      ) : (
-        <div ref={ref} className={rows.length <= 2 ? 'flex flex-wrap justify-center gap-x-10 gap-y-4 py-2' : 'grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-3'}>
-          {rows.map(({ a, v, lim, ratio }, i) => {
-            // No limit to compare against: size by amount relative to the largest find.
-            const r = ratio === null ? Math.max(6, 26 * Math.sqrt(v / maxV)) : Math.min(RMAX, Math.max(3, R0 * Math.sqrt(ratio)));
+      <div ref={boxRef}>
+        <div className="rf-pf" role="table" aria-label={`PFAS results, ${samples} samples per compound`}>
+          <div role="row" className="contents">
+            <span role="columnheader" className="rf-pf-hd">Compound</span>
+            <span role="columnheader" className="rf-pf-hd rf-pf-axis">
+              {unitText}
+              {years && W >= 460 ? ` · ${years}` : ''}
+            </span>
+            <span role="columnheader" className="rf-pf-hd r">Limit</span>
+          </div>
+          {rows.map(({ a, v, lim, ratio }) => {
             const over = (ratio ?? 0) > 1;
-            const c = ratio === null ? TONE.faint : over ? TONE.alert : TONE.water;
+            const filled = a.detects > 0 ? Math.max(1, Math.round(a.detects / per)) : 0;
+            const name = a.label.replace(/\s*\(GenX\)$/i, ' (GenX)');
             return (
-              <div key={a.name} className="flex flex-col items-center text-center">
-                <svg viewBox="-60 -60 120 120" className="size-[124px] overflow-visible" role="img" aria-label={`${a.label}: ${num(v)} ng/L${lim ? ` vs ${num(lim)} ng/L limit` : ', no federal limit'}`}>
-                  <title>{`${a.label}: highest ${num(v)} ng/L${lim ? `, limit ${num(lim)} ng/L` : ', no federal limit'}`}</title>
-                  {over && !reduce && seen && (
-                    <motion.circle
-                      r={R0}
-                      fill="none"
-                      stroke={c}
-                      strokeWidth={1}
-                      initial={{ scale: 1, opacity: 0.5 }}
-                      animate={{ scale: r / R0 + 0.35, opacity: 0 }}
-                      transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut', delay: 1 + i * 0.2 }}
-                    />
+              <div role="row" className="contents" key={a.name}>
+                <span role="cell" className="rf-pf-name">
+                  {name}
+                  {a.detects > 0 && (
+                    <em data-over={over || undefined}>
+                      max {num(v)} ng/L
+                      {ratio !== null ? (over ? ` · ${num(ratio)}× limit` : ` · ${Math.max(1, Math.round(ratio * 100))}%`) : ''}
+                    </em>
                   )}
-                  <motion.circle
-                    r={r}
-                    fill={c}
-                    fillOpacity={over ? 0.85 : 0.22}
-                    stroke={c}
-                    strokeWidth={over ? 0 : 1.25}
-                    initial={reduce ? false : { scale: 0 }}
-                    animate={seen ? { scale: 1 } : undefined}
-                    transition={{ type: 'spring', stiffness: 120, damping: 13, delay: 0.2 + i * 0.12 }}
-                  />
-                  {lim !== null && (
-                    <circle r={R0} fill="none" stroke={over ? 'var(--card)' : 'var(--foreground)'} strokeOpacity={over ? 0.9 : 0.55} strokeWidth={1.25} strokeDasharray="3 3.5" />
-                  )}
-                </svg>
-                <p className="mt-1 text-[15px] font-semibold leading-tight">{a.label.replace(/\s*\(.*\)$/, '')}</p>
-                <p className="text-[13px] tabular-nums text-muted-foreground">
-                  {num(v)} ng/L
-                  {ratio !== null ? (
-                    <span className="font-medium" style={{ color: over ? TONE.alert : undefined }}>
-                      {' · '}
-                      {over ? `${num(ratio)}× limit` : `${Math.round(ratio * 100)}% of limit`}
-                    </span>
-                  ) : (
-                    ' · no limit'
-                  )}
-                </p>
+                </span>
+                <span role="cell" className="rf-pf-rings" style={{ ['--n' as string]: nRings }} aria-label={`${a.detects} of ${a.samples} samples detected`}>
+                  {Array.from({ length: nRings }, (_, k) => (
+                    <i key={k} data-d={k < filled ? (over ? 'over' : 'det') : undefined} />
+                  ))}
+                </span>
+                <span role="cell" className="rf-pf-lim">
+                  {lim !== null ? `${num(lim)} ng/L` : 'none'}
+                </span>
               </div>
             );
           })}
         </div>
-      )}
+        <div className="rf-pf-key" aria-hidden="true">
+          <span>
+            <i /> = sampled, not detected
+          </span>
+          {detected.length > 0 && (
+            <span>
+              <i data-d="det" /> = detected
+            </span>
+          )}
+          <span>
+            <i data-d="over" /> = over its limit{above === 0 ? ' (none in record)' : ''}
+          </span>
+        </div>
+      </div>
     </VisualFrame>
   );
 }
