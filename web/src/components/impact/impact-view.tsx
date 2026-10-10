@@ -1,10 +1,6 @@
-import { motion, useReducedMotion } from 'motion/react';
-import { ArrowUpRightIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
 import impact from '../../../../docs/impact.json';
-import { Logo } from '../Logo';
-import { TONE } from '../visual/frame';
+import { ExtLink, Masthead, RecordHeader, Sec } from '../triage/record-page';
 
 /* Taproot Impact — what the forecast would have changed, checked against what
    actually happened. Route: /#/impact. Numbers: docs/impact.json, built by
@@ -39,72 +35,54 @@ export interface ImpactYear {
 const DATA = impact as { note: string; years: ImpactYear[]; context: Array<{ fact: string; source: string; url: string }> };
 
 export const millions = (n: number) => (n >= 1_000_000 ? `${(Math.round(n / 100_000) / 10).toFixed(1)} million` : `${Math.round(n / 1000)}k`);
+const short = (n: number) => (n >= 1_000_000 ? `${(Math.round(n / 100_000) / 10).toFixed(1)}M` : `${Math.round(n / 1000)}k`);
 export const oneIn = (rate: number) => `1 in ${Math.max(1, Math.round(1 / Math.max(rate, 1e-6)))}`;
 
-const GROUPS: Array<{ key: 'both' | 'model_only' | 'ett_only' | 'neither'; label: string; color: string }> = [
-  { key: 'model_only', label: 'Only Taproot', color: TONE.water },
-  { key: 'both', label: 'Both', color: 'color-mix(in oklab, var(--link) 75%, var(--foreground) 10%)' },
-  { key: 'ett_only', label: 'Only EPA formula', color: TONE.watch },
-  { key: 'neither', label: 'Neither', color: TONE.faint },
+const GROUPS: Array<{ key: 'both' | 'model_only' | 'ett_only' | 'neither'; label: string }> = [
+  { key: 'model_only', label: 'Only Taproot' },
+  { key: 'both', label: 'Both lists' },
+  { key: 'ett_only', label: 'Only EPA formula' },
+  { key: 'neither', label: 'Neither' },
 ];
 
-/** One dot per system that went on to have a new health-based violation. */
-function DotField({ y }: { y: ImpactYear }) {
-  const reduce = useReducedMotion();
-  const dots: string[] = [];
-  for (const g of GROUPS) for (let i = 0; i < y[g.key]; i++) dots.push(g.color);
+/** One dot per system that went on to have a new health-based violation; filled = it was on the list. */
+function DotField({ total, hit, blue, label }: { total: number; hit: number; blue?: boolean; label: string }) {
   return (
-    <figure className="rounded-[28px] border bg-card px-5 py-5 sm:px-6" aria-label={`${y.violators} systems with a new health-based violation in ${y.year}`}>
-      <div className="flex flex-wrap gap-[5px]" aria-hidden="true">
-        {dots.map((c, i) => (
-          <motion.span
-            key={i}
-            className="size-[11px] rounded-full"
-            style={{ background: c }}
-            initial={reduce ? false : { opacity: 0, scale: 0.4 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: reduce ? 0 : Math.min(1.2, i * 0.004), duration: 0.25 }}
-          />
-        ))}
-      </div>
-      <figcaption className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px] sm:grid-cols-4">
-        {GROUPS.map((g) => (
-          <span key={g.key} className="flex items-center gap-2">
-            <span className="size-2.5 shrink-0 rounded-full" style={{ background: g.color }} />
-            <span className="text-muted-foreground">{g.label}</span>
-            <span className="ml-auto tabular-nums sm:ml-0">{y[g.key]}</span>
-          </span>
-        ))}
-      </figcaption>
-    </figure>
+    <div className={`rp-dots${blue ? ' blue' : ''}`} role="img" aria-label={label}>
+      {Array.from({ length: total }, (_, i) => (
+        <i key={i} className={i < hit ? 'on' : undefined} />
+      ))}
+    </div>
   );
 }
 
 function YearBars({ years }: { years: ImpactYear[] }) {
   const max = Math.max(...years.map((y) => y.violators));
   return (
-    <div className="space-y-4">
+    <div className="rp-grid c3 thin">
       {years.map((y) => (
-        <div key={y.year}>
-          <div className="mb-1.5 flex items-baseline justify-between text-[13px]">
-            <span className="font-medium tabular-nums">{y.year}</span>
-            <span className="text-muted-foreground tabular-nums">{y.violators} systems had a new violation</span>
+        <div key={y.year} className="rp-cell">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="rp-mono text-[15px] font-semibold">{y.year}</span>
+            <span className="rp-lbl">{y.violators} new violators</span>
           </div>
-          {(
-            [
-              ['Taproot', y.model_caught, TONE.water],
-              ['Repeat last year', y.repeat_caught, TONE.faint],
-              ['EPA formula', y.ett_caught, TONE.watch],
-            ] as Array<[string, number, string]>
-          ).map(([label, v, color]) => (
-            <div key={label} className="grid grid-cols-[7.5rem_1fr_2.5rem] items-center gap-3 py-0.5 text-[12.5px]">
-              <span className="text-muted-foreground">{label}</span>
-              <span className="h-2 rounded-full bg-muted">
-                <span className="block h-2 rounded-full" style={{ width: `${(v / max) * 100}%`, background: color }} />
-              </span>
-              <span className="text-right tabular-nums">{v}</span>
-            </div>
-          ))}
+          <div className="mt-3 border-t border-rule">
+            {(
+              [
+                ['Taproot', y.model_caught, true],
+                ['Repeat last year', y.repeat_caught, false],
+                ['EPA formula', y.ett_caught, false],
+              ] as Array<[string, number, boolean]>
+            ).map(([label, v, me]) => (
+              <div key={label} className={`rp-bl${me ? ' strong' : ''}`} style={{ gridTemplateColumns: 'minmax(84px, 120px) minmax(0, 1fr) 40px' }}>
+                <span className="rp-bl-n">{label}</span>
+                <span className="rp-bl-b" aria-hidden="true">
+                  <i style={{ width: `${(v / max) * 100}%`, background: me ? 'var(--register)' : undefined }} />
+                </span>
+                <span className="rp-bl-v">{v}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>
@@ -119,123 +97,163 @@ export function ImpactView() {
     document.title = 'Taproot Impact';
   }, []);
   const avgExtraPeople = years.reduce((a, r) => a + r.extra_people, 0) / years.length;
+  const firstTimeNote =
+    y.first_time_model <= y.first_time_ett ? 'no better than EPA here.' : y.first_time_model - y.first_time_ett <= 3 ? 'barely better than EPA here.' : 'better, but still a minority.';
 
   return (
-    <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-10 flex h-16 items-center gap-2.5 border-b border-border bg-background/85 px-5 backdrop-blur">
-        <a href="#/" className="press flex items-center gap-2.5 rounded-full pr-2" aria-label="Back to Taproot Atlas">
-          <Logo size={26} />
-          <span className="font-display text-[20px] font-medium tracking-tight">Taproot Impact</span>
-        </a>
-        <a href="#/" className="press ml-auto rounded-full px-3 py-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground">
-          Back to chat
-        </a>
-      </header>
+    <div className="rp">
+      <RecordHeader page="Impact · backtest" />
 
-      <main className="mx-auto w-full max-w-[672px] px-5 pb-24 pt-10">
-        <p className="text-[13px] font-medium text-muted-foreground">Checked against what actually happened</p>
-        <h1 className="mt-1 text-balance font-display text-[29px] font-medium leading-[1.1] tracking-[-0.01em] sm:text-[42px] sm:leading-[1.08]">
-          A list made in January {y.year} would have found {y.model_caught} of the {y.violators} systems that broke a health rule that year.
-        </h1>
-        <p className="mt-3 text-[16px] leading-snug text-muted-foreground">
-          We rebuilt Taproot’s forecast using only records available before {y.year}, took the top 10% ({y.visits.toLocaleString('en-US')} of {y.systems.toLocaleString('en-US')} community
-          systems), and compared it with EPA’s enforcement-targeting formula. Same number of systems, same starting date.
-        </p>
-
-        <div role="tablist" aria-label="Forecast year" className="mt-6 inline-flex rounded-full border border-border p-0.5">
-          {years.map((r, i) => (
-            <button
-              key={r.year}
-              role="tab"
-              aria-selected={i === idx}
-              onClick={() => setIdx(i)}
-              className={cn('press h-8 rounded-full px-3 text-[13px] font-medium tabular-nums text-muted-foreground', i === idx && 'bg-foreground text-background')}
-            >
-              {r.year}
-            </button>
-          ))}
+      <main className="rp-main">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap justify-between gap-3">
+            <span className="rp-lbl blue">/#/impact · Checked against what actually happened</span>
+            <span className="rp-lbl">Backtest · health-based violations</span>
+          </div>
+          <div role="tablist" aria-label="Forecast year" className="rp-tabs">
+            {years.map((r, i) => (
+              <button key={r.year} type="button" role="tab" aria-selected={i === idx} onClick={() => setIdx(i)}>
+                {r.year}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-3xl bg-muted px-4 py-4">
-            <p className="font-display text-[34px] font-medium leading-none tabular-nums" style={{ color: TONE.water }}>
-              {y.model_caught}
+        <Masthead
+          kicker={[`Forecast made January ${y.year}`, `Top 10% · ${y.visits.toLocaleString('en-US')} of ${y.systems.toLocaleString('en-US')} systems`]}
+          h1Props={{ className: 'rp-lead' }}
+          title={
+            <>
+              In {y.year}, Taproot’s top-10% list held <b>{y.model_caught}</b> of the {y.violators} systems that went on to a health-based violation — EPA’s formula held{' '}
+              <b>{y.ett_caught}</b>.
+            </>
+          }
+          dek={
+            <>
+              We rebuilt Taproot’s forecast using only records available before {y.year}, took the top 10% ({y.visits.toLocaleString('en-US')} of {y.systems.toLocaleString('en-US')}{' '}
+              community systems), and compared it with EPA’s enforcement-targeting formula. Same number of systems, same starting date.
+            </>
+          }
+        />
+
+        <div className="flex flex-col gap-3">
+          <div className="rp-cmp" key={y.year}>
+            <div>
+              <div className="rp-cmp-h">
+                <span className="rp-lbl">Taproot top 10%</span>
+                <span className="rp-cmp-n" style={{ color: 'var(--register)' }}>
+                  {y.model_caught}
+                  <small>/{y.violators}</small>
+                </span>
+              </div>
+              <DotField total={y.violators} hit={y.model_caught} blue label={`${y.model_caught} of ${y.violators} on Taproot’s list`} />
+              <p className="rp-note mt-3">Serving {millions(y.model_people)} people.</p>
+            </div>
+            <div>
+              <div className="rp-cmp-h">
+                <span className="rp-lbl">EPA formula (ETT) top 10%</span>
+                <span className="rp-cmp-n">
+                  {y.ett_caught}
+                  <small>/{y.violators}</small>
+                </span>
+              </div>
+              <DotField total={y.violators} hit={y.ett_caught} label={`${y.ett_caught} of ${y.violators} on EPA’s formula list`} />
+              <p className="rp-note mt-3">Serving {millions(y.ett_people)} people.</p>
+            </div>
+          </div>
+          <p className="rp-note">Each dot is one system that had a new health-based violation in {y.year}. Filled = it was on the list a year earlier.</p>
+          <div className="rp-split" aria-label="Overlap of the two lists">
+            {GROUPS.map((g) => (
+              <div key={g.key}>
+                <span>{g.label}</span>
+                <b>{y[g.key]}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rp-kv">
+          <div>
+            <span className="rp-lbl">People in caught systems</span>
+            <b>
+              {short(y.model_people)} <span>vs {short(y.ett_people)} people</span>
+            </b>
+            <p>
+              In {y.year}, {y.extra_vs_ett} systems on Taproot’s list but not EPA’s went on to break a health rule. They serve <strong>{millions(y.extra_people)} people</strong>, and{' '}
+              {y.extra_high_svi} of them are in counties in the top quarter of CDC’s Social Vulnerability Index. Averaged over {years[0].year}–{years[years.length - 1].year}, that is about{' '}
+              {millions(avgExtraPeople)} people a year.
             </p>
-            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">on Taproot’s list, serving {millions(y.model_people)} people</p>
           </div>
-          <div className="rounded-3xl bg-muted px-4 py-4">
-            <p className="font-display text-[34px] font-medium leading-none tabular-nums">{y.ett_caught}</p>
-            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">on EPA’s formula list, serving {millions(y.ett_people)} people</p>
+          <div>
+            <span className="rp-lbl">Inspection yield</span>
+            <b>
+              {oneIn(y.hit_rate_model)} <span>visits finds a violator vs {oneIn(y.hit_rate_ett)}</span>
+            </b>
+            <p>
+              {oneIn(y.hit_rate_model)} systems on Taproot’s list went on to have a new health-based violation, against {oneIn(y.hit_rate_ett)} on EPA’s formula list. For an inspector
+              with a fixed calendar, that is the difference between a visit that heads off a problem and one that confirms everything is fine.
+            </p>
           </div>
         </div>
 
-        <div className="mt-4">
-          <DotField key={y.year} y={y} />
+        <div className="rp-limit">
+          <span className="rp-mark elev" data-on="true">
+            Honest limit
+          </span>
+          <p>
+            First-time violators: {y.first_time_model} vs {y.first_time_ett} — {firstTimeNote}
+          </p>
         </div>
 
-        <section className="mt-10">
-          <h2 className="font-display text-[24px] font-medium tracking-tight">Every visit lands better</h2>
-          <p className="mt-2 text-[16px] leading-snug">
-            {oneIn(y.hit_rate_model)} systems on Taproot’s list went on to have a new health-based violation, against {oneIn(y.hit_rate_ett)} on EPA’s formula list. For an
-            inspector with a fixed calendar, that is the difference between a visit that heads off a problem and one that confirms everything is fine.
-          </p>
-        </section>
+        <Sec no="1" title="Three years, same test" note="Out-of-time backtest, top 10% each year">
+          <YearBars years={years} />
+        </Sec>
 
-        <section className="mt-10">
-          <h2 className="font-display text-[24px] font-medium tracking-tight">Who the extra catches serve</h2>
-          <p className="mt-2 text-[16px] leading-snug">
-            In {y.year}, {y.extra_vs_ett} systems on Taproot’s list but not EPA’s went on to break a health rule. They serve <strong>{millions(y.extra_people)} people</strong>, and{' '}
-            {y.extra_high_svi} of them are in counties in the top quarter of CDC’s Social Vulnerability Index. Averaged over {years[0].year}–{years[years.length - 1].year}, that is about{' '}
-            {millions(avgExtraPeople)} people a year.
-          </p>
-        </section>
-
-        <section className="mt-10 rounded-[28px] border bg-card px-5 py-5 sm:px-6">
-          <h2 className="text-[13px] font-medium text-muted-foreground">Three years, same test</h2>
-          <div className="mt-3">
-            <YearBars years={years} />
-          </div>
-        </section>
-
-        <section className="mt-10">
-          <h2 className="font-display text-[24px] font-medium tracking-tight">Why it matters</h2>
-          <ul className="mt-3 space-y-3">
-            {DATA.context.map((c) => (
-              <li key={c.url} className="text-[15px] leading-snug">
-                {c.fact}{' '}
-                <a href={c.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 whitespace-nowrap text-[var(--link)]">
-                  {c.source}
-                  <ArrowUpRightIcon className="size-3.5" />
-                </a>
+        <Sec no="2" title="Why it matters" note="Sources">
+          <ol>
+            {DATA.context.map((c, i) => (
+              <li key={c.url} className="rp-src">
+                <span className="n">{i + 1}</span>
+                <p>
+                  {c.fact} <ExtLink href={c.url}>{c.source}</ExtLink>
+                </p>
               </li>
             ))}
-          </ul>
-        </section>
+          </ol>
+        </Sec>
 
-        <section className="mt-10 rounded-3xl bg-muted px-5 py-5">
-          <h2 className="text-[13px] font-medium text-muted-foreground">What this does not show</h2>
-          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[14px] leading-snug">
-            <li>Being on a list is not the same as a violation prevented; that needs a field trial with a state program.</li>
+        <Sec no="3" title="What this does not show" note="Read before quoting">
+          <ul className="rp-ol">
             <li>
-              First-time violators are still hard: of {y.first_time} systems with no health-based violation in the prior five years, Taproot’s list held {y.first_time_model} and EPA’s
-              formula {y.first_time_ett}.
+              <span>01</span>
+              <span>Being on a list is not the same as a violation prevented; that needs a field trial with a state program.</span>
             </li>
-            <li>People counts use each system’s current population served. EPA’s formula is recomputed from SDWIS records, not EPA’s internal list.</li>
+            <li>
+              <span>02</span>
+              <span>
+                First-time violators are still hard: of {y.first_time} systems with no health-based violation in the prior five years, Taproot’s list held {y.first_time_model} and EPA’s
+                formula {y.first_time_ett}.
+              </span>
+            </li>
+            <li>
+              <span>03</span>
+              <span>People counts use each system’s current population served. EPA’s formula is recomputed from SDWIS records, not EPA’s internal list.</span>
+            </li>
           </ul>
-        </section>
+        </Sec>
 
-        <div className="mt-8 flex flex-wrap gap-2">
-          <a href="#/triage" className="press inline-flex h-9 items-center rounded-full bg-foreground px-4 text-[14px] font-medium text-background">
+        <div className="rp-actions">
+          <a href="#/triage" className="rp-btn primary">
             Open the triage queue
           </a>
-          <a href="#/study" className="press inline-flex h-9 items-center rounded-full border border-border px-4 text-[14px] font-medium">
+          <a href="#/study" className="rp-btn">
             Help us test Taproot
           </a>
-          <a href="#/global" className="press inline-flex h-9 items-center rounded-full border border-border px-4 text-[14px] font-medium">
+          <a href="#/global" className="rp-btn">
             Beyond the U.S.
           </a>
         </div>
-        <p className="mt-6 text-[12.5px] leading-relaxed text-muted-foreground">{DATA.note}</p>
+        <p className="rp-foot">{DATA.note}</p>
       </main>
     </div>
   );

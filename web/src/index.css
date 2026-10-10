@@ -5,9 +5,28 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-display);
-    --font-display: 'Newsreader', 'Times New Roman', Times, serif;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif;
+    --font-heading: var(--font-sans);
+    --font-display: var(--font-sans);
+    --font-sans: 'Public Sans Variable', 'Public Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    --font-serif: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --color-paper: var(--paper);
+    --color-field: var(--field);
+    --color-field-2: var(--field-2);
+    --color-rule: var(--rule);
+    --color-ink: var(--ink);
+    --color-ink-2: var(--ink-2);
+    --color-ink-3: var(--ink-3);
+    --color-register: var(--register);
+    --color-register-tint: var(--register-tint);
+    --color-register-line: var(--register-line);
+    --color-notice: var(--notice);
+    --color-notice-tint: var(--notice-tint);
+    --color-within: var(--within);
+    --color-within-tint: var(--within-tint);
+    --color-ochre: var(--ochre);
+    --color-ochre-text: var(--ochre-text);
+    --color-ochre-tint: var(--ochre-tint);
     --ease-out-quint: cubic-bezier(.22, 1, .36, 1);
     --ease-out-cubic: cubic-bezier(.215, .61, .355, 1);
     --ease-standard: cubic-bezier(.4, 0, .2, 1);
@@ -51,93 +70,98 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* America.gov-parity tokens: white page, deep navy ink (#000c1f) with
-   alpha steps for secondary text and hairlines, navy primary, link blue. */
+/* ==========================================================================
+   Public Record (Kamu Kaydı) — the Taproot design system.
+   A civic register: off-white paper, black ink, hairline rules, square
+   corners, ONE accent (register blue). Notice red marks only exceedances
+   and flags; within-limit green is used sparingly; ochre = elevated.
+   Type: Public Sans (UI, headings, big numerals), Source Serif 4 (answer
+   prose), IBM Plex Mono (record IDs, dates, units, § numbers).
+   Reference mocks: /workspace/work/mocks/record/*.html
+   ========================================================================== */
 :root {
-    --background: #ffffff;
-    --foreground: #000c1f;
-    --card: #ffffff;
-    --card-foreground: #000c1f;
-    --popover: #ffffff;
-    --popover-foreground: #000c1f;
-    --primary: #000c1f;
-    --primary-foreground: #ffffff;
-    --secondary: #0026640d;
-    --secondary-foreground: #000c1f;
-    --muted: #f7f7f7;
-    --muted-foreground: #000c1fa6;
-    --accent: #0026640d;
-    --accent-foreground: #000c1f;
-    --destructive: #d80007;
-    --border: #000c1f1a;
-    --input: #000c1f1a;
-    --ring: #0066c5;
-    --link: #0066c5;
-    --tertiary: #000c1f94;
-    --level-alert: #c1121f;
-    --level-alert-bg: #c1121f14;
-    --level-watch: #a15c00;
-    --level-watch-bg: #b8690014;
-    --level-ok: #00703c;
-    --level-ok-bg: #00703c12;
-    --chart-1: #002664;
-    --chart-2: #0066c5;
-    --chart-3: #007f26;
-    --chart-4: #000c1f73;
-    --chart-5: #d80007;
-    --radius: 1rem;
-    --shadow-elevation-1: 0 10px 40px 0 #010e2414;
-    --sidebar: #ffffff;
-    --sidebar-foreground: #000c1f;
-    --sidebar-primary: #000c1f;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #0026640d;
-    --sidebar-accent-foreground: #000c1f;
-    --sidebar-border: #000c1f1a;
-    --sidebar-ring: #0066c5;
+    --paper: #fafaf7;
+    --field: #f1f1ec;
+    --field-2: #e8e8e2;
+    --rule: #d4d4cf;
+    --ink: #111214;
+    --ink-2: #55575c;
+    --ink-3: #6e7076;
+    --register: #0b3d91;
+    --register-ink: #ffffff;
+    --register-tint: #e8edf6;
+    --register-line: #9fb2d6;
+    --notice: #c8102e;
+    --notice-tint: #fbeaec;
+    --within: #2e6b3a;
+    --within-tint: #e9f1ea;
+    --ochre: #a86a00;
+    --ochre-text: #875600;
+    --ochre-tint: #f7eedc;
+
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--paper);
+    --card-foreground: var(--ink);
+    --popover: var(--paper);
+    --popover-foreground: var(--ink);
+    --primary: var(--register);
+    --primary-foreground: var(--register-ink);
+    --secondary: var(--field);
+    --secondary-foreground: var(--ink);
+    --muted: var(--field);
+    --muted-foreground: var(--ink-2);
+    --accent: var(--field);
+    --accent-foreground: var(--ink);
+    --destructive: var(--notice);
+    --border: var(--rule);
+    --input: var(--ink);
+    --ring: var(--register);
+    --link: var(--register);
+    --tertiary: var(--ink-3);
+    --level-alert: var(--notice);
+    --level-alert-bg: var(--notice-tint);
+    --level-watch: var(--ochre-text);
+    --level-watch-bg: var(--ochre-tint);
+    --level-ok: var(--within);
+    --level-ok-bg: var(--within-tint);
+    --chart-1: var(--ink);
+    --chart-2: var(--register);
+    --chart-3: var(--within);
+    --chart-4: var(--ink-3);
+    --chart-5: var(--notice);
+    --radius: 0px;
+    --shadow-elevation-1: 0 1px 0 rgb(17 18 20 / .06);
+    --sidebar: var(--paper);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--register);
+    --sidebar-primary-foreground: var(--register-ink);
+    --sidebar-accent: var(--field);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: var(--rule);
+    --sidebar-ring: var(--register);
 }
 
 .dark {
-    --level-alert: #ff6b6b;
-    --level-alert-bg: #ff6b6b1f;
-    --level-watch: #f0b44c;
-    --level-watch-bg: #f0b44c1f;
-    --level-ok: #4fd18b;
-    --level-ok-bg: #4fd18b1a;
-    --background: #050b16;
-    --foreground: #eef2f8;
-    --card: #0b1424;
-    --card-foreground: #eef2f8;
-    --popover: #0b1424;
-    --popover-foreground: #eef2f8;
-    --primary: #eef2f8;
-    --primary-foreground: #050b16;
-    --secondary: #ffffff12;
-    --secondary-foreground: #eef2f8;
-    --muted: #ffffff0d;
-    --muted-foreground: #eef2f8bf;
-    --accent: #ffffff12;
-    --accent-foreground: #eef2f8;
-    --destructive: #ff5a5f;
-    --border: #ffffff24;
-    --input: #ffffff33;
-    --ring: #5aa9ff;
-    --link: #7cb8ff;
-    --tertiary: #eef2f89c;
-    --chart-1: #7cb8ff;
-    --chart-2: #5aa9ff;
-    --chart-3: #4ed08a;
-    --chart-4: #eef2f873;
-    --chart-5: #ff5a5f;
-    --shadow-elevation-1: 0 10px 40px 0 #00000066;
-    --sidebar: #050b16;
-    --sidebar-foreground: #eef2f8;
-    --sidebar-primary: #eef2f8;
-    --sidebar-primary-foreground: #050b16;
-    --sidebar-accent: #ffffff12;
-    --sidebar-accent-foreground: #eef2f8;
-    --sidebar-border: #ffffff1a;
-    --sidebar-ring: #5aa9ff;
+    --paper: #0f1114;
+    --field: #171a1f;
+    --field-2: #1e2228;
+    --rule: #2f333a;
+    --ink: #ecece6;
+    --ink-2: #a7aab0;
+    --ink-3: #8c9096;
+    --register: #8fb3ff;
+    --register-ink: #0f1114;
+    --register-tint: #16213a;
+    --register-line: #3d5687;
+    --notice: #ff6b78;
+    --notice-tint: #2a1519;
+    --within: #7cc48a;
+    --within-tint: #14231a;
+    --ochre: #e0a440;
+    --ochre-text: #e6af55;
+    --ochre-tint: #2a2113;
+    --shadow-elevation-1: 0 1px 0 rgb(0 0 0 / .4);
 }
 
 @layer base {
@@ -146,9 +170,12 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 15px;
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums lining-nums;
+    text-rendering: optimizeLegibility;
   }
+  ::selection { background: var(--register-tint); color: var(--ink); }
   html {
     @apply font-sans;
   }
@@ -209,7 +236,7 @@
 }
 
 /* ---------- Answer prose ---------- */
-.answer-prose { font-size: 17px; line-height: 1.6; color: var(--foreground); }
+.answer-prose { font-family: var(--font-serif); font-size: 18px; line-height: 1.55; color: var(--foreground); }
 .answer-prose p { margin: 0 0 .85em; }
 .answer-prose p:last-child { margin-bottom: 0; }
 .answer-prose h4 { font-size: 17px; font-weight: 700; margin: 1.3em 0 .5em; }
@@ -219,8 +246,9 @@
 .answer-prose ol { list-style: decimal; }
 .answer-prose li { margin: .35em 0; padding-left: .2em; }
 .answer-prose li::marker { color: var(--tertiary); }
-.answer-prose a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
-.answer-prose code { background: var(--muted); padding: 1px 5px; border-radius: 6px; font-size: .9em; }
+.answer-prose a { color: var(--register); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.answer-prose code { font-family: var(--font-mono); background: var(--field); padding: 1px 4px; font-size: .85em; }
+.answer-prose strong { font-weight: 650; }
 
 .scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
@@ -285,5 +313,18 @@
 .viz [tabindex]:focus-visible, .viz button:focus-visible, .viz a:focus-visible {
   outline: 2px solid var(--ring) !important;
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 0;
 }
+
+/* ---------- Public Record primitives (shared by every area) ---------- */
+.rec-mono { font-family: var(--font-mono); }
+.rec-label { font: 500 11px/1.2 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.rec-strip { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; border-top: 3px solid var(--ink); border-bottom: 1px solid var(--rule); padding: 8px 0 7px; font: 500 11px/1.4 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.rec-strip b { color: var(--ink); font-weight: 600; }
+.rec-sec { display: inline-grid; place-items: center; min-width: 26px; height: 20px; padding: 0 5px 1px; background: var(--ink); color: var(--paper); font: 600 11px/1 var(--font-mono); }
+.rec-hero { font: 800 56px/.9 var(--font-sans); letter-spacing: -.045em; }
+.rec-mark { display: inline-flex; align-items: center; gap: 6px; font: 600 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.rec-mark::before { content: ''; width: 8px; height: 8px; border: 1px solid currentColor; flex: none; }
+.rec-mark[data-on='true']::before { background: currentColor; }
+.rec-grid { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.rec-grid > * { background: var(--paper); min-width: 0; }

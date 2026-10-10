@@ -1,7 +1,7 @@
-import { ArrowUpIcon, LocateFixedIcon, MicIcon, PaperclipIcon, SquareIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import { RcArrow, RcAttach, RcLocate, RcMic, RcStop } from './chat/rc-icons';
+import '../styles/record-chat.css';
 
 interface ComposerProps {
   input: string;
@@ -16,8 +16,11 @@ interface ComposerProps {
   locating: boolean;
   coordsActive: boolean;
   placeholder?: string;
+  /** Accessible name for the field. */
   label: string;
   autoFocus?: boolean;
+  /** Footnote under the field (privacy links etc.). */
+  foot?: React.ReactNode;
 }
 
 function Tool({
@@ -36,17 +39,7 @@ function Tool({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={label}
-          aria-pressed={active}
-          disabled={disabled}
-          onClick={onClick}
-          className={cn(
-            'press inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-40',
-            active && 'bg-secondary text-[var(--link)]',
-          )}
-        >
+        <button type="button" aria-label={label} aria-pressed={active} disabled={disabled} onClick={onClick} className="rc-btn icon">
           {children}
         </button>
       </TooltipTrigger>
@@ -56,9 +49,9 @@ function Tool({
 }
 
 /**
- * America.gov-style composer: one rounded white surface with a soft
- * elevation shadow, auto-growing textarea, quiet tools on the left and a
- * round navy send button that turns into Stop while an answer is coming.
+ * Public Record composer: a labelled government form field. "Question"
+ * over a 2px ink box, quiet square tools, a register-blue Send that
+ * becomes an ink-bordered Stop while records are read.
  */
 export function Composer(props: ComposerProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -90,76 +83,81 @@ export function Composer(props: ComposerProps) {
         e.preventDefault();
         submit();
       }}
-      className="group rounded-[28px] border border-border bg-card shadow-[var(--shadow-elevation-1)] transition-[border-color,box-shadow] duration-200 focus-within:border-foreground/30 focus-within:ring-2 focus-within:ring-[var(--link)]/35"
+      className="rc-composer"
     >
-      <label className="sr-only" htmlFor="composer-input">
-        {props.label}
-      </label>
-      <textarea
-        id="composer-input"
-        ref={taRef}
-        rows={1}
-        value={props.input}
-        onChange={(e) => props.onInputChange(e.target.value.slice(0, 2000))}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-            e.preventDefault();
-            submit();
-          }
-        }}
-        placeholder={props.placeholder ?? 'Ask anything…'}
-        className="block max-h-[200px] min-h-[52px] w-full resize-none bg-transparent px-5 pb-1 pt-4 text-[17px] leading-normal outline-none placeholder:text-[var(--tertiary)]"
-      />
-      <div className="flex items-center gap-0.5 px-2 pb-2">
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".txt,.md,.csv,.json"
-          hidden
-          aria-hidden="true"
-          tabIndex={-1}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) props.onAttachFile(f);
-            e.target.value = '';
+      <div className="rc-cmp-label">
+        <label htmlFor="composer-input">
+          Question<span className="sr-only"> — {props.label}</span>
+        </label>
+        <span aria-hidden="true">US city, ZIP, or system ID</span>
+      </div>
+      <div className="rc-cmp-box">
+        {props.busy && <div className="rc-cmp-prog" aria-hidden="true" />}
+        <textarea
+          id="composer-input"
+          ref={taRef}
+          rows={1}
+          value={props.input}
+          onChange={(e) => props.onInputChange(e.target.value.slice(0, 2000))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              submit();
+            }
           }}
+          placeholder={props.placeholder ?? 'Ask about your water…'}
+          className="rc-cmp-text"
         />
-        <Tool label="Attach a text file" onClick={() => fileRef.current?.click()}>
-          <PaperclipIcon className="size-[18px]" />
-        </Tool>
-        <Tool label={props.listening ? 'Listening…' : 'Ask by voice'} onClick={props.onVoice} active={props.listening}>
-          <MicIcon className="size-[18px]" />
-        </Tool>
-        <Tool
-          label={props.coordsActive ? 'Location on, tap to turn off' : 'Use my location'}
-          onClick={props.onLocate}
-          active={props.coordsActive}
-          disabled={props.locating}
-        >
-          <LocateFixedIcon className={cn('size-[18px]', props.locating && 'dot-pulse')} />
-        </Tool>
-        <div className="ml-auto">
+        <div className="rc-cmp-bar">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".txt,.md,.csv,.json"
+            hidden
+            aria-hidden="true"
+            tabIndex={-1}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) props.onAttachFile(f);
+              e.target.value = '';
+            }}
+          />
+          <Tool label="Attach a text file" onClick={() => fileRef.current?.click()}>
+            <RcAttach />
+          </Tool>
+          <Tool label={props.listening ? 'Listening…' : 'Ask by voice'} onClick={props.onVoice} active={props.listening}>
+            <RcMic className={props.listening ? 'dot-pulse' : undefined} />
+          </Tool>
+          <Tool
+            label={props.coordsActive ? 'Location on, tap to turn off' : 'Use my location'}
+            onClick={props.onLocate}
+            active={props.coordsActive}
+            disabled={props.locating}
+          >
+            <RcLocate className={props.locating ? 'dot-pulse' : undefined} />
+          </Tool>
+          <span className="spacer" />
+          <span className="hint" aria-hidden="true">
+            {props.busy ? 'Reading records…' : '↵ to send'}
+          </span>
           {props.busy ? (
-            <button
-              type="button"
-              onClick={props.onStop}
-              aria-label="Stop response"
-              className="press inline-flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90"
-            >
-              <SquareIcon className="size-3.5 fill-current" />
+            <button type="button" onClick={props.onStop} aria-label="Stop response" className="rc-btn stop">
+              <RcStop />
+              Stop
             </button>
           ) : (
-            <button
-              type="submit"
-              disabled={!canSend}
-              aria-label="Send message"
-              className="press inline-flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 disabled:bg-[var(--border)] disabled:text-[var(--tertiary)]"
-            >
-              <ArrowUpIcon className="size-5" />
+            <button type="submit" disabled={!canSend} aria-label="Send message" className="rc-btn primary">
+              Send
+              <RcArrow />
             </button>
           )}
         </div>
       </div>
+      {props.foot !== undefined ? (
+        <div className="rc-cmp-foot">{props.foot}</div>
+      ) : (
+        <p className="rc-cmp-foot">Answers come from EPA records (SDWIS, Lead &amp; Copper Rule, UCMR 5), not a test of your tap.</p>
+      )}
     </form>
   );
 }

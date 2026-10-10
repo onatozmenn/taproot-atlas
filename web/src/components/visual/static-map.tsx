@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 
 /**
- * A map that needs no GPU. When WebGL is missing (older laptops, locked-down
+ * A map that needs no GPU, in the record's paper look: grey tiles, an ink
+ * outline and a register-blue tint for the area. When WebGL is missing (older laptops, locked-down
  * browsers, headless QA) or MapLibre can't start, the service area is drawn
  * as SVG over plain raster tiles in Web Mercator, so the answer still shows
  * the place instead of an error box.
@@ -97,7 +98,7 @@ export function StaticMap({ rings, sources = [], centre, modeled, height, label 
   }, [width, height, rings, sources, centre, dark]);
 
   return (
-    <div ref={box} className="relative overflow-hidden bg-[var(--muted)]" style={{ height }} role="img" aria-label={label}>
+    <div ref={box} className="rf-smap" style={{ height }} role="img" aria-label={label}>
       {view?.tiles.map((t) => (
         <img
           key={t.key}
@@ -114,11 +115,11 @@ export function StaticMap({ rings, sources = [], centre, modeled, height, label 
       {view && (
         <svg className="absolute inset-0" width="100%" height={height} aria-hidden="true">
           <path d={view.d} fillRule="evenodd" className="static-map-fill" />
-          <path d={view.d} pathLength={modeled ? undefined : 1} className="static-map-line" style={modeled ? { strokeDasharray: '6 4', animation: 'none' } : { strokeDasharray: 1 }} />
+          <path d={view.d} className="static-map-line" data-modeled={modeled || undefined} />
           {view.arcs.map((a) => (
             <g key={a.label}>
               <path d={a.d} className="static-map-arc" />
-              <circle cx={a.at[0]} cy={a.at[1]} r={5} className="static-map-dot" />
+              <rect x={a.at[0] - 5} y={a.at[1] - 5} width={10} height={10} className="static-map-dot" />
               <text x={a.at[0]} y={a.at[1] + 20} textAnchor="middle" className="static-map-label">
                 {a.label}
               </text>
@@ -126,7 +127,7 @@ export function StaticMap({ rings, sources = [], centre, modeled, height, label 
           ))}
         </svg>
       )}
-      <span className="absolute bottom-1 right-2 rounded bg-background/70 px-1 text-[10px] text-muted-foreground">Esri, HERE, Garmin, © OpenStreetMap</span>
+      <span className="rf-smap-attr">Esri, HERE, Garmin, © OpenStreetMap</span>
     </div>
   );
 }

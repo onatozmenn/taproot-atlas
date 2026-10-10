@@ -59,7 +59,7 @@ export function VisualAnswer({ answer, onAsk }: { answer: TapAnswer; onAsk?: (q:
   const { kind, topic } = visualKind(answer);
   switch (kind) {
     case 'risk':
-      return <RiskForecast p={p} sourceUrl={url} />;
+      return <RiskForecast p={p} sourceUrl={url} city={city} />;
     case 'lead':
       return <LeadDrops p={p} sourceUrl={url} />;
     case 'pfas':

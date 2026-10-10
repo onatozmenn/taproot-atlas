@@ -52,6 +52,39 @@ function webglAvailable(): boolean {
  */
 const SETTLE_MS = 15000;
 
+/** A record token as a concrete colour MapLibre can paint. */
+function tok(name: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+/** Paper land, register-tint water, hairline roads, ink-3 labels. */
+function paintBase(map: import('maplibre-gl').Map) {
+  const paper = tok('--paper', '#fafaf7');
+  const field = tok('--field', '#f1f1ec');
+  const rule = tok('--rule', '#d4d4cf');
+  const ink3 = tok('--ink-3', '#6e7076');
+  const water = tok('--register-tint', '#e8edf6');
+  const waterLine = tok('--register-line', '#9fb2d6');
+  for (const l of map.getStyle().layers ?? []) {
+    if (l.id.startsWith('area-') || l.id.startsWith('arcs-') || l.id.startsWith('wsheds-')) continue;
+    try {
+      if (l.type === 'background') map.setPaintProperty(l.id, 'background-color', paper);
+      else if (l.type === 'fill') {
+        map.setPaintProperty(l.id, 'fill-color', /water/.test(l.id) ? water : field);
+        if (!/water/.test(l.id)) map.setPaintProperty(l.id, 'fill-opacity', 0.6);
+      } else if (l.type === 'line') map.setPaintProperty(l.id, 'line-color', /water|river/.test(l.id) ? waterLine : rule);
+      else if (l.type === 'symbol') {
+        map.setPaintProperty(l.id, 'text-color', /water/.test(l.id) ? waterLine : ink3);
+        map.setPaintProperty(l.id, 'text-halo-color', paper);
+      }
+    } catch {
+      /* layer without that paint property */
+    }
+  }
+}
+
 /** A gentle arc from a to b, for water arriving from a far source. */
 function arc(a: [number, number], b: [number, number], steps = 48): number[][] {
   const mx = (a[0] + b[0]) / 2;
@@ -87,6 +120,7 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
     let raf = 0;
     let cancelled = false;
     let settleTimer = 0;
+    let themeObs: MutationObserver | null = null;
     const fail = () => {
       if (!cancelled) {
         window.clearTimeout(settleTimer);
@@ -112,6 +146,15 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
           pitchWithRotate: false,
         });
         settleTimer = window.setTimeout(fail, SETTLE_MS);
+        // Theme switch: repaint the basemap from the new tokens.
+        themeObs = new MutationObserver(() => {
+          if (map && map.isStyleLoaded()) {
+            paintBase(map);
+            if (map.getLayer('area-line')) map.setPaintProperty('area-line', 'line-color', tok('--ink', '#111214'));
+            if (map.getLayer('area-fill')) map.setPaintProperty('area-fill', 'fill-color', tok('--register', '#0b3d91'));
+          }
+        });
+        themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         let tileErrors = 0;
         // A tile that arrived means the basemap is painting; stop the clock.
         // ('idle' never comes: the animated source arcs repaint forever.
@@ -137,19 +180,17 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
         });
         map.on('load', () => {
           if (!map) return;
-          // Quiet the basemap so the water reads first.
+          // Monochrome paper basemap: hide the noise, then paint from the record tokens.
           for (const l of map.getStyle().layers ?? []) {
-            if (/poi|aeroway|railway|highway-shield|road_shield|building/.test(l.id)) map.setLayoutProperty(l.id, 'visibility', 'none');
-            if (l.id === 'water') map.setPaintProperty(l.id, 'fill-color', '#d6e6f5');
-            if (l.id === 'waterway') map.setPaintProperty(l.id, 'line-color', '#b5d1ec');
+            if (/poi|aeroway|railway|highway-shield|road_shield|building|housenum/.test(l.id)) map.setLayoutProperty(l.id, 'visibility', 'none');
           }
           map.addSource('area', { type: 'geojson', data: { type: 'Feature', geometry: sa.geometry as never, properties: {} } });
-          map.addLayer({ id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#0066c5', 'fill-opacity': 0 } });
+          map.addLayer({ id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': tok('--register', '#0b3d91'), 'fill-opacity': 0 } });
           map.addLayer({
             id: 'area-line',
             type: 'line',
             source: 'area',
-            paint: { 'line-color': '#003f7f', 'line-width': 1.6, 'line-opacity': 0, ...(sa.method === 'modeled' ? { 'line-dasharray': [2, 1.5] } : {}) },
+            paint: { 'line-color': tok('--ink', '#111214'), 'line-width': 1.5, 'line-opacity': 0, ...(sa.method === 'modeled' ? { 'line-dasharray': [3, 1.5] } : {}) },
           });
           if (centre && sources.length > 0) {
             map.addSource('arcs', {
@@ -166,17 +207,18 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
                 features: sources.map((s) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.at[0], s.at[1]] }, properties: { label: s.label.replace(/ Watershed$/i, '') } })),
               },
             });
-            map.addLayer({ id: 'arcs-base', type: 'line', source: 'arcs', paint: { 'line-color': '#0066c5', 'line-width': 2, 'line-opacity': 0.18 }, layout: { 'line-cap': 'round' } });
-            map.addLayer({ id: 'arcs-flow', type: 'line', source: 'arcs', paint: { 'line-color': '#0066c5', 'line-width': 2.4, 'line-dasharray': [0, 4, 3] }, layout: { 'line-cap': 'round' } });
-            map.addLayer({ id: 'wsheds-dot', type: 'circle', source: 'wsheds', paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-color': '#0066c5', 'circle-stroke-width': 2 } });
+            map.addLayer({ id: 'arcs-base', type: 'line', source: 'arcs', paint: { 'line-color': tok('--register', '#0b3d91'), 'line-width': 1, 'line-opacity': 0.35 }, layout: { 'line-cap': 'butt' } });
+            map.addLayer({ id: 'arcs-flow', type: 'line', source: 'arcs', paint: { 'line-color': tok('--register', '#0b3d91'), 'line-width': 2, 'line-dasharray': [0, 4, 3] }, layout: { 'line-cap': 'butt' } });
+            map.addLayer({ id: 'wsheds-dot', type: 'circle', source: 'wsheds', paint: { 'circle-radius': 5, 'circle-color': tok('--paper', '#fafaf7'), 'circle-stroke-color': tok('--register', '#0b3d91'), 'circle-stroke-width': 2 } });
             map.addLayer({
               id: 'wsheds-label',
               type: 'symbol',
               source: 'wsheds',
-              layout: { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top' },
-              paint: { 'text-color': '#003f7f', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
+              layout: { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-transform': 'uppercase', 'text-letter-spacing': 0.06, 'text-offset': [0, 1.2], 'text-anchor': 'top' },
+              paint: { 'text-color': tok('--register', '#0b3d91'), 'text-halo-color': tok('--paper', '#fafaf7'), 'text-halo-width': 2 },
             });
           }
+          paintBase(map);
           // Arrival: start a little wide, settle onto the area, then fade the border and fill in.
           if (!reduce) map.jumpTo({ zoom: map.getZoom() - 1.4 });
           map.fitBounds(box, { padding: compact ? 36 : 48, duration: reduce ? 0 : 2200, essential: true, maxZoom: 12.5 });
@@ -190,8 +232,8 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
             const k = Math.min(1, (t - t0 - 700) / 1400);
             if (k >= 0) {
               const e = 1 - Math.pow(1 - k, 3);
-              map.setPaintProperty('area-fill', 'fill-opacity', 0.13 * e);
-              map.setPaintProperty('area-line', 'line-opacity', 0.9 * e);
+              map.setPaintProperty('area-fill', 'fill-opacity', 0.14 * e);
+              map.setPaintProperty('area-line', 'line-opacity', e);
             }
             if (map.getLayer('arcs-flow') && !reduce) {
               const step = Math.floor((t / 70) % dash.length);
@@ -207,6 +249,7 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
     })();
     return () => {
       cancelled = true;
+      themeObs?.disconnect();
       window.clearTimeout(settleTimer);
       cancelAnimationFrame(raf);
       try {
@@ -219,28 +262,34 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
   }, [p.pwsid]);
 
   const facts = [
-    p.population ? `${people(p.population)} people` : '',
     sa.areaKm2 ? `${num(sa.areaKm2)} km²` : '',
     p.connections ? `${num(p.connections)} connections` : '',
+    sa.method === 'reported' ? 'boundary reported by the state or utility' : 'boundary estimated by EPA',
   ].filter(Boolean);
+  const height = compact ? 240 : 320;
 
   return (
     <VisualFrame
-      eyebrow={sa.method === 'reported' ? 'Service area · boundary reported by the state or utility' : 'Service area · boundary estimated by EPA'}
+      fig={6}
+      eyebrow={`Service area · ${sa.method === 'reported' ? 'reported' : 'estimated'}`}
+      record={p.pwsid}
+      hero={p.population ? people(p.population) : undefined}
+      unit={p.population ? 'people' : undefined}
       headline={titleCase(p.name)}
       sub={facts.join(' · ')}
-      source={`EPA Public Water System Service Areas${sources.length > 0 ? ' · source arcs are schematic' : ''}`}
+      note={`${sa.method === 'reported' ? 'Reported' : 'Approximate'} service area${sources.length > 0 ? '; source arcs are schematic' : ''}.`}
+      source="EPA service areas"
       sourceUrl={sa.sourceUrl}
-      bleed
     >
-      <div className={compact ? 'relative h-[240px]' : 'relative h-[320px]'}>{/* WebGL map, or the SVG fallback when it can't start */}
+      <div className="rf-map" style={{ height }}>
+        {/* WebGL map, or the SVG fallback when it can't start */}
         {failed ? (
           <StaticMap
             rings={rings}
             sources={sources.map((x) => ({ label: x.label, at: [x.at[0], x.at[1]] as [number, number] }))}
             centre={centre}
             modeled={sa.method === 'modeled'}
-            height={compact ? 240 : 320}
+            height={height - 2}
             label={`Map of the area ${titleCase(p.name)} serves`}
           />
         ) : (
@@ -248,6 +297,27 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
           // position:relative, which beats Tailwind's `absolute` and
           // collapses this box to zero height (blank map).
           <div ref={el} className="service-map" role="application" aria-label={`Map of the area ${p.name} serves`} style={{ position: 'absolute', inset: 0 }} />
+        )}
+        <span className="rf-map-n" aria-hidden="true">
+          <svg viewBox="0 0 12 18">
+            <path d="M6 0 12 18 6 14 0 18Z" fill="currentColor" />
+          </svg>
+          N
+        </span>
+      </div>
+      <div className="rf-map-key" aria-hidden="true">
+        <span>
+          <i className="area" data-modeled={sa.method === 'modeled' || undefined} /> Service area
+        </span>
+        {sources.length > 0 && (
+          <>
+            <span>
+              <i className="src" /> Source
+            </span>
+            <span>
+              <i className="flow" /> Flow (schematic)
+            </span>
+          </>
         )}
       </div>
     </VisualFrame>

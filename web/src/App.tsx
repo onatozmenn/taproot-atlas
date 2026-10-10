@@ -1,4 +1,3 @@
-import { ClipboardCheckIcon, GlobeIcon, HistoryIcon, ListOrderedIcon, MenuIcon, MoonIcon, SquarePenIcon, SunIcon, TargetIcon, Trash2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -8,17 +7,26 @@ import { InfoDialogs, type InfoDialogKind } from './components/chat/info-dialogs
 import { CommandPalette, useCommandPalette } from './components/command-palette';
 import { Composer } from './components/composer';
 import { Logo } from './components/Logo';
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from './components/tremor';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle } from './components/tremor';
 import { cn } from './lib/utils';
+import { RcArrow, RcChevRight, RcClose, RcMenu, RcMoon, RcPlus, RcSun, RcTrash } from './components/chat/rc-icons';
+import './styles/record-chat.css';
 
 let nextId = 1;
 
 const EXAMPLES = [
-  'Where does Chicago tap water come from?',
-  'Is there lead in New York City water?',
-  'How does Los Angeles water reach my tap?',
-  'Any violations in Houston in the last 5 years?',
+  'Is Flint water safe?',
+  'Is there lead in Chicago water?',
+  'Does Denver water have PFAS?',
+  'Where does Jackson MS water come from?',
 ];
+
+const EXPLORE = [
+  ['#/triage', 'Triage queue', 'For water teams: where to look first'],
+  ['#/impact', 'How accurate is it?', 'Checked against what happened'],
+  ['#/global', 'Beyond the U.S.', 'Ireland and the open record format'],
+  ['#/study', 'Help test Taproot', 'Ten minutes, anonymous'],
+] as const;
 
 const HISTORY_KEY = 'taproot-history';
 
@@ -44,13 +52,7 @@ function HeaderButton({
   buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="press inline-flex h-10 items-center gap-2 rounded-full px-3 text-[15px] font-medium hover:bg-secondary"
-    >
+    <button ref={buttonRef} type="button" onClick={onClick} aria-label={label} className="rc-btn quiet">
       {children}
     </button>
   );
@@ -94,7 +96,7 @@ export default function App() {
     busyRef.current = true;
     setBusy(true);
     lastQuestion.current = q;
-    setMessages((m) => [...m.map((x) => ({ ...x, fresh: false })), { id: nextId++, role: 'user', text: q }]);
+    setMessages((m) => [...m.map((x) => ({ ...x, fresh: false })), { id: nextId++, role: 'user', text: q, at: Date.now() }]);
     setInput('');
     setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 10));
     const started = performance.now();
@@ -252,81 +254,90 @@ export default function App() {
     coordsActive: coords !== null,
   };
 
-  const notice = (
-    <p className="mb-2 text-center text-[13px] text-muted-foreground">
-      <button type="button" className="underline-offset-4 hover:underline" onClick={() => setInfo('privacy')}>
+  const links = (
+    <>
+      <button type="button" onClick={() => setInfo('privacy')}>
         Your privacy
       </button>
       <span aria-hidden="true"> · </span>
-      <button type="button" className="underline-offset-4 hover:underline" onClick={() => setInfo('how')}>
+      <button type="button" onClick={() => setInfo('how')}>
         How Taproot works
       </button>
-    </p>
+    </>
   );
 
+  const dark = resolvedTheme === 'dark';
+
   return (
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="rc-app flex h-dvh flex-col bg-background text-foreground">
       <a className="sr-only focus:not-sr-only" href="#composer-input">
         Skip to message input
       </a>
-      <header className="z-20 flex h-16 shrink-0 items-center gap-2 px-4 sm:px-6">
-        <button type="button" onClick={newChat} className="press flex items-center gap-2.5 rounded-full pr-2" aria-label="Taproot Atlas, new chat">
-          <Logo size={28} />
-          <span className="font-display text-[22px] font-medium tracking-tight">Taproot Atlas</span>
+      <header className="rc-hdr">
+        <button type="button" onClick={newChat} className="rc-brand" aria-label="Taproot Atlas, new chat">
+          <Logo size={26} />
+          <span className="rc-brand-name">Taproot Atlas</span>
+          <span className="rc-brand-sub">Public water record</span>
         </button>
-        <div className="ml-auto flex items-center gap-1">
-          {!empty && (
-            <HeaderButton label="New chat" onClick={newChat}>
-              <SquarePenIcon className="size-[18px]" />
-              <span className="hidden sm:inline">New chat</span>
-            </HeaderButton>
-          )}
-          <HeaderButton label="Menu" buttonRef={menuButtonRef} onClick={() => setMenuOpen(true)}>
-            <MenuIcon className="size-[18px]" />
-            <span className="hidden sm:inline">Menu</span>
+        {!empty && (
+          <HeaderButton label="New chat" onClick={newChat}>
+            <RcPlus />
+            <span className="txt">New chat</span>
           </HeaderButton>
-        </div>
+        )}
+        <HeaderButton label="Menu" buttonRef={menuButtonRef} onClick={() => setMenuOpen(true)}>
+          <RcMenu />
+          <span className="txt">Menu</span>
+        </HeaderButton>
       </header>
 
       {empty ? (
-        <main
-          className={cn(
-            'mx-auto flex w-full max-w-[672px] flex-1 flex-col justify-center px-5 pb-16',
-            leaving && 'landing-dissolve-out',
-          )}
-        >
-          <div className="stagger-entrance">
-            <h1 style={{ ['--stagger-index' as string]: 0 }} className="font-display text-[40px] font-normal leading-[1.1] tracking-tight sm:text-[52px]">
-              Ask about your tap water.
-            </h1>
-            <p style={{ ['--stagger-index' as string]: 1 }} className="mt-3 text-[17px] text-muted-foreground">
-              Where it comes from, what tests found in it, and how it reaches you. Answers come only from public EPA and
-              utility records.
-            </p>
-            <div style={{ ['--stagger-index' as string]: 2 }} className="mt-8">
-              <Composer {...composerProps} label="Ask about your tap water" placeholder="Ask about a city's tap water…" autoFocus />
+        <main className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto', leaving && 'landing-dissolve-out')}>
+          <div className="rc-home stagger-entrance my-auto">
+            <div style={{ ['--stagger-index' as string]: 0 }} className="rc-kick">
+              Public water record · United States
             </div>
-            <div style={{ ['--stagger-index' as string]: 3 }} className="mt-5 flex flex-wrap gap-2.5" aria-label="Example questions">
-              {EXAMPLES.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => send(q)}
-                  className="press min-h-11 rounded-[40px] border border-border px-4 py-2 text-left text-[15px] hover:border-foreground/40 hover:bg-secondary"
-                >
-                  {q}
+            <h1 style={{ ['--stagger-index' as string]: 1 }}>
+              Ask about the water at any US address <span>— answered from federal records.</span>
+            </h1>
+            <p style={{ ['--stagger-index' as string]: 2 }} className="rc-home-dek">
+              Where it comes from, what tests found in it, and how it reaches you. Every answer is filed with its system ID, source and date.
+            </p>
+            <div style={{ ['--stagger-index' as string]: 3 }}>
+              <Composer {...composerProps} label="Ask about your tap water" autoFocus foot={null} />
+            </div>
+            <div style={{ ['--stagger-index' as string]: 4 }} className="rc-sugg" aria-label="Example questions" role="group">
+              {EXAMPLES.map((q, i) => (
+                <button key={q} type="button" onClick={() => send(q)} aria-label={q}>
+                  <span className="n" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <b>{q}</b>
+                  <RcArrow />
                 </button>
               ))}
             </div>
+            <p style={{ ['--stagger-index' as string]: 5 }} className="rc-home-foot">
+              {links}
+            </p>
           </div>
         </main>
       ) : (
         <main id="chat" className="animate-chat-surface-in flex min-h-0 flex-1 flex-col">
           <ChatPane messages={messages} busy={busy} onFollowUp={send} />
-          <div className="shrink-0 bg-gradient-to-t from-background from-70% to-transparent px-4 pb-4 pt-2">
-            <div className="mx-auto w-full max-w-[672px]">
-              {notice}
-              <Composer {...composerProps} label="Message" />
+          <div className="rc-composer-wrap">
+            <div className="inner">
+              <div className="max-w-[680px]">
+                <Composer
+                  {...composerProps}
+                  label="Message"
+                  foot={
+                    <>
+                      Answers come from EPA records, not a test of your tap. {links}
+                    </>
+                  }
+                />
+              </div>
             </div>
           </div>
         </main>
@@ -334,71 +345,72 @@ export default function App() {
 
       <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
         <DrawerContent
-          className="gap-0 px-1 sm:px-2"
+          className="rc-drawer gap-0 p-0 sm:p-0"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
             menuButtonRef.current?.focus();
           }}
         >
-          <DrawerHeader className="px-3">
-            <DrawerTitle className="font-display text-2xl font-medium">Menu</DrawerTitle>
-            <DrawerDescription className="sr-only">New chat, other Taproot pages, recent questions and display settings</DrawerDescription>
-          </DrawerHeader>
-          <nav className="flex flex-col gap-1 px-1">
-            <button type="button" onClick={newChat} className="press flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-secondary">
-              <SquarePenIcon className="size-[18px]" /> New chat
+          <DrawerTitle className="sr-only">Menu</DrawerTitle>
+          <DrawerDescription className="sr-only">New chat, other Taproot pages, recent questions and display settings</DrawerDescription>
+          <div className="rc-drw-h">
+            <span className="flex items-center gap-2.5">
+              <Logo size={22} />
+              <span className="rc-brand-name" style={{ fontSize: 17 }}>
+                Taproot Atlas
+              </span>
+            </span>
+            <DrawerClose asChild>
+              <button type="button" aria-label="Close menu" className="rc-btn icon ghost">
+                <RcClose />
+              </button>
+            </DrawerClose>
+          </div>
+          <div className="rc-drw-sec">
+            <button type="button" onClick={newChat} className="rc-btn primary w-full" style={{ height: 44 }}>
+              <RcPlus /> New chat
             </button>
-            <button
-              type="button"
-              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-              className="press flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-secondary"
-            >
-              {resolvedTheme === 'dark' ? <SunIcon className="size-[18px]" /> : <MoonIcon className="size-[18px]" />}
-              {resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}
-            </button>
-          </nav>
-          <div className="mt-3 border-t px-1 pt-3">
-            <h3 className="px-3 pb-1 text-sm font-medium text-muted-foreground">Explore</h3>
-            <nav className="flex flex-col gap-0.5" aria-label="Explore">
-              {(
-                [
-                  ['#/triage', ListOrderedIcon, 'Triage queue', 'For water teams: where to look first'],
-                  ['#/impact', TargetIcon, 'How accurate is it?', 'Checked against what happened'],
-                  ['#/global', GlobeIcon, 'Beyond the U.S.', 'Ireland and the open record format'],
-                  ['#/study', ClipboardCheckIcon, 'Help test Taproot', 'Ten minutes, anonymous'],
-                ] as const
-              ).map(([href, Icon, label, hint]) => (
-                <a key={href} href={href} onClick={() => setMenuOpen(false)} className="press flex items-start gap-3 rounded-2xl px-3 py-2 hover:bg-secondary">
-                  <Icon className="mt-0.5 size-[18px] shrink-0" />
+          </div>
+          <div className="rc-drw-sec">
+            <span className="rc-lbl">Explore</span>
+            <nav aria-label="Explore">
+              {EXPLORE.map(([href, label, hint], i) => (
+                <a key={href} href={href} onClick={() => setMenuOpen(false)} className="rc-drw-a">
+                  <span className="n">{String(i + 1).padStart(2, '0')}</span>
                   <span className="min-w-0">
-                    <span className="block text-[15px] leading-tight">{label}</span>
-                    <span className="block text-[12.5px] leading-snug text-muted-foreground">{hint}</span>
+                    {label}
+                    <span className="h">{hint}</span>
                   </span>
+                  <RcChevRight />
                 </a>
               ))}
             </nav>
           </div>
-          <div className="mt-3 border-t px-1 pt-4">
-            <div className="flex items-center justify-between px-3 pb-2">
-              <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <HistoryIcon className="size-4" /> Recent questions
-              </h3>
+          <div className="rc-drw-sec">
+            <span className="rc-lbl">Theme</span>
+            <div className="rc-seg" role="group" aria-label="Theme">
+              <button type="button" aria-pressed={!dark} onClick={() => setTheme('light')}>
+                <RcSun /> Day
+              </button>
+              <button type="button" aria-pressed={dark} onClick={() => setTheme('dark')}>
+                <RcMoon /> Night
+              </button>
+            </div>
+          </div>
+          <div className="rc-drw-sec">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="rc-lbl">Recent questions</span>
               {history.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setHistory([])}
-                  aria-label="Clear recent questions"
-                  className="press inline-flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary"
-                >
-                  <Trash2Icon className="size-4" />
+                <button type="button" onClick={() => setHistory([])} aria-label="Clear recent questions" className="rc-btn icon sm ghost">
+                  <RcTrash />
                 </button>
               )}
             </div>
             {history.length === 0 ? (
-              <p className="px-3 text-sm text-muted-foreground">Your questions stay in this browser.</p>
+              <p className="rc-drw-empty">Your questions stay in this browser.</p>
             ) : (
-              <ul className="flex flex-col">
-                {history.map((q) => (
+              <ul>
+                {history.map((q, i) => (
                   <li key={q}>
                     <button
                       type="button"
@@ -406,24 +418,22 @@ export default function App() {
                         setMenuOpen(false);
                         send(q);
                       }}
-                      className="press w-full truncate rounded-2xl px-3 py-2 text-left text-[15px] hover:bg-secondary"
+                      className="rc-drw-a"
                     >
-                      {q}
+                      <span className="n">Q{i + 1}</span>
+                      <span className="t">{q}</span>
+                      <RcArrow />
                     </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          <div className="mt-auto border-t px-4 pb-1 pt-4 text-[13px] text-muted-foreground">
-            <button type="button" className="hover:underline" onClick={() => setInfo('privacy')}>
-              Your privacy
-            </button>
-            <span aria-hidden="true"> · </span>
-            <button type="button" className="hover:underline" onClick={() => setInfo('how')}>
-              How Taproot works
-            </button>
-            <p className="mt-2">Reported records only. Never a real-time safety verdict.</p>
+          <div className="rc-drw-about">
+            <span className="rc-lbl mb-1.5 block">About</span>
+            <b>Taproot Atlas</b> reads public US EPA records — SDWIS violations, Lead &amp; Copper results and UCMR 5 PFAS tests — and answers in plain
+            language. Reported records only, never a real-time safety verdict.
+            <p className="mt-2 flex flex-wrap gap-x-1">{links}</p>
           </div>
         </DrawerContent>
       </Drawer>

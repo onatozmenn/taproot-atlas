@@ -103,7 +103,7 @@ export function CommandPaletteButton({ onClick }: { onClick: () => void }) {
   return (
     <Button variant="outline" size="sm" onClick={onClick} aria-label="Open command palette">
       <span className="text-muted-foreground">Ask anything…</span>
-      <kbd className="ml-2 rounded border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
+      <kbd className="ml-2 border border-[var(--rule)] bg-[var(--field)] px-1.5 font-mono text-[10px] font-medium text-muted-foreground">⌘K</kbd>
     </Button>
   );
 }

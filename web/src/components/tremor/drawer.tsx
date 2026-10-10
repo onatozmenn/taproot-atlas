@@ -16,7 +16,7 @@ const DrawerOverlay = React.forwardRef<React.ElementRef<typeof DrawerPrimitives.
   ({ className, ...props }, ref) => (
     <DrawerPrimitives.Overlay
       ref={ref}
-      className={cx('fixed inset-0 z-50 overflow-y-auto bg-black/25 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0', className)}
+      className={cx('fixed inset-0 z-50 overflow-y-auto bg-[color-mix(in_oklab,var(--ink)_28%,transparent)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0', className)}
       {...props}
     />
   ),
@@ -30,7 +30,7 @@ export const DrawerContent = React.forwardRef<React.ElementRef<typeof DrawerPrim
       <DrawerPrimitives.Content
         ref={ref}
         className={cx(
-          'fixed inset-y-2 right-2 z-50 flex w-[min(340px,calc(100vw-1rem))] flex-col overflow-y-auto rounded-[24px] border border-border bg-popover p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-popover-foreground shadow-xl sm:w-[360px] sm:p-5',
+          'fixed inset-y-0 right-0 z-50 flex w-[min(360px,calc(100vw-2.5rem))] flex-col overflow-y-auto border-l border-[var(--ink)] bg-[var(--paper)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-foreground sm:w-[360px] sm:p-5',
           'duration-300 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-right-8 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-8',
           focusRing,
           className,
@@ -46,7 +46,7 @@ export const DrawerHeader = React.forwardRef<HTMLDivElement, React.ComponentProp
   <div ref={ref} className="flex items-start justify-between gap-x-4 pb-3" {...props}>
     <div className={cx('mt-1 flex flex-col gap-y-1', className)}>{children}</div>
     <DrawerPrimitives.Close asChild>
-      <button type="button" aria-label="Close" className={cx('press grid size-10 shrink-0 place-items-center rounded-full hover:bg-muted', focusRing)}>
+      <button type="button" aria-label="Close" className={cx('press grid size-10 shrink-0 place-items-center border border-transparent hover:border-[var(--rule)] hover:bg-[var(--field)]', focusRing)}>
         <XIcon className="size-5" aria-hidden="true" />
       </button>
     </DrawerPrimitives.Close>

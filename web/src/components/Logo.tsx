@@ -1,56 +1,22 @@
-import React from 'react';
-
-const FLAG_BLUE = '#0a3161';
-
-/** Points of a 5-point star centered at (cx, cy). */
-function starPoints(cx: number, cy: number, outer: number, inner: number): string {
-  const pts: string[] = [];
-  for (let k = 0; k < 10; k++) {
-    const r = k % 2 === 0 ? outer : inner;
-    const a = ((k * 36 - 90) * Math.PI) / 180;
-    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
-  }
-  return pts.join(' ');
-}
+import { useId } from 'react';
 
 /**
- * Taproot Atlas mark: Old Glory Blue droplet filled with as many white
- * stars as fit (US-flag blue + white stars, no flag itself).
+ * Taproot Atlas mark (Public Record): an ink-outlined drop with a level
+ * line, the lower half filled in register blue. Same drawing as the
+ * masthead mark on the record pages.
  */
-export function Logo({ size = 30 }: { size?: number }) {
-  const stars: Array<{ x: number; y: number }> = [];
-  const gap = 4.1;
-  let row = 0;
-  for (let y = 4.5; y <= 28; y += gap) {
-    const offset = row % 2 === 0 ? 0 : gap / 2;
-    for (let x = 8 + offset; x <= 24.5; x += gap) {
-      stars.push({ x, y });
-    }
-    row++;
-  }
+export function Logo({ size = 26 }: { size?: number }) {
+  const clip = `ta-drop-${useId().replace(/:/g, '')}`;
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      role="img"
-      aria-label="Taproot Atlas logo"
-      className="logo-mark"
-    >
+    <svg width={size} height={size} viewBox="0 0 26 26" role="img" aria-label="Taproot Atlas logo" className="logo-mark" style={{ flex: 'none' }}>
       <defs>
-        <clipPath id="ta-drop-clip">
-          <path d="M16 2.5C16 2.5 6.5 14.2 6.5 20a9.5 9.5 0 0 0 19 0C25.5 14.2 16 2.5 16 2.5Z" />
+        <clipPath id={clip}>
+          <path d="M13 1.5c4.2 5.4 7.8 9.6 7.8 14a7.8 7.8 0 0 1-15.6 0c0-4.4 3.6-8.6 7.8-14z" />
         </clipPath>
       </defs>
-      <path
-        d="M16 2.5C16 2.5 6.5 14.2 6.5 20a9.5 9.5 0 0 0 19 0C25.5 14.2 16 2.5 16 2.5Z"
-        fill={FLAG_BLUE}
-      />
-      <g clipPath="url(#ta-drop-clip)">
-        {stars.map((s, i) => (
-          <polygon key={i} points={starPoints(s.x, s.y, 1.45, 0.58)} fill="#ffffff" opacity="0.95" />
-        ))}
-      </g>
+      <rect x="0" y="14" width="26" height="12" fill="var(--register)" clipPath={`url(#${clip})`} />
+      <path d="M13 1.5c4.2 5.4 7.8 9.6 7.8 14a7.8 7.8 0 0 1-15.6 0c0-4.4 3.6-8.6 7.8-14z" fill="none" stroke="var(--ink)" strokeWidth="1.8" />
+      <path d="M2 14h3.5M20.5 14H24" stroke="var(--ink)" strokeWidth="1.4" />
     </svg>
   );
 }

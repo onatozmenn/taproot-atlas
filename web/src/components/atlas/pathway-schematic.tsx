@@ -1,77 +1,60 @@
-import { Droplets, Factory, Home, Mountain, MoveRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { TapAnswer } from '../../api';
 import { RealMap } from '../RealMap';
+import '../../styles/record-figures.css';
 
-const ROLE_ICON: Record<string, typeof Mountain> = {
-  watershed: Mountain,
-  treatment_facility: Factory,
-  distribution_zone: Home,
+const ROLE: Record<string, string> = {
+  watershed: 'Source',
+  treatment_facility: 'Treatment',
+  distribution_zone: 'Distribution',
 };
-
-function StepIcon({ role }: { role: string }) {
-  const Icon = ROLE_ICON[role] ?? Droplets;
-  return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-      <Icon className="size-5" />
-    </span>
-  );
-}
 
 export function PathwaySchematic({ answer }: { answer: TapAnswer }) {
   const steps = answer.flow;
   const conveyances = answer.conveyances ?? [];
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-xl">Source-to-tap pathway</CardTitle>
-          <CardDescription>
-            Schematic order only; paths are approximations, never engineering alignments.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {steps.length > 0 ? (
-            <ol className="flex flex-col gap-2 sm:flex-row sm:items-stretch" aria-label="Schematic water pathway">
-              {steps.map((s, i) => (
-                <li key={`${s.label}-${i}`} className="flex flex-1 items-center gap-2">
-                  {i > 0 && <MoveRight className="hidden size-4 shrink-0 text-muted-foreground sm:block" aria-hidden="true" />}
-                  <div className="flex flex-1 items-center gap-2.5 rounded-lg border p-2.5">
-                    <StepIcon role={s.role} />
-                    <span className="text-sm font-medium">{s.label}</span>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="text-sm text-muted-foreground">No curated pathway is available for this system.</p>
-          )}
-          {conveyances.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-sm text-muted-foreground">Large conveyances (schematic):</span>
+      <section className="rf-card">
+        <h3>Source-to-tap pathway</h3>
+        <p className="d">Schematic order only; paths are approximations, never engineering alignments.</p>
+        {steps.length > 0 ? (
+          <ol className="rf-steps" aria-label="Schematic water pathway">
+            {steps.map((s, i) => (
+              <li key={`${s.label}-${i}`}>
+                <span>
+                  §{i + 1} {ROLE[s.role] ?? 'Step'}
+                </span>
+                <b>{s.label}</b>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p style={{ color: 'var(--ink-2)' }}>No curated pathway is available for this system.</p>
+        )}
+        {conveyances.length > 0 && (
+          <>
+            <h4>Large conveyances (schematic)</h4>
+            <div className="rf-chips">
               {conveyances.map((c) => (
-                <Badge key={c.name} variant="outline">
+                <span key={c.name} className="rf-chip">
                   {c.name}
-                </Badge>
+                </span>
               ))}
             </div>
-          )}
-          {answer.treatment?.rigor ? (
-            <p className="text-sm">
-              Reported treatment: <span className="font-medium">{answer.treatment.rigor}.</span>
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">No treatment profile available.</p>
-          )}
-          {answer.upstream && (
-            <p className="text-sm text-muted-foreground">
-              Upstream context near {answer.upstream.outletLabel}: {answer.upstream.upstreamCount} flowlines and{' '}
-              {answer.upstream.stationCount} pre-treatment monitoring stations in range. Pre-treatment context only.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        )}
+        {answer.treatment?.rigor ? (
+          <p style={{ marginTop: 12 }}>
+            Reported treatment: <b>{answer.treatment.rigor}.</b>
+          </p>
+        ) : (
+          <p style={{ marginTop: 12, color: 'var(--ink-2)' }}>No treatment profile available.</p>
+        )}
+        {answer.upstream && (
+          <p style={{ marginTop: 8, color: 'var(--ink-2)' }}>
+            Upstream context near {answer.upstream.outletLabel}: {answer.upstream.upstreamCount} flowlines and {answer.upstream.stationCount} pre-treatment monitoring stations in range. Pre-treatment context only.
+          </p>
+        )}
+      </section>
       <RealMap answer={answer} />
     </div>
   );

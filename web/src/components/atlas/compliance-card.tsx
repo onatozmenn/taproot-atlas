@@ -1,8 +1,5 @@
-import { ExternalLink } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { TapAnswer } from '../../api';
+import '../../styles/record-figures.css';
 
 function tierText(answer: TapAnswer): string {
   switch (answer.recordTier) {
@@ -19,52 +16,52 @@ function tierText(answer: TapAnswer): string {
   }
 }
 
+const Ext = () => (
+  <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+    <path d="M3.5 2.5h6v6M9.5 2.5l-7 7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" />
+  </svg>
+);
+
 export function ComplianceCard({ answer }: { answer: TapAnswer }) {
   const processes = answer.treatment?.processes ?? [];
+  const flagged = answer.recordTier === 'health-based';
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-display text-xl">Regulatory compliance</CardTitle>
-        <CardDescription>EPA SDWIS record-keeping for the monitored window.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-muted-foreground">Monitored period</dt>
-            <dd className="font-medium">
-              {answer.windowStart} to {answer.windowEnd}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Violations recorded</dt>
-            <dd className="font-medium">
-              {answer.compliancePending ? 'Not yet curated' : answer.violations}
-            </dd>
-          </div>
-        </dl>
-        <p className="text-sm">{tierText(answer)}</p>
-        {processes.length > 0 && (
-          <div>
-            <h4 className="mb-1.5 text-sm font-medium">Reported treatment steps</h4>
-            <div className="flex flex-wrap gap-1.5" aria-label="Reported treatment processes">
-              {processes.map((p) => (
-                <Badge key={p} variant="secondary">
-                  {p.toLowerCase().replace(/(^|\s|-)(\S)/g, (m) => m.toUpperCase())}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <a href={answer.echoUrl} target="_blank" rel="noreferrer">
-              {answer.compliancePending ? 'Verify live records at EPA ECHO' : 'Access EPA ECHO system profile'}{' '}
-              <ExternalLink className="ml-1 size-3.5" />
-            </a>
-          </Button>
+    <section className="rf-card">
+      <h3>Regulatory compliance</h3>
+      <p className="d">EPA SDWIS record-keeping for the monitored window.</p>
+      <dl className="rf-dl">
+        <div>
+          <dt>Monitored period</dt>
+          <dd>
+            {answer.windowStart} to {answer.windowEnd}
+          </dd>
         </div>
-        <p className="text-xs text-muted-foreground">Record verified at: {answer.verifiedAt}</p>
-      </CardContent>
-    </Card>
+        <div>
+          <dt>Violations recorded</dt>
+          <dd style={flagged ? { color: 'var(--notice)' } : undefined}>{answer.compliancePending ? 'Not yet curated' : answer.violations}</dd>
+        </div>
+      </dl>
+      <p>{tierText(answer)}</p>
+      {processes.length > 0 && (
+        <div>
+          <h4>Reported treatment steps</h4>
+          <div className="rf-chips" aria-label="Reported treatment processes">
+            {processes.map((p) => (
+              <span key={p} className="rf-chip">
+                {p.toLowerCase().replace(/(^|\s|-)(\S)/g, (m) => m.toUpperCase())}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      <p style={{ marginTop: 14 }}>
+        <a className="rf-btn" href={answer.echoUrl} target="_blank" rel="noreferrer">
+          {answer.compliancePending ? 'Verify live records at EPA ECHO' : 'Access EPA ECHO system profile'} <Ext />
+        </a>
+      </p>
+      <p className="rf-lbl" style={{ marginTop: 10 }}>
+        Record verified at: {answer.verifiedAt}
+      </p>
+    </section>
   );
 }

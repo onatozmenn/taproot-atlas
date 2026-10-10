@@ -1,42 +1,38 @@
 // Tremor Slider [v1.0.0], adapted for Taproot (Apache-2.0, see LICENSE-tremor.txt).
 // Changes: radix-ui umbrella import, Taproot colours, a 44px touch target
-// around the thumb for phones.
+// around the thumb for phones. Public Record: 2px rule track, 4px register
+// range, square 16×24 thumb, optional ticks.
 import { Slider as SliderPrimitive } from 'radix-ui';
 import * as React from 'react';
-import { cx, focusRing } from './utils';
+import '../../styles/record-pages-tremor.css';
+import { cx } from './utils';
 
 interface SliderProps extends React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> {
   ariaLabelThumb?: string;
+  /** Tick positions in slider units, drawn under the track. */
+  ticks?: number[];
 }
 
-export const Slider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Root>, SliderProps>(({ className, ariaLabelThumb, ...props }, ref) => {
+export const Slider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Root>, SliderProps>(({ className, ariaLabelThumb, ticks, ...props }, ref) => {
   const value = props.value || props.defaultValue;
+  const min = props.min ?? 0;
+  const max = props.max ?? 100;
   return (
-    <SliderPrimitive.Root
-      ref={ref}
-      className={cx(
-        'relative flex h-11 cursor-pointer touch-none select-none items-center',
-        "data-[orientation='horizontal']:w-full data-disabled:pointer-events-none",
-        className,
-      )}
-      {...props}
-    >
-      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-muted ring-1 ring-inset ring-border">
-        <SliderPrimitive.Range className="absolute h-full rounded-full bg-[var(--link)] data-disabled:bg-[var(--tertiary)]" />
-      </SliderPrimitive.Track>
-      {value?.map((_, i) => (
-        <SliderPrimitive.Thumb
-          key={i}
-          aria-label={ariaLabelThumb}
-          className={cx(
-            'relative block size-5 shrink-0 rounded-full border border-border bg-background shadow-[0_1px_3px_rgb(0_0_0/0.18)] transition-transform active:scale-110',
-            "before:absolute before:-inset-3 before:content-['']",
-            focusRing,
-            'outline-offset-0',
-          )}
-        />
-      ))}
-    </SliderPrimitive.Root>
+    <div className={className}>
+      <SliderPrimitive.Root ref={ref} className="rp-slider" {...props}>
+        <SliderPrimitive.Track className="rp-slider-track">
+          <SliderPrimitive.Range className="rp-slider-range" />
+        </SliderPrimitive.Track>
+        {value?.map((_, i) => <SliderPrimitive.Thumb key={i} aria-label={ariaLabelThumb} className="rp-slider-thumb" />)}
+      </SliderPrimitive.Root>
+      {ticks && max > min ? (
+        <div className={cx('rp-slider-ticks')} aria-hidden="true">
+          {ticks.map((t) => (
+            <i key={t} style={{ left: `calc(8px + (100% - 16px) * ${(t - min) / (max - min)})` }} />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 });
 Slider.displayName = 'Slider';

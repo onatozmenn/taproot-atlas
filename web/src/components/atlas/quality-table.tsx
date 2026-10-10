@@ -1,20 +1,28 @@
-import { TriangleAlert } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { TapAnswer } from '../../api';
 import type { QualityMetricRecord } from '../../../../types/water-intelligence';
+import '../../styles/record-figures.css';
 
-function statusBadge(status: QualityMetricRecord['complianceStatus']) {
+function statusMark(status: QualityMetricRecord['complianceStatus']) {
   switch (status) {
     case 'within_standard':
-      return <Badge className="whitespace-nowrap bg-emerald-600 text-white hover:bg-emerald-600">Within standard</Badge>;
+      return (
+        <span className="rf-mark" data-tone="ok">
+          Within standard
+        </span>
+      );
     case 'exceeds_standard':
-      return <Badge variant="destructive" className="whitespace-nowrap">Exceeds standard</Badge>;
+      return (
+        <span className="rf-mark" data-tone="flag" data-on="true">
+          Exceeds standard
+        </span>
+      );
     default:
-      return <Badge className="whitespace-nowrap bg-amber-500 text-white hover:bg-amber-500">Monitoring</Badge>;
+      return (
+        <span className="rf-mark" data-tone="typ">
+          Monitoring
+        </span>
+      );
   }
 }
 
@@ -26,90 +34,76 @@ function shortDate(iso: string): string {
 
 function MetricTable({ metrics }: { metrics: QualityMetricRecord[] }) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Parameter</TableHead>
-          <TableHead>Reported</TableHead>
-          <TableHead>Standard</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Tested</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {metrics.map((m) => (
-          <TableRow key={m.parameter}>
-            <TableCell>
-              <a
-                className="font-medium text-primary underline-offset-4 hover:underline"
-                href={m.provenance.sourceDocumentUrl}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Verify ${m.parameter} filing`}
-              >
-                {m.parameter}
-              </a>
-            </TableCell>
-            <TableCell className="whitespace-nowrap">{m.reportedValue}</TableCell>
-            <TableCell className="whitespace-nowrap">{m.regulatoryThreshold}</TableCell>
-            <TableCell>{statusBadge(m.complianceStatus)}</TableCell>
-            <TableCell className="whitespace-nowrap">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="cursor-help underline decoration-dotted underline-offset-2">
-                    {shortDate(m.testDate)}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {m.testDate} · {m.provenance.reportPeriod}
-                    <br />
-                    Ingested {m.provenance.captureTime} · {m.provenance.sourceVersionId}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="rf-tbl-wrap">
+      <table className="rf-tbl">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Reported</th>
+            <th>Standard</th>
+            <th>Status</th>
+            <th>Tested</th>
+          </tr>
+        </thead>
+        <tbody>
+          {metrics.map((m) => (
+            <tr key={m.parameter} style={m.complianceStatus === 'exceeds_standard' ? { background: 'var(--notice-tint)' } : undefined}>
+              <td>
+                <a href={m.provenance.sourceDocumentUrl} target="_blank" rel="noreferrer" aria-label={`Verify ${m.parameter} filing`}>
+                  {m.parameter}
+                </a>
+              </td>
+              <td className="m">{m.reportedValue}</td>
+              <td className="m">{m.regulatoryThreshold}</td>
+              <td>{statusMark(m.complianceStatus)}</td>
+              <td className="m">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help underline decoration-dotted underline-offset-2">{shortDate(m.testDate)}</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {m.testDate} · {m.provenance.reportPeriod}
+                      <br />
+                      Ingested {m.provenance.captureTime} · {m.provenance.sourceVersionId}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
 export function QualityTable({ answer }: { answer: TapAnswer }) {
   const extra = [...(answer.lcr ?? []), ...(answer.ucmr ?? []), ...(answer.syr ?? []), ...(answer.distribution ?? [])];
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-display text-xl">Reported quality</CardTitle>
-        <CardDescription>Laboratory results as reported, with the regulatory benchmark for each row.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Alert>
-          <TriangleAlert className="size-4" />
-          <AlertDescription>
-            Reports only. Never a safety verdict. Verify at the official source.
-          </AlertDescription>
-        </Alert>
-        {answer.metrics.length > 0 ? (
-          <MetricTable metrics={answer.metrics} />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No reported lab metrics are available for this system in the current snapshot.
-          </p>
-        )}
-        {extra.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">More monitoring extracts (LCR / UCMR / SYR / distribution)</h4>
-            <MetricTable metrics={extra} />
-            {(answer.ucmr ?? []).length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                UCMR rows are occurrence findings, not federal MCL violations unless the threshold names an MCL.
-              </p>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <section className="rf-card">
+      <h3>Reported quality</h3>
+      <p className="d">Laboratory results as reported, with the regulatory benchmark for each row.</p>
+      <div className="rf-note" role="note">
+        <b aria-hidden="true">□</b>
+        <span>Reports only. Never a safety verdict. Verify at the official source.</span>
+      </div>
+      {answer.metrics.length > 0 ? (
+        <MetricTable metrics={answer.metrics} />
+      ) : (
+        <p style={{ color: 'var(--ink-2)' }}>No reported lab metrics are available for this system in the current snapshot.</p>
+      )}
+      {extra.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <h4>More monitoring extracts (LCR / UCMR / SYR / distribution)</h4>
+          <MetricTable metrics={extra} />
+          {(answer.ucmr ?? []).length > 0 && (
+            <p className="rf-lbl" style={{ marginTop: 6 }}>
+              UCMR rows are occurrence findings, not federal MCL violations unless the threshold names an MCL.
+            </p>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

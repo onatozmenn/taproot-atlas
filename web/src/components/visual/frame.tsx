@@ -1,26 +1,43 @@
 import { animate, useInView, useReducedMotion } from 'motion/react';
-import { ArrowUpRightIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import '../../styles/record-figures.css';
 
 /**
- * The one figure under an answer. Editorial, not dashboard: a quiet eyebrow,
- * one big serif number or phrase, the drawing, and a single source line.
+ * The one figure under an answer, drawn as a page of the public record:
+ * a 3px ink rule, a mono "FIG. n · label" caption, one big Public Sans
+ * hero number with its headline, the drawing, and a source line.
  */
 export function VisualFrame({
+  fig,
   eyebrow,
+  record,
+  hero,
+  unit,
   headline,
   sub,
   children,
+  note,
   source,
   sourceUrl,
   className,
   bleed = false,
 }: {
+  /** Figure number in the register (1–8). */
+  fig?: number;
+  /** The caption after "FIG. n ·". */
   eyebrow: string;
+  /** Record id (PWSID) shown at the right of the caption strip. */
+  record?: string;
+  /** The one big number that leads the figure. */
+  hero?: ReactNode;
+  unit?: ReactNode;
   headline?: ReactNode;
   sub?: ReactNode;
   children: ReactNode;
+  /** Plain-words caption under the figure (left). Defaults to nothing. */
+  note?: ReactNode;
+  /** Mono source line (right of the caption). */
   source: string;
   sourceUrl?: string;
   className?: string;
@@ -28,28 +45,56 @@ export function VisualFrame({
   bleed?: boolean;
 }) {
   return (
-    <figure className={cn('viz animate-rich-content-in mt-5 overflow-hidden rounded-[28px] border bg-card', className)}>
-      <header className="px-5 pt-5 sm:px-6">
-        <p className="text-[13px] font-medium tracking-[0.01em] text-muted-foreground">{eyebrow}</p>
-        {headline && <h3 className="mt-1 font-display text-[30px] font-medium leading-[1.1] tracking-[-0.01em] sm:text-[34px]">{headline}</h3>}
-        {sub && <p className="mt-1.5 max-w-[52ch] text-[15px] leading-snug text-muted-foreground">{sub}</p>}
-      </header>
-      <div className={cn(bleed ? 'mt-4' : 'px-5 pb-1 pt-4 sm:px-6')}>{children}</div>
-      <figcaption className="flex items-center justify-between gap-3 px-5 pb-4 pt-3 text-[12.5px] text-muted-foreground sm:px-6">
-        <span className="min-w-0 truncate">{source}</span>
-        {sourceUrl && (
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="press inline-flex shrink-0 items-center gap-0.5 font-medium text-[var(--link)] hover:underline"
-          >
-            EPA record
-            <ArrowUpRightIcon className="size-3.5" />
-          </a>
+    <figure className={cn('viz rf', className)} data-fig={fig}>
+      <div className="rf-strip">
+        <span>
+          {fig ? <b>Fig. {fig}</b> : null}
+          {fig ? ' · ' : ''}
+          {eyebrow}
+        </span>
+        {record && (
+          <span className="rf-strip-r">
+            Record <b>{record}</b>
+          </span>
         )}
+      </div>
+      {(hero !== undefined || headline) && (
+        <header className="rf-head">
+          {hero !== undefined && (
+            <span className="rf-num">
+              {hero}
+              {unit ? <small>{unit}</small> : null}
+            </span>
+          )}
+          {headline && <h3 className="rf-h3">{headline}</h3>}
+        </header>
+      )}
+      {sub && <p className="rf-sub">{sub}</p>}
+      <div className={cn('rf-body', bleed && 'rf-bleed')}>{children}</div>
+      <figcaption className="rf-cap">
+        <span className="rf-cap-note">{note ?? source}</span>
+        <span className="rf-cap-r">
+          {note ? <span className="rf-cap-src">{source}</span> : null}
+          {sourceUrl && (
+            <a href={sourceUrl} target="_blank" rel="noreferrer" className="rf-cap-link">
+              EPA record
+              <svg viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M3.5 2.5h6v6M9.5 2.5l-7 7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" />
+              </svg>
+            </a>
+          )}
+        </span>
       </figcaption>
     </figure>
+  );
+}
+
+/** ■ / □ register mark: filled = needs attention. */
+export function Mark({ tone, on, children }: { tone: 'flag' | 'ok' | 'elev' | 'typ'; on?: boolean; children: ReactNode }) {
+  return (
+    <span className="rf-mark" data-tone={tone} data-on={on ? 'true' : undefined}>
+      {children}
+    </span>
   );
 }
 
@@ -85,11 +130,12 @@ export function useOnScreen<T extends Element>() {
   return [ref, seen] as const;
 }
 
+/** Register colours. Ink = data, grey = context, blue = you are here, red = over a limit. */
 export const TONE = {
-  alert: 'var(--level-alert)',
-  watch: 'var(--level-watch)',
-  ok: 'var(--level-ok)',
-  water: 'var(--link)',
-  ink: 'var(--foreground)',
-  faint: 'var(--tertiary)',
+  alert: 'var(--notice)',
+  watch: 'var(--ochre-text)',
+  ok: 'var(--within)',
+  water: 'var(--register)',
+  ink: 'var(--ink)',
+  faint: 'var(--ink-3)',
 } as const;

@@ -1,49 +1,53 @@
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { plainViolation, type ViolationKind } from '../../../../lib/plain-violation';
 import type { ProfileViolation, WaterSystemProfile } from '../../../../types/water-intelligence';
 import { day } from '../report/format';
-import { TONE, VisualFrame, useOnScreen } from './frame';
+import { Mark, TONE, VisualFrame } from './frame';
 import { useBoxWidth } from '../kit/motion';
 import { Tracker, type TrackerBlockProps } from '../tremor';
 
 const YEARS = 10;
-const SEVERITY: ViolationKind[] = ['limit', 'treatment', 'testing', 'notice'];
+const RIVER_YEARS = 5;
+const DAY = 86_400_000;
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** One Tremor Tracker block per calendar year, coloured by the year's most serious record. */
-export function yearBlocks(kindsByYear: Map<number, ViolationKind[]>, startYear: number, years = YEARS): TrackerBlockProps[] {
+/** Severity of a year's records, for the ten-year Tracker. */
+export type YearSeverity = 'hb' | 'mt' | 'other';
+
+/**
+ * One Tremor Tracker block per calendar year, by its most serious record:
+ * ■ red = health-based, ochre outline = a missed test or other lapse,
+ * □ = nothing on record.
+ */
+export function yearBlocks(byYear: Map<number, YearSeverity[]>, startYear: number, years = YEARS): TrackerBlockProps[] {
   return Array.from({ length: years }, (_, i) => {
     const y = startYear + i;
-    const ks = kindsByYear.get(y) ?? [];
-    const worst = SEVERITY.find((k) => ks.includes(k));
-    const parts = SEVERITY.filter((k) => ks.includes(k)).map((k) => `${ks.filter((x) => x === k).length} ${KIND[k].label.toLowerCase()}`);
+    const ks = byYear.get(y) ?? [];
+    const hb = ks.filter((k) => k === 'hb').length;
+    const mt = ks.filter((k) => k === 'mt').length;
+    const other = ks.filter((k) => k === 'other').length;
+    const parts = [hb ? `${hb} health-based` : '', mt ? `${mt} missed test${mt === 1 ? '' : 's'}` : '', other ? `${other} other` : ''].filter(Boolean);
     return {
       key: y,
-      color: worst ? KIND[worst].color : 'color-mix(in oklab, var(--level-ok) 50%, transparent)',
+      color: hb ? TONE.alert : undefined,
+      outline: !hb && ks.length > 0 ? true : undefined,
       tooltip: `${y}: ${parts.length ? parts.join(', ') : 'no violations'}`,
     };
   });
 }
 
-const KIND: Record<ViolationKind, { label: string; lane: number; color: string }> = {
-  limit: { label: 'Above a limit', lane: 0, color: TONE.alert },
-  treatment: { label: 'Treatment fell short', lane: 1, color: TONE.watch },
-  testing: { label: 'Missed a test', lane: 2, color: 'var(--chart-1)' },
-  notice: { label: 'Late notice or report', lane: 3, color: TONE.faint },
+const sev = (v: ProfileViolation, kind: ViolationKind): YearSeverity => (v.healthBased ? 'hb' : kind === 'testing' ? 'mt' : 'other');
+
+const shortDay = (t: number) => {
+  const d = new Date(t);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
 };
 
-function Mark({ kind, r, color, open }: { kind: ViolationKind; r: number; color: string; open: boolean }) {
-  if (kind === 'limit') return <circle r={r + 1.5} fill={color} />;
-  if (kind === 'treatment') return <rect x={-r} y={-r} width={r * 2} height={r * 2} transform="rotate(45)" rx={1.5} fill={color} />;
-  if (kind === 'testing') return <circle r={r} fill="var(--card)" stroke={color} strokeWidth={1.75} />;
-  return <rect x={-r * 0.8} y={-1.5} width={r * 1.6} height={3} rx={1.5} fill={color} opacity={open ? 1 : 0.9} />;
-}
-
 /**
- * Ten years of records as stones in a river. The current runs left to right
- * through time; each violation sits in it by start date, in a lane by what
- * kind of lapse it was. Red stones are water above a limit; hollow rings
- * are missed tests. A stone still open keeps pulsing. Tap one to read it.
+ * The record as a river: five years run left to right on a grey band, each
+ * violation sits on it as a span from start to fix. Health-based spans are
+ * red; other lapses are ochre ticks. A blue rule marks today. Below, a
+ * ten-year Tracker gives each year's worst record. Tap a span to read it.
  */
 export function ViolationRiver({
   p,
@@ -56,240 +60,200 @@ export function ViolationRiver({
   filter?: (v: ProfileViolation) => boolean;
   topicName?: string;
 }) {
-  const [ref, seen] = useOnScreen<SVGSVGElement>();
-  const reduce = useReducedMotion();
   const [sel, setSel] = useState<string | null>(null);
   const now = new Date();
+  const nowT = now.getTime();
   const startYear = now.getUTCFullYear() - YEARS + 1;
-  const t0 = Date.UTC(startYear, 0, 1);
-  const t1 = now.getTime();
+  const riverStart = now.getUTCFullYear() - RIVER_YEARS;
+  const t0 = Date.UTC(riverStart, 0, 1);
+  const t1 = Date.UTC(now.getUTCFullYear() + 1, 0, 1);
+  const tenStart = Date.UTC(startYear, 0, 1);
   const all = (filter ? p.violations.filter(filter) : p.violations).filter((v) => v.begin);
-  const inWin = all.filter((v) => Date.parse(v.begin!) >= t0);
-  const older = all.length - inWin.length;
   const items = useMemo(
     () =>
-      inWin.map((v, k) => {
-        const pv = plainViolation(v);
-        const open = !v.returnedToCompliance && !/resolved|archived/i.test(v.status ?? '');
-        return { v, pv, open, k };
-      }),
+      all
+        .filter((v) => Date.parse(v.begin!) >= tenStart)
+        .map((v, k) => {
+          const pv = plainViolation(v);
+          const open = !v.returnedToCompliance && !/resolved|archived/i.test(v.status ?? '');
+          const b = Date.parse(v.begin!);
+          const fixIso = v.returnedToCompliance ?? v.end;
+          const e = open ? nowT : fixIso ? Date.parse(fixIso) + DAY : b + 30 * DAY;
+          return { v, pv, open, k, b, e, key: `${v.id}${k}` };
+        })
+        .sort((a, b) => a.b - b.b),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [p.pwsid, filter],
   );
-  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640);
-  const H = W < 420 ? 210 : 200;
-  const riverTop = 34;
-  const riverBot = 160;
-  const laneY = (lane: number) => riverTop + 18 + lane * ((riverBot - riverTop - 36) / 3);
-  const x = (iso: string) => 14 + ((Date.parse(iso) - t0) / (t1 - t0)) * (W - 28);
-  // Same-lane stones that land on top of each other fan out vertically.
-  const placed = useMemo(() => {
-    const out: Array<(typeof items)[number] & { cx: number; cy: number }> = [];
-    for (const it of [...items].sort((a, b) => (a.v.begin! < b.v.begin! ? -1 : 1))) {
-      const lane = KIND[it.pv.kind].lane;
-      let cx = x(it.v.begin!);
-      let cy = laneY(lane);
-      let n = 0;
-      // Phones squeeze ten years into ~300 px, so stones may fan further.
-      const maxFan = W < 420 ? 8 : 6;
-      while (out.some((o) => Math.abs(o.cx - cx) < 7 && Math.abs(o.cy - cy) < 7) && n < maxFan) {
-        n++;
-        cy = laneY(lane) + (n % 2 ? -1 : 1) * Math.ceil(n / 2) * 6;
-      }
-      if (n === maxFan) cx += 3.5; // still crowded: nudge sideways so it shows as a cluster, not one stone
-      out.push({ ...it, cx, cy });
-    }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, W]);
+  const older = all.length - items.length;
+  const river = items.filter((i) => i.e >= t0);
+  const fiveAgo = nowT - 5 * 365.25 * DAY;
+  const last5 = items.filter((i) => i.b >= fiveAgo);
+  const health5 = last5.filter((i) => i.v.healthBased);
+  const open5 = last5.filter((i) => i.open).length;
 
-  const counts = (Object.keys(KIND) as ViolationKind[]).map((k) => ({ k, n: items.filter((i) => i.pv.kind === k).length }));
-  const health = items.filter((i) => i.v.healthBased).length;
-  const openN = items.filter((i) => i.open).length;
-  const chosen = placed.find((i) => i.v.id + i.k === sel) ?? null;
+  const [boxRef, W] = useBoxWidth<HTMLDivElement>(640, 220);
+  const narrow = W < 460;
+  const noteH = narrow ? 70 : 58;
+  const ry = noteH + 26;
+  const H = ry + 34;
+  const X = (t: number) => Math.min(W, Math.max(0, ((t - t0) / (t1 - t0)) * W));
+
   const blocks = useMemo(() => {
-    const m = new Map<number, ViolationKind[]>();
+    const m = new Map<number, YearSeverity[]>();
     for (const it of items) {
-      const y = new Date(it.v.begin!).getUTCFullYear();
-      m.set(y, [...(m.get(y) ?? []), it.pv.kind]);
+      const y = new Date(it.b).getUTCFullYear();
+      m.set(y, [...(m.get(y) ?? []), sev(it.v, it.pv.kind)]);
     }
     return yearBlocks(m, startYear);
   }, [items, startYear]);
-  const fiveAgo = `${now.getUTCFullYear() - 5}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
-  const last5 = items.filter((i) => i.v.begin! >= fiveAgo);
 
-  // Two drifting sine banks make the river. One wavelength is 2π/0.55
-  // steps of 20 px; the drawing is wide enough to slide by exactly one.
-  const WAVE = (2 * Math.PI * 20) / 0.55;
-  const pts = (y0: number, amp: number, ph: number) =>
-    Array.from({ length: 56 }, (_, i) => [-40 + i * 20, y0 + Math.sin(i * 0.55 + ph) * amp] as const);
-  const bank = (y0: number, amp: number, ph: number) => pts(y0, amp, ph).map(([xx, yy], i) => `${i === 0 ? 'M' : 'L'}${xx} ${yy.toFixed(1)}`).join(' ');
-  const riverPath = `${bank(riverTop, 4, 0)} ${[...pts(riverBot, 4, 1.4)].reverse().map(([xx, yy]) => `L${xx} ${yy.toFixed(1)}`).join(' ')} Z`;
+  // The span the note talks about: the one tapped, else the latest health-based, else the latest.
+  const chosen = items.find((i) => i.key === sel) ?? null;
+  const featured = [...river].reverse().find((i) => i.v.healthBased) ?? river[river.length - 1] ?? null;
+  const note = featured;
+  const nx = note ? X(note.b) : 0;
+  const side: 'start' | 'end' = nx > W * 0.55 ? 'end' : 'start';
+  const days = (i: (typeof items)[number]) => Math.max(1, Math.round((i.e - i.b) / DAY));
+  const fixWord = (i: (typeof items)[number]) => {
+    const d = days(i);
+    return d <= 45 ? 'fixed in a month' : d <= 100 ? `fixed in ${Math.round(d / 30)} months` : d < 365 ? `fixed in ${Math.round(d / 30)} months` : `fixed after ${Math.round(d / 365)} year${Math.round(d / 365) === 1 ? '' : 's'}`;
+  };
 
+  const topic = topicName ? `${topicName.toLowerCase()} ` : '';
+  const hero = health5.length > 0 ? health5.length : last5.length;
   const headline =
-    items.length === 0
-      ? `No ${topicName ? `${topicName.toLowerCase()} ` : ''}violations in ${YEARS} years`
-      : health > 0
-        ? `${health} health-based in ${YEARS} years`
-        : `${items.length} record${items.length === 1 ? '' : 's'}, none health-based`;
+    last5.length === 0
+      ? `${topic}violations in five years${older + items.length > 0 ? `; ${items.length + older} on record before` : ''}`
+      : health5.length > 0
+        ? `health-based ${topic}violation${health5.length === 1 ? '' : 's'} in five years${health5.length === 1 && !health5[0].open ? ` — ${fixWord(health5[0])}` : open5 > 0 ? ` — ${open5} still open` : ''}`
+        : `${topic}record${last5.length === 1 ? '' : 's'} in five years, none health-based`;
+
+  const tone = (i: (typeof items)[number]) => (i.v.healthBased ? 'var(--notice)' : i.pv.kind === 'testing' ? 'var(--ochre)' : 'var(--ink-3)');
 
   return (
     <VisualFrame
-      eyebrow={`${topicName ? `${topicName} · ` : ''}EPA violations, ${startYear} to today`}
+      fig={5}
+      eyebrow={`${topicName ? `${topicName} · ` : ''}Violations, ${riverStart} → today`}
+      record={p.pwsid}
+      hero={hero}
       headline={headline}
-      sub={
-        items.length === 0
-          ? older > 0
-            ? `${older} older record${older === 1 ? '' : 's'} before ${startYear}; the river has run clear since.`
-            : 'The river has run clear.'
-          : `${last5.length} in the last 5 years${openN > 0 ? `, ${openN} still open` : ''}. Tap a stone to read it.`
-      }
-      source={`EPA SDWIS via ECHO${older > 0 && items.length > 0 ? ` · ${older} older record${older === 1 ? '' : 's'} not drawn` : ''}`}
+      note="One span per violation, from start to fix. One square per year below; colour shows the most serious record that year."
+      source={`SDWIS via ECHO${older > 0 ? ` · ${older} before ${startYear}` : ''}`}
       sourceUrl={sourceUrl}
     >
-      <div ref={boxRef}>
-      <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full overflow-visible" role="img" aria-label={`${items.length} violations since ${startYear}, ${health} health-based`}>
-        <defs>
-          <linearGradient id="river" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="var(--link)" stopOpacity="0.04" />
-            <stop offset="1" stopColor="var(--link)" stopOpacity="0.13" />
-          </linearGradient>
-          <clipPath id="river-clip">
-            <rect x="0" y="0" width={W} height={H} />
-          </clipPath>
-        </defs>
-        <g clipPath="url(#river-clip)">
-          <motion.path
-            d={riverPath}
-            fill="url(#river)"
-            initial={reduce ? false : { x: 0 }}
-            animate={reduce ? undefined : { x: [0, -WAVE] }}
-            transition={{ duration: 6, ease: 'linear', repeat: Infinity }}
-          />
-          {/* current lines */}
-          {[0.33, 0.66].map((f, i) => (
-            <motion.path
-              key={f}
-              d={bank(riverTop + (riverBot - riverTop) * f, 2.5, i)}
-              fill="none"
-              stroke="var(--link)"
-              strokeOpacity={0.14}
-              strokeDasharray="14 22"
-              initial={reduce ? false : { strokeDashoffset: 0 }}
-              animate={reduce ? undefined : { strokeDashoffset: [0, -72] }}
-              transition={{ duration: 4 + i, ease: 'linear', repeat: Infinity }}
-            />
-          ))}
-        </g>
-        {/* year ticks */}
-        {Array.from({ length: YEARS }, (_, i) => startYear + i).map((yr) => {
-          const xx = x(`${yr}-01-01`);
-          return (
-            <g key={yr}>
-              <line x1={xx} x2={xx} y1={riverBot + 6} y2={riverBot + 11} stroke="var(--border)" />
-              {(yr - startYear) % (W < 420 ? 3 : 2) === 0 ? (
-                <text x={xx} y={H - 12} textAnchor="start" className="fill-[var(--tertiary)] text-[11px]">
-                  {yr}
-                </text>
-              ) : null}
-            </g>
-          );
-        })}
-        {items.length === 0 && (
-          <text x={W / 2} y={(riverTop + riverBot) / 2 + 4} textAnchor="middle" className="fill-[var(--level-ok)] text-[13px] font-medium">
-            Clear water · no records
-          </text>
-        )}
-        {placed.map((it, idx) => {
-          const meta = KIND[it.pv.kind];
-          const key = it.v.id + it.k;
-          const active = sel === key;
-          const r = it.pv.kind === 'limit' ? 5 : 4;
-          return (
-            <motion.g
-              key={key}
-              style={{ x: it.cx, y: it.cy }}
-              initial={reduce ? false : { opacity: 0, scale: 0 }}
-              animate={seen ? { opacity: 1, scale: active ? 1.6 : 1 } : undefined}
-              transition={{ type: 'spring', stiffness: 300, damping: 18, delay: active ? 0 : 0.2 + (it.cx / W) * 1.1 + (idx % 3) * 0.02 }}
-              className="cursor-pointer outline-none focus-visible:[&>circle:first-child]:stroke-[var(--link)] focus-visible:[&>circle:first-child]:[stroke-width:2]"
-              tabIndex={0}
-              role="button"
-              aria-label={`${it.pv.title}, ${day(it.v.begin)}`}
-              onClick={() => setSel(active ? null : key)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setSel(active ? null : key);
-                }
-              }}
-            >
-              <circle r={10} fill="transparent" />
-              {active && <circle r={r + 4.5} fill="none" stroke="var(--foreground)" strokeWidth={1.25} />}
-              {it.open && !reduce && (
-                <motion.circle
-                  r={r + 2}
-                  fill="none"
-                  stroke={meta.color}
-                  initial={{ scale: 1, opacity: 0.7 }}
-                  animate={{ scale: 2.6, opacity: 0 }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
-                />
-              )}
-              <Mark kind={it.pv.kind} r={r} color={meta.color} open={it.open} />
-            </motion.g>
-          );
-        })}
-      </svg>
-      </div>
-      {items.length > 0 && (
-        <div className="mt-1">
-          <p className="sr-only">Year by year</p>
-          <Tracker data={blocks} className="h-7 px-[14px]" hoverEffect aria-label="Each year's most serious record; tap a year for counts" />
-        </div>
-      )}
-
-      <AnimatePresence mode="wait">
-        {chosen ? (
-          <motion.div
-            key={chosen.v.id + chosen.k}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.22 }}
-            className="mt-2 rounded-2xl bg-[var(--muted)] px-4 py-3"
+      <div className="rf-vr" ref={boxRef}>
+        {note && (
+          <div
+            className="rf-vr-note"
+            data-side={side}
+            style={side === 'end' ? { right: W - nx + 6, maxWidth: nx - 6 } : { left: nx + 6, maxWidth: W - nx - 6 }}
+            aria-hidden="true"
           >
-            <p className="flex items-center gap-2 text-[15px] font-semibold">
-              <span className="size-2 shrink-0 rounded-full" style={{ background: KIND[chosen.pv.kind].color }} />
-              {chosen.pv.title}
-            </p>
-            <p className="mt-0.5 text-[13.5px] text-muted-foreground">
+            <span className="d" data-tone={note.v.healthBased ? undefined : note.pv.kind === 'testing' ? 'elev' : 'ink'}>
+              {shortDay(note.b)} → {note.open ? 'still open' : `fixed ${shortDay(note.e - DAY)}`}, {new Date(note.b).getUTCFullYear()}
+            </span>
+            <span className="t">{note.pv.title}</span>
+            <span className="m">
+              {note.v.healthBased ? 'health-based' : note.pv.kind === 'testing' ? 'missed test' : 'record'} · {days(note)} days{note.open ? ' so far' : ' open'}
+            </span>
+          </div>
+        )}
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block h-auto w-full overflow-visible" role="img" aria-label={`${items.length} violations since ${startYear}, ${health5.length} health-based in five years`}>
+          <rect x={0} y={ry - 7} width={W} height={14} fill="var(--field-2)" />
+          {Array.from({ length: RIVER_YEARS + 2 }, (_, k) => riverStart + k).map((yr) => {
+            const x = X(Date.UTC(yr, 0, 1));
+            const show = yr <= now.getUTCFullYear() && (!narrow || (yr - riverStart) % 1 === 0);
+            return (
+              <g key={yr}>
+                <line x1={x} x2={x} y1={ry + 7} y2={ry + 15} stroke="var(--ink)" />
+                {show && x < W - 24 && (
+                  <text x={x + 4} y={ry + 28} className={note && new Date(note.b).getUTCFullYear() === yr ? 't-ink t-b' : undefined}>
+                    {narrow ? `’${String(yr).slice(2)}` : yr}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+          {note && <line x1={nx} x2={nx} y1={4} y2={ry - 12} stroke={tone(note)} />}
+          {items.length === 0 && (
+            <text x={W / 2} y={ry - 16} textAnchor="middle" className="t-ink t-up">
+              No records in {RIVER_YEARS} years
+            </text>
+          )}
+          {/* today */}
+          <rect x={X(nowT) - 1} y={ry - 12} width={2} height={24} fill="var(--register)" />
+          <text x={X(nowT) - 5} y={ry - 17} textAnchor="end" className="t-blue t-b t-up">
+            Today
+          </text>
+          {river.map((it) => {
+            const x0 = X(it.b);
+            const x1 = Math.max(x0 + 4, X(it.e));
+            const hb = it.v.healthBased;
+            const active = sel === it.key;
+            return (
+              <g
+                key={it.key}
+                className="cursor-pointer outline-none"
+                tabIndex={0}
+                role="button"
+                aria-label={`${it.pv.title}, ${day(it.v.begin)}`}
+                aria-pressed={active}
+                onClick={() => setSel(active ? null : it.key)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSel(active ? null : it.key);
+                  }
+                }}
+              >
+                <rect x={Math.min(x0, x1 - 22) - 6} y={ry - 22} width={Math.max(x1 - x0, 22) + 12} height={44} fill="transparent" />
+                {hb ? (
+                  <rect x={x0} y={ry - 12} width={x1 - x0} height={24} fill="var(--notice)" />
+                ) : (
+                  <rect x={x0} y={ry - 7} width={x1 - x0} height={14} fill={it.pv.kind === 'testing' ? 'var(--ochre-tint)' : 'var(--field)'} stroke={tone(it)} strokeWidth={1.5} />
+                )}
+                {active && <rect x={x0 - 3} y={ry - 15} width={x1 - x0 + 6} height={30} fill="none" stroke="var(--ink)" strokeWidth={1.5} />}
+              </g>
+            );
+          })}
+        </svg>
+
+        {chosen && (
+          <div className="rf-vr-sel" data-hb={chosen.v.healthBased || undefined} aria-live="polite">
+            <p className="t">{chosen.pv.title}</p>
+            <p className="m">
               {day(chosen.v.begin)}
               {chosen.v.returnedToCompliance ? ` · fixed ${day(chosen.v.returnedToCompliance)}` : chosen.open ? ' · still open' : ' · resolved'}
               {chosen.v.healthBased ? ' · health-based' : ''}
               {chosen.v.contaminant ? ` · ${chosen.v.contaminant.toLowerCase()}` : ''}
             </p>
-          </motion.div>
-        ) : (
-          <motion.ul
-            key="legend"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground"
-          >
-            {counts.filter(({ n }) => n > 0).map(({ k, n }) => (
-              <li key={k} className="flex items-center gap-1.5">
-                <svg viewBox="-7 -7 14 14" className="size-3.5" aria-hidden="true">
-                  <Mark kind={k} r={4} color={KIND[k].color} open={false} />
-                </svg>
-                {KIND[k].label}
-                <b className="font-semibold tabular-nums text-foreground">{n}</b>
-              </li>
-            ))}
-          </motion.ul>
+          </div>
         )}
-      </AnimatePresence>
+
+        <div className="rf-vr-yr">
+          <span className="rf-lbl">
+            Worst record each year · {startYear}–{startYear + YEARS - 1}
+          </span>
+          <div className="rf-vr-key" aria-hidden="true">
+            <Mark tone="flag" on>
+              Health-based
+            </Mark>
+            <Mark tone="elev" on>
+              Missed test / other
+            </Mark>
+            <Mark tone="typ">None</Mark>
+          </div>
+          <Tracker data={blocks} defaultBackgroundColor="" className="h-7" hoverEffect aria-label="Each year's most serious record; tap a year for counts" />
+          <div className="rf-trk-yrs" aria-hidden="true">
+            {blocks.map((b, i) => (
+              <span key={String(b.key)} data-hb={b.color ? 'true' : undefined}>
+                {W < 420 ? `’${String(startYear + i).slice(2)}` : startYear + i}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </VisualFrame>
   );
 }

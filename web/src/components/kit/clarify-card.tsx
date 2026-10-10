@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import '../../styles/record-chat.css';
 
 /* ─────────────────────────────────────────────────────────
  * CLARIFY CARD — when a question could mean more than one
@@ -58,16 +59,14 @@ export function ClarifyCard({ question, options, onChoose, onSkip, skipLabel = '
 
   if (done) return null;
   return (
-    <div
-      ref={ref}
-      role="group"
-      aria-labelledby={titleId}
-      className={cn('kit-fade-up w-full rounded-3xl border border-border bg-card p-2 shadow-[var(--shadow-elevation-1)]', className)}
-    >
-      <p id={titleId} className="px-3 pb-2 pt-2.5 text-[16px] font-semibold">
-        {question}
-      </p>
-      <div role="radiogroup" className="flex flex-col gap-1">
+    <div ref={ref} role="group" aria-labelledby={titleId} className={cn('rc-clar kit-fade-up w-full', className)}>
+      <div className="rc-clar-h">
+        <h4 id={titleId}>{question}</h4>
+        <span className="rc-lbl">
+          {options.length} matching {options.length === 1 ? 'system' : 'systems'}
+        </span>
+      </div>
+      <div role="radiogroup" aria-labelledby={titleId}>
         {options.map((o, i) => {
           const on = picked === i;
           return (
@@ -79,28 +78,24 @@ export function ClarifyCard({ question, options, onChoose, onSkip, skipLabel = '
               disabled={disabled}
               onClick={() => setPicked(i)}
               onDoubleClick={() => confirm(i)}
-              className={cn(
-                'press flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-secondary',
-                on && 'bg-secondary ring-1 ring-[var(--link)]',
-              )}
+              className="rc-opt"
             >
-              <span
-                className={cn(
-                  'flex size-6 shrink-0 items-center justify-center rounded-lg border border-border font-mono text-[12px] tabular-nums text-muted-foreground transition-colors',
-                  on && 'border-[var(--link)] bg-[var(--link)] text-white',
-                )}
-              >
-                {i + 1}
+              <span className="rb" aria-hidden="true" />
+              <span className="min-w-0">
+                <b>{o.label}</b>
+                {o.hint && <span className="h">{o.hint}</span>}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15.5px] font-medium">{o.label}</span>
-                {o.hint && <span className="block text-[13px] text-muted-foreground">{o.hint}</span>}
+              <span className="k" aria-hidden="true">
+                {i + 1}
               </span>
             </button>
           );
         })}
       </div>
-      <div className="mt-2 flex items-center justify-end gap-1.5 px-1 pb-1">
+      <div className="rc-clar-f">
+        <span className="hint" aria-hidden="true">
+          Press 1–{options.length} · ↵ continue
+        </span>
         {onSkip && (
           <button
             type="button"
@@ -108,17 +103,12 @@ export function ClarifyCard({ question, options, onChoose, onSkip, skipLabel = '
               setDone(true);
               onSkip();
             }}
-            className="press h-9 rounded-full px-4 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+            className="rc-btn quiet"
           >
             {skipLabel}
           </button>
         )}
-        <button
-          type="button"
-          disabled={picked === null || disabled}
-          onClick={() => confirm(picked)}
-          className="press h-9 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-40"
-        >
+        <button type="button" disabled={picked === null || disabled} onClick={() => confirm(picked)} className="rc-btn primary">
           Continue
         </button>
       </div>

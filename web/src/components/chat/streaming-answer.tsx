@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { renderMarkdown } from '../../md';
 
 /** Close an unbalanced **bold** run so a half-revealed token never shows raw asterisks. */
@@ -18,6 +18,8 @@ interface StreamingAnswerProps {
   /** Reveal word by word (new answers). Old answers render instantly. */
   animate: boolean;
   onDone?: () => void;
+  /** Inline cite tags, set at the end of the last paragraph once the text is in. */
+  tail?: ReactNode;
 }
 
 /**
@@ -26,7 +28,7 @@ interface StreamingAnswerProps {
  * action row and follow-up pills. The full text is in the DOM for screen
  * readers from the start (aria-live announces once on completion).
  */
-export function StreamingAnswer({ markdown, animate, onDone }: StreamingAnswerProps) {
+export function StreamingAnswer({ markdown, animate, onDone, tail }: StreamingAnswerProps) {
   const words = useMemo(() => markdown.split(/(\s+)/), [markdown]);
   const skip = !animate || prefersReducedMotion();
   const [count, setCount] = useState(skip ? words.length : 0);
@@ -60,9 +62,19 @@ export function StreamingAnswer({ markdown, animate, onDone }: StreamingAnswerPr
   }, [finished, onDone]);
 
   const visible = finished ? markdown : balance(words.slice(0, count).join(''));
+  const nodes = renderMarkdown(visible);
+  if (finished && tail) {
+    const last = nodes[nodes.length - 1];
+    if (isValidElement(last) && last.type === 'p') {
+      const el = last as ReactElement<{ children?: ReactNode }>;
+      nodes[nodes.length - 1] = cloneElement(el, undefined, el.props.children, tail);
+    } else {
+      nodes.push(<p key="cite-tail">{tail}</p>);
+    }
+  }
   return (
     <div className="answer-prose" aria-busy={!finished}>
-      {renderMarkdown(visible)}
+      {nodes}
       {!finished && <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[3px] bg-foreground/60 dot-pulse" aria-hidden="true" />}
     </div>
   );
