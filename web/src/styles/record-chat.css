@@ -64,14 +64,14 @@
 }
 
 /* Thread layout: one column, sources move to a margin at >=1000px */
-.rc-thread { width: 100%; max-width: 1120px; margin: 0 auto; padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 28px; }
-.rc-col { width: 100%; max-width: 680px; }
+.rc-thread { width: 100%; max-width: 1440px; margin: 0 auto; padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 28px; }
+.rc-col { width: 100%; max-width: 880px; }
 .rc-turn { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .rc-turn > * { min-width: 0; }
 .rc-margin { display: none; }
 @media (min-width: 1000px) {
   .rc-thread { padding: 36px 40px 24px; }
-  .rc-turn.has-margin { display: grid; grid-template-columns: minmax(0, 680px) minmax(0, 1fr); column-gap: 40px; row-gap: 20px; align-items: start; }
+  .rc-turn.has-margin { display: grid; grid-template-columns: minmax(0, 880px) minmax(0, 1fr); column-gap: 40px; row-gap: 20px; align-items: start; }
   .rc-turn.has-margin > * { grid-column: 1; }
   .rc-turn.has-margin > .rc-margin { display: block; grid-column: 2; grid-row: 1 / span 20; align-self: start; position: sticky; top: 16px; border-left: 1px solid var(--rule); padding-left: 24px; }
   .rc-turn.has-margin .rc-srclist-inline { display: none; }
