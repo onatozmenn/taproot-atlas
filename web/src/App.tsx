@@ -324,22 +324,22 @@ export default function App() {
         </main>
       ) : (
         <main id="chat" className="animate-chat-surface-in flex min-h-0 flex-1 flex-col">
-          <ChatPane messages={messages} busy={busy} onFollowUp={send} />
-          <div className="rc-composer-wrap">
-            <div className="inner">
-              <div className="max-w-[680px]">
-                <Composer
-                  {...composerProps}
-                  label="Message"
-                  foot={
-                    <>
-                      Answers come from EPA records, not a test of your tap. {links}
-                    </>
-                  }
-                />
-              </div>
-            </div>
-          </div>
+          <ChatPane
+            messages={messages}
+            busy={busy}
+            onFollowUp={send}
+            composer={
+              <Composer
+                {...composerProps}
+                label="Message"
+                foot={
+                  <>
+                    Answers come from EPA records, not a test of your tap. {links}
+                  </>
+                }
+              />
+            }
+          />
         </main>
       )}
 
