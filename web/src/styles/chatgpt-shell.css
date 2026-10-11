@@ -142,7 +142,7 @@ html.cg-shell ::selection { background: color-mix(in oklab, var(--register) 25%,
 .cg-side-logo:hover { background: var(--cg-side-hover); }
 .cg-side .cg-icon-btn:hover { background: var(--cg-side-hover); }
 .cg-side-nav { display: flex; flex-direction: column; gap: 1px; padding-bottom: 8px; }
-.cg-side-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; padding: 0 10px; border-radius: var(--cg-r-sm); font: 400 14px/1 var(--cg-font); color: var(--ink); text-align: left; text-decoration: none; transition: background-color .12s; }
+.cg-side-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 40px; padding: 0 10px; border-radius: var(--cg-r-sm); font: 400 14px/1.4 var(--cg-font); color: var(--ink); text-align: left; text-decoration: none; transition: background-color .12s; }
 .cg-side-item:hover { background: var(--cg-side-hover); }
 .cg-side-item:focus-visible, .cg-chat-open:focus-visible, .cg-chat-more:focus-visible, .cg-user-row:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 /* Sidebar rows never glow blue: the ink outline carries keyboard focus. */
@@ -165,12 +165,13 @@ html.cg-shell ::selection { background: color-mix(in oklab, var(--register) 25%,
 .cg-chat { position: relative; display: flex; align-items: center; border-radius: var(--cg-r-sm); transition: background-color .12s; }
 .cg-chat:hover { background: var(--cg-side-hover); }
 .cg-chat.active { background: var(--cg-side-active); }
-.cg-chat-open { flex: 1; min-width: 0; height: 36px; padding: 0 10px; text-align: left; font: 400 14px/36px var(--cg-font); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: var(--cg-r-sm); }
+.cg-chat-open { flex: 1; min-width: 0; height: 38px; padding: 0 10px; display: flex; align-items: center; text-align: left; font: 400 14px/1.4 var(--cg-font); color: var(--ink); border-radius: var(--cg-r-sm); }
+.cg-chat-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cg-chat-more { display: grid; place-items: center; width: 32px; height: 32px; margin-right: 2px; border-radius: 6px; color: var(--ink-3); opacity: 0; transition: opacity .12s, color .12s; flex: none; }
 .cg-chat-more svg.lucide { width: 16px; height: 16px; }
 .cg-chat:hover .cg-chat-more, .cg-chat:focus-within .cg-chat-more, .cg-chat.active .cg-chat-more, .cg-chat-more[data-state='open'] { opacity: 1; }
 .cg-chat-more:hover { color: var(--ink); }
-@media (hover: none) { .cg-chat-more { opacity: .7; width: 40px; height: 40px; } .cg-chat-open { height: 44px; line-height: 44px; } }
+@media (hover: none) { .cg-chat-more { opacity: .7; width: 40px; height: 40px; } .cg-chat-open { height: 44px; } }
 .cg-side-foot { padding-top: 6px; border-top: 1px solid color-mix(in oklab, var(--rule) 70%, transparent); }
 .cg-user-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 50px; padding: 6px 8px; border-radius: var(--cg-r-sm); font: 500 14px/1.2 var(--cg-font); color: var(--ink); transition: background-color .12s; }
 .cg-user-row:hover, .cg-user-row[data-state='open'] { background: var(--cg-side-hover); }

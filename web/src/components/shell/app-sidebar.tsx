@@ -308,7 +308,7 @@ function ChatRow({ conv, active, onOpen, onDelete, onRename }: { conv: Conversat
   return (
     <li className={cn('cg-chat', active && 'active')}>
       <button type="button" className="cg-chat-open" aria-current={active ? 'page' : undefined} onClick={onOpen} title={conv.title}>
-        {conv.title}
+        <span className="cg-chat-title">{conv.title}</span>
       </button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
