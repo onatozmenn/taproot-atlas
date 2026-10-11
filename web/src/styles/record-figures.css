@@ -167,6 +167,12 @@ button.rf-sig-c[data-flag='true']:hover { background: color-mix(in oklab, var(--
 .rf-map-key i.flow { width: 16px; height: 0; border-top: 2px dotted var(--register); }
 .rf-map-n { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; font: 600 11px/1 var(--rf-mono); color: var(--ink); }
 .rf-map-n svg { width: 12px; height: 18px; }
+/* Expand: a square record button pinned to the map's top-right corner. */
+.rf-map-expand { position: absolute; top: 8px; right: 8px; z-index: 3; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: var(--paper); border: 1px solid var(--ink); color: var(--ink); }
+.rf-map-expand:hover { background: var(--field); }
+.rf-map-expand:focus-visible { outline: 3px solid var(--register-line); outline-offset: 2px; }
+/* Expanded map dialog: near-full viewport, room for the 560px figure. */
+.rf-map-dialog { width: min(1020px, 94vw); max-width: none; max-height: 90vh; overflow-y: auto; border-radius: 0; }
 
 /* Static (no-GPU) fallback: monochrome paper tiles + ink outline + register tint */
 .rf-smap { position: relative; overflow: hidden; background-color: var(--paper); background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size: 46px 46px; background-position: -1px -1px; }

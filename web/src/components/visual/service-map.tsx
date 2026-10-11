@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { Maximize2 } from 'lucide-react';
 import type { WaterSystemProfile } from '../../../../types/water-intelligence';
 import type { TapAnswer } from '../../api';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { loadMaplibre } from '../RealMap';
 import { num, people, titleCase } from '../report/format';
 import { VisualFrame } from './frame';
@@ -107,9 +109,10 @@ function arc(a: [number, number], b: [number, number], steps = 48): number[][] {
  * utility's service area, its border draws itself in, and for cities with
  * a known far source, arcs carry water in from each watershed.
  */
-export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; p: WaterSystemProfile; compact?: boolean }) {
+export function ServiceMap({ answer, p, compact = false, large = false }: { answer: TapAnswer; p: WaterSystemProfile; compact?: boolean; large?: boolean }) {
   const el = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
   const sa = p.serviceArea!;
   const rings = ringsOf(sa.geometry);
   const centre = centreOf(rings);
@@ -266,7 +269,7 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
     p.connections ? `${num(p.connections)} connections` : '',
     sa.method === 'reported' ? 'boundary reported by the state or utility' : 'boundary estimated by EPA',
   ].filter(Boolean);
-  const height = compact ? 240 : 320;
+  const height = large ? 560 : compact ? 240 : 320;
 
   return (
     <VisualFrame
@@ -304,6 +307,17 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
           </svg>
           N
         </span>
+        {!failed && !large && (
+          <button
+            type="button"
+            className="rf-map-expand"
+            aria-label={`Expand map of the area ${titleCase(p.name)} serves`}
+            title="Expand map"
+            onClick={() => setZoomed(true)}
+          >
+            <Maximize2 className="size-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
       <div className="rf-map-key" aria-hidden="true">
         <span>
@@ -320,6 +334,14 @@ export function ServiceMap({ answer, p, compact = false }: { answer: TapAnswer; 
           </>
         )}
       </div>
+      {!large && (
+        <Dialog open={zoomed} onOpenChange={setZoomed}>
+          <DialogContent className="rf-map-dialog">
+            <DialogTitle className="sr-only">Service area map of {titleCase(p.name)}</DialogTitle>
+            <ServiceMap answer={answer} p={p} large />
+          </DialogContent>
+        </Dialog>
+      )}
     </VisualFrame>
   );
 }
