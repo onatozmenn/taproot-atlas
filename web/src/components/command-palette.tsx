@@ -24,9 +24,11 @@ interface CommandPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPick: (question: string) => void;
+  /** While an answer is loading, question picks would be silently dropped — dim them instead. */
+  busy?: boolean;
 }
 
-export function CommandPalette({ open, onOpenChange, onPick }: CommandPaletteProps) {
+export function CommandPalette({ open, onOpenChange, onPick, busy }: CommandPaletteProps) {
   const [text, setText] = useState('');
   const pick = (q: string) => {
     onPick(q);
@@ -43,7 +45,7 @@ export function CommandPalette({ open, onOpenChange, onPick }: CommandPalettePro
           <CommandEmpty>Type a question to ask it.</CommandEmpty>
           {typed && (
             <CommandGroup heading="Ask">
-              <CommandItem value={`ask:${typed}`} onSelect={() => pick(typed)}>
+              <CommandItem value={`ask:${typed}`} disabled={busy} onSelect={() => pick(typed)}>
                 Ask “{typed}”
               </CommandItem>
             </CommandGroup>
@@ -88,7 +90,7 @@ export function CommandPalette({ open, onOpenChange, onPick }: CommandPalettePro
           </CommandGroup>
           <CommandGroup heading="Example questions">
             {EXAMPLE_QUESTIONS.map((q) => (
-              <CommandItem key={q} value={q} onSelect={() => pick(q)}>
+              <CommandItem key={q} value={q} disabled={busy} onSelect={() => pick(q)}>
                 {q}
               </CommandItem>
             ))}

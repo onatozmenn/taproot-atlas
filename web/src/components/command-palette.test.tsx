@@ -15,4 +15,15 @@ describe('CommandPalette', () => {
     fireEvent.click(screen.getByText(/Ask “lead in Tulsa”/));
     expect(onPick).toHaveBeenCalledWith('lead in Tulsa');
   });
+
+  it('dims question picks while busy instead of dropping them silently', () => {
+    const onPick = vi.fn();
+    const onOpenChange = vi.fn();
+    render(<CommandPalette open onOpenChange={onOpenChange} onPick={onPick} busy />);
+    const option = screen.getByRole('option', { name: /Where does Chicago tap water come from/ });
+    expect(option.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(option);
+    expect(onPick).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
 });
