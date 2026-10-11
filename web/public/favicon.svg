@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <defs>
-    <clipPath id="d"><path d="M16 2.6c5.2 6.5 9.6 11.7 9.6 17.2a9.6 9.6 0 0 1-19.2 0c0-5.5 4.4-10.7 9.6-17.2z"/></clipPath>
-  </defs>
-  <path d="M16 2.6c5.2 6.5 9.6 11.7 9.6 17.2a9.6 9.6 0 0 1-19.2 0c0-5.5 4.4-10.7 9.6-17.2z" fill="#e5f2f7"/>
-  <g clip-path="url(#d)">
-    <path d="M0 18 q4 -2.6 8 0 t8 0 t8 0 t8 0 V32 H0Z" fill="#9edbe8"/>
-    <path d="M0 19.5 q4 -2.6 8 0 t8 0 t8 0 t8 0 V32 H0Z" fill="#14a9c2"/>
-  </g>
-  <path d="M16 2.6c5.2 6.5 9.6 11.7 9.6 17.2a9.6 9.6 0 0 1-19.2 0c0-5.5 4.4-10.7 9.6-17.2z" fill="none" stroke="#0b3a55" stroke-width="2" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#fafaf7"/>
+  <svg x="9" y="9" width="46" height="46" viewBox="0 0 26 26">
+    <defs>
+      <clipPath id="ta-drop"><path d="M13 1.5c4.2 5.4 7.8 9.6 7.8 14a7.8 7.8 0 0 1-15.6 0c0-4.4 3.6-8.6 7.8-14z"/></clipPath>
+    </defs>
+    <rect x="0" y="14" width="26" height="12" fill="#0b3d91" clip-path="url(#ta-drop)"/>
+    <path d="M13 1.5c4.2 5.4 7.8 9.6 7.8 14a7.8 7.8 0 0 1-15.6 0c0-4.4 3.6-8.6 7.8-14z" fill="none" stroke="#111214" stroke-width="2"/>
+    <path d="M2 14h3.5M20.5 14H24" stroke="#111214" stroke-width="1.56"/>
+  </svg>
 </svg>
