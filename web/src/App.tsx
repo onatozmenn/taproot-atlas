@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
-import { ChevronDown, Command as CommandIcon, Info, Moon, PanelLeft, Shield, SquarePen, Sun } from 'lucide-react';
+import { ChevronDown, Command as CommandIcon, Info, Keyboard, Moon, PanelLeft, Shield, SquarePen, Sun } from 'lucide-react';
 import { askTapWater } from './api';
 import { ChatPane, type ChatMsg } from './components/chat-pane';
 import { InfoDialogs, type InfoDialogKind } from './components/chat/info-dialogs';
@@ -19,13 +19,17 @@ import {
 } from './components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip';
 import {
+  autoTitle,
   loadConversations,
   newConversationId,
+  renameConversation,
   saveConversations,
   titleFrom,
   upsertConversation,
   type Conversation,
 } from './lib/conversations';
+import { WaterMark, WaterSurface } from './components/shell/water-mark';
+import './styles/water.css';
 import { cn } from './lib/utils';
 import './styles/record-chat.css';
 import './styles/chatgpt-shell.css';
@@ -68,7 +72,23 @@ function IconButton({ label, onClick, children, className }: { label: string; on
   );
 }
 
-export default function App() {
+/** The system the conversation is about: the latest answered one, if any. */
+function contextOf(list: ChatMsg[]): string | undefined {
+  return [...list].reverse().find((m) => m.role === 'assistant' && m.answer && m.answer.scope === 'water' && m.answer.pwsid !== 'UNKNOWN')?.answer?.pwsid ?? undefined;
+}
+
+function isTyping(el: EventTarget | null): boolean {
+  const t = el as HTMLElement | null;
+  return Boolean(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable));
+}
+
+export interface ShellPage {
+  /** Page name in the top bar ("Triage"). */
+  label: string;
+  node: ReactNode;
+}
+
+export default function App({ page = null }: { page?: ShellPage | null } = {}) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -100,9 +120,7 @@ export default function App() {
   activeRef.current = activeId;
 
   const empty = messages.length === 0;
-  const contextPwsid =
-    [...messages].reverse().find((m) => m.role === 'assistant' && m.answer && m.answer.scope === 'water' && m.answer.pwsid !== 'UNKNOWN')?.answer
-      ?.pwsid ?? undefined;
+  const contextPwsid = contextOf(messages);
 
   useEffect(() => {
     try {
@@ -118,9 +136,15 @@ export default function App() {
     setConversations((list) => {
       const prev = list.find((c) => c.id === activeId);
       const firstQ = messages.find((m) => m.role === 'user')?.text ?? '';
+      const firstA = messages.find((m) => m.role === 'assistant' && m.answer)?.answer;
+      // ChatGPT-style naming: a short topic title once the first answer is in,
+      // unless the user renamed the chat by hand.
+      const userTitled = prev?.titleSource === 'user';
+      const place = firstA && firstA.scope === 'water' && firstA.pwsid !== 'UNKNOWN' ? firstA.placeName : null;
       const conv: Conversation = {
         id: activeId,
-        title: prev?.title ?? titleFrom(firstQ),
+        titleSource: userTitled ? 'user' : 'auto',
+        title: userTitled && prev ? prev.title : firstA ? autoTitle(firstQ, place) : titleFrom(firstQ),
         createdAt: prev?.createdAt ?? Date.now(),
         updatedAt: Date.now(),
         messages,
@@ -129,7 +153,8 @@ export default function App() {
     });
   }, [messages, activeId]);
 
-  async function run(q: string, pinPwsid?: string) {
+  async function run(q: string, pinPwsid?: string, ctx: string | undefined | null = null) {
+    const context = ctx === null ? contextPwsid : ctx;
     const gen = genRef.current;
     const controller = new AbortController();
     abortRef.current = controller;
@@ -148,7 +173,7 @@ export default function App() {
       const answer = await askTapWater(q, {
         signal: controller.signal,
         ...(coords ? { lat: coords.lat, lon: coords.lon } : {}),
-        ...(contextPwsid ? { contextPwsid } : {}),
+        ...(context ? { contextPwsid: context } : {}),
         ...(pinPwsid ? { pwsid: pinPwsid } : {}),
       });
       if (gen !== genRef.current) return;
@@ -247,8 +272,15 @@ export default function App() {
   }
 
   function deleteChat(id: string) {
+    const gone = conversations.find((c) => c.id === id);
     setConversations((list) => saveConversations(list.filter((c) => c.id !== id)));
     if (id === activeId) newChat();
+    if (gone) {
+      toast('Chat deleted', {
+        description: gone.title,
+        action: { label: 'Undo', onClick: () => setConversations((list) => saveConversations(upsertConversation(list, gone))) },
+      });
+    }
   }
 
   function clearAll() {
@@ -259,12 +291,26 @@ export default function App() {
 
   function regenerate(q: string) {
     if (busy || busyRef.current) return;
-    // Drop the last question and its answer, then ask it again.
-    setMessages((m) => {
-      const lastUser = m.map((x) => x.role).lastIndexOf('user');
-      return lastUser >= 0 ? m.slice(0, lastUser) : m;
-    });
-    void run(q);
+    // Drop the last question and its answer, then ask it again with the
+    // context it was first asked in.
+    const lastUser = messages.map((x) => x.role).lastIndexOf('user');
+    const before = lastUser >= 0 ? messages.slice(0, lastUser) : messages;
+    setMessages(before);
+    void run(q, undefined, contextOf(before));
+  }
+
+  /** ChatGPT's edit-and-resend: the edited question replaces it and everything after. */
+  function editAndResend(id: number, text: string) {
+    if (busy || busyRef.current) return;
+    const i = messages.findIndex((m) => m.id === id);
+    if (i < 0) return;
+    const before = messages.slice(0, i);
+    setMessages(before);
+    void run(text, undefined, contextOf(before));
+  }
+
+  function renameChat(id: string, title: string) {
+    setConversations((list) => saveConversations(renameConversation(list, id, title)));
   }
 
   function toggleLocate() {
@@ -351,6 +397,42 @@ export default function App() {
     if (!mobile) setDrawerOpen(false);
   }, [mobile]);
 
+  // ChatGPT's keyboard shortcuts (Ctrl on Windows/Linux, Cmd on macOS).
+  const keysRef = useRef<(e: KeyboardEvent) => void>(() => undefined);
+  keysRef.current = (e: KeyboardEvent) => {
+    const mod = e.metaKey || e.ctrlKey;
+    const k = e.key.toLowerCase();
+    if (mod && e.shiftKey && k === 'o') {
+      e.preventDefault();
+      if (page) window.location.hash = '#/';
+      newChat();
+      window.requestAnimationFrame(() => document.getElementById('composer-input')?.focus());
+    } else if (mod && e.shiftKey && k === 's') {
+      e.preventDefault();
+      if (railOpen) closeSide();
+      else openSide();
+    } else if (e.shiftKey && e.key === 'Escape') {
+      e.preventDefault();
+      document.getElementById('composer-input')?.focus();
+    } else if (mod && e.shiftKey && k === 'c' && !isTyping(e.target)) {
+      const last = [...messages].reverse().find((m) => m.role === 'assistant' && m.answer)?.answer;
+      if (!last) return;
+      e.preventDefault();
+      void navigator.clipboard?.writeText(last.markdown).then(
+        () => toast.success('Answer copied'),
+        () => toast.error('Could not copy the answer.'),
+      );
+    } else if (mod && (e.key === '/' || e.key === '?')) {
+      e.preventDefault();
+      setInfo('keys');
+    }
+  };
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => keysRef.current(e);
+    window.addEventListener('keydown', on);
+    return () => window.removeEventListener('keydown', on);
+  }, []);
+
   const composerProps = {
     input,
     onInputChange: setInput,
@@ -377,7 +459,7 @@ export default function App() {
   const dark = resolvedTheme === 'dark';
 
   return (
-    <div className={cn('cg-app', railOpen && !mobile && 'rail-open')}>
+    <div className={cn('cg-app', railOpen && !mobile && 'rail-open', page && 'on-page')}>
       <a className="sr-only focus:not-sr-only" href="#composer-input">
         Skip to message input
       </a>
@@ -390,6 +472,8 @@ export default function App() {
         onNewChat={newChat}
         onSelect={openChat}
         onDelete={deleteChat}
+        onRename={renameChat}
+        currentPage={page?.label ?? null}
         onClearAll={clearAll}
         theme={theme}
         onTheme={setTheme}
@@ -412,7 +496,7 @@ export default function App() {
             <DropdownMenuTrigger asChild>
               <button type="button" className="cg-title" aria-label="Taproot Atlas menu">
                 <span>Taproot Atlas</span>
-                <span className="cg-title-sub">Public water record</span>
+                <span className="cg-title-sub">{page ? page.label : 'Public water record'}</span>
                 <ChevronDown className="cg-title-chev" />
               </button>
             </DropdownMenuTrigger>
@@ -432,6 +516,10 @@ export default function App() {
               <DropdownMenuItem onSelect={() => setInfo('privacy')}>
                 <Shield className="size-4" /> Your privacy
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setInfo('keys')}>
+                <Keyboard className="size-4" /> Keyboard shortcuts
+                <DropdownMenuShortcut>Ctrl /</DropdownMenuShortcut>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {APP_PAGES.map(({ href, label, hint, icon: Icon }) => (
                 <DropdownMenuItem key={href} onSelect={() => (window.location.hash = href)}>
@@ -443,7 +531,7 @@ export default function App() {
             </DropdownMenuContent>
           </DropdownMenu>
           <span className="flex-1" />
-          {mobile && !empty && (
+          {mobile && (!empty || page) && (
             <IconButton label="New chat" onClick={newChat}>
               <SquarePen />
             </IconButton>
@@ -453,9 +541,17 @@ export default function App() {
           </IconButton>
         </header>
 
-        {empty ? (
+        {page ? (
+          <main className="cg-page scrollbar-thin" aria-label={page.label}>
+            {page.node}
+          </main>
+        ) : empty ? (
           <main className={cn('cg-empty', leaving && 'landing-dissolve-out')}>
+            <WaterSurface />
             <div className="cg-empty-inner stagger-entrance">
+              <span className="cg-hello-mark" style={{ ['--stagger-index' as string]: 0 }} aria-hidden="true">
+                <WaterMark size={40} />
+              </span>
               <h1 style={{ ['--stagger-index' as string]: 0 }}>Where does your tap water come from?</h1>
               <div style={{ ['--stagger-index' as string]: 1 }}>
                 <Composer {...composerProps} label="Ask about your tap water" autoFocus foot={null} />
@@ -477,6 +573,7 @@ export default function App() {
               busy={busy}
               onFollowUp={send}
               onRegenerate={regenerate}
+              onEdit={editAndResend}
               composer={<Composer {...composerProps} label="Message Taproot" placeholder="Ask a follow-up" foot={foot} />}
             />
           </main>

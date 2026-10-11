@@ -77,6 +77,11 @@ function period(start: string | null, end: string | null): string {
 }
 
 /** "Des Moines" -> "Des Moines'", "Chicago" -> "Chicago's". */
+/** "Nitrate (as N)" -> "Nitrate": the lab basis is noise in a sentence. */
+export function plainAnalyte(label: string): string {
+  return label.replace(/\s*\((?:as|total as)\s+[a-z0-9]+\)/i, '').trim();
+}
+
 export function poss(name: string): string {
   return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
@@ -216,10 +221,10 @@ function answerAnalytes(city: string, p: WaterSystemProfile, t: Topic): string[]
   const above = rows.some((a) => a.status === 'max_above_benchmark');
   const lim = head.benchmark ? `${fmtN(limV)} ${unit}` : null;
   const first = above
-    ? `**Some ${poss(city)} ${head.label.toLowerCase()} samples went above the ${lim} federal limit**, though the typical level was ${fmtN(med)} ${unit}.`
+    ? `**Some of ${poss(city)} ${plainAnalyte(head.label).toLowerCase()} samples went above the ${lim} federal limit**, though the typical level was ${fmtN(med)} ${unit}.`
     : lim
-      ? `**${head.label} in ${poss(city)} water typically measured ${fmtN(med)} ${unit}**, under the ${lim} federal limit.`
-      : `**${head.label} turned up in ${fmtN(head.detects)} of ${fmtN(head.samples)} ${city} samples**, typically ${fmtN(med)} ${unit}; it has no federal limit.`;
+      ? `**${plainAnalyte(head.label)} in ${poss(city)} water typically measured ${fmtN(med)} ${unit}**, under the ${lim} federal limit.`
+      : `**${plainAnalyte(head.label)} turned up in ${fmtN(head.detects)} of ${fmtN(head.samples)} ${city} samples**, typically ${fmtN(med)} ${unit}; it has no federal limit.`;
   return [first, `The highest of ${fmtN(head.samples)} samples was ${fmtN(max)} ${unit}${years ? ` (${years})` : ''}.`];
 }
 
@@ -302,6 +307,41 @@ function followUps(city: string, p: WaterSystemProfile, focus: AnswerIntent, ask
 }
 
 /** Main entry: null when the schematic has no profile. */
+const LONG_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function longDay(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${LONG_MONTHS[Number(m[2]) - 1]} ${Number(m[3])}, ${m[1]}` : iso;
+}
+
+/** "Flint, City Of" / "Phoenix City Of" -> "the City of Flint". */
+function utilityName(raw: string): string {
+  const m = raw.match(/^(.*?),?\s+(City|Town|Village|County|Borough) Of$/i);
+  if (m) return `the ${m[2][0].toUpperCase()}${m[2].slice(1).toLowerCase()} of ${m[1]}`;
+  return raw;
+}
+
+/** "When was it last inspected?" / "How many people does it serve?" / "Who runs it?" */
+export function answerRecordDetail(city: string, p: WaterSystemProfile, question: string): string[] | null {
+  if (/\b(inspect\w*|sanitary survey|surveys?|site visits?)\b/i.test(question)) {
+    const sv = p.lastSanitarySurvey;
+    if (!sv?.date) return [`**The EPA record lists no sanitary survey date for ${city}.** It covers the system's violations, lead tests and lab results instead.`];
+    const sig = sv.findings.filter((f) => /significant deficiency/i.test(f)).length;
+    return [
+      `**${city}'s water system was last inspected on ${longDay(sv.date)}**, in a state sanitary survey.`,
+      sig > 0 ? `It noted ${sig} significant ${sig === 1 ? 'deficiency' : 'deficiencies'} for the utility to fix.` : '',
+    ].filter(Boolean);
+  }
+  if (/\b(how many (?:people|customers|homes|households)|population|serves?|serving|served)\b/i.test(question) && !/\bsafe\b/i.test(question)) {
+    if (!p.population) return [`**The EPA record does not list how many people ${city}'s water system serves.**`];
+    return [`**${city}'s water system serves about ${people(p.population)}**${p.connections ? ` through ${p.connections.toLocaleString('en-US')} service connections` : ''}.`];
+  }
+  if (/\b(who (?:runs|operates|owns|manages)|owner|operator|run by|utility name)\b/i.test(question)) {
+    const own = p.owner ? ` It is owned by ${/^(a|an|the)\b/i.test(p.owner) ? '' : 'a '}${p.owner.toLowerCase()}.` : '';
+    return [`**${city}'s water is run by ${utilityName(p.name)}** (${p.pwsid}).${own}`];
+  }
+  return null;
+}
+
 export function composeProfileAnswer(
   s: WaterOriginSchematic,
   question: string,
@@ -315,6 +355,12 @@ export function composeProfileAnswer(
   const asked = new Set(topics.map((t) => t.key));
   const askedParameters = topics.map((t) => ({ name: t.name, found: true }));
   const safety = /\b(safe|drinkable|potable|healthy|quality|ok to drink|okay to drink|clean)\b/i.test(question);
+
+  // Record questions with one plain answer: last inspection, people served, who runs it.
+  const direct = topics.length === 0 ? answerRecordDetail(city, p, question) : null;
+  if (direct) {
+    return { markdown: joinAnswer(direct), followUps: followUps(city, p, focus, asked), focus, askedParameters };
+  }
 
   if (topics.length > 0) {
     topics.slice(0, 2).forEach((t, i) => {

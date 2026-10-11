@@ -30,33 +30,39 @@ function Root() {
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
-  const page = hash.startsWith('#/kit') ? (
-    <KitGallery />
-  ) : hash.startsWith('#/triage') ? (
-    <TriageView initialState={triageState(hash)} />
-  ) : hash.startsWith('#/global') ? (
-    <GlobalView />
-  ) : hash.startsWith('#/impact') ? (
-    <ImpactView />
-  ) : hash.startsWith('#/study') ? (
-    <StudyView />
-  ) : null;
+  const page = hash.startsWith('#/kit')
+    ? { label: 'Kit', node: <KitGallery /> }
+    : hash.startsWith('#/triage')
+      ? { label: 'Triage', node: <TriageView initialState={triageState(hash)} /> }
+      : hash.startsWith('#/global')
+        ? { label: 'Global', node: <GlobalView /> }
+        : hash.startsWith('#/impact')
+          ? { label: 'Impact', node: <ImpactView /> }
+          : hash.startsWith('#/study')
+            ? { label: 'Study', node: <StudyView /> }
+            : null;
   const isChat = page === null;
   useEffect(() => {
     if (isChat) document.title = 'Taproot Atlas';
-    // The chat wears the neutral ChatGPT-style shell; the record pages keep
-    // the Public Record look. Portals (menus, dialogs, toasts) follow <html>.
-    document.documentElement.classList.toggle('cg-shell', isChat);
+    // One product: every route wears the water shell (palette, sidebar, top
+    // bar). Portals (menus, dialogs, toasts) follow <html>.
+    document.documentElement.classList.add('cg-shell');
   }, [isChat]);
-  // The chat stays mounted under every page, so "Back to chat" returns to
-  // the same conversation instead of an empty start screen.
+  // The chat stays mounted under every page (the shell shows the page in
+  // place of the thread), so a sidebar chat or New chat returns to the same
+  // conversation instead of an empty start screen.
+  return <App page={page ? { label: page.label, node: <Suspense fallback={<PageSkeleton />}>{page.node}</Suspense> } : null} />;
+}
+
+/** Shown while a page's code loads: quiet bars where the masthead and first section will be. */
+function PageSkeleton() {
   return (
-    <>
-      <div hidden={page !== null}>
-        <App />
-      </div>
-      {page && <Suspense fallback={null}>{page}</Suspense>}
-    </>
+    <div className="cg-page-skel" role="status" aria-label="Loading page">
+      <i style={{ width: '38%', height: 28 }} />
+      <i style={{ width: '72%' }} />
+      <i style={{ width: '64%' }} />
+      <i style={{ width: '100%', height: 160, marginTop: 24 }} />
+    </div>
   );
 }
 
