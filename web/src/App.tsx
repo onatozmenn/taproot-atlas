@@ -581,7 +581,7 @@ export default function App({ page = null }: { page?: ShellPage | null } = {}) {
       </div>
 
       <InfoDialogs open={info} onOpenChange={setInfo} />
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={(q) => send(q)} />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={(q) => send(q)} busy={busy} />
     </div>
   );
 }
