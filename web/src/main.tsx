@@ -41,9 +41,13 @@ function Root() {
   ) : hash.startsWith('#/study') ? (
     <StudyView />
   ) : null;
+  const isChat = page === null;
   useEffect(() => {
-    if (!page) document.title = 'Taproot Atlas';
-  }, [page]);
+    if (isChat) document.title = 'Taproot Atlas';
+    // The chat wears the neutral ChatGPT-style shell; the record pages keep
+    // the Public Record look. Portals (menus, dialogs, toasts) follow <html>.
+    document.documentElement.classList.toggle('cg-shell', isChat);
+  }, [isChat]);
   // The chat stays mounted under every page, so "Back to chat" returns to
   // the same conversation instead of an empty start screen.
   return (

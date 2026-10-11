@@ -1,60 +1,70 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
+import { ChevronDown, Command as CommandIcon, Info, Moon, PanelLeft, Shield, SquarePen, Sun } from 'lucide-react';
 import { askTapWater } from './api';
 import { ChatPane, type ChatMsg } from './components/chat-pane';
 import { InfoDialogs, type InfoDialogKind } from './components/chat/info-dialogs';
 import { CommandPalette, useCommandPalette } from './components/command-palette';
 import { Composer } from './components/composer';
-import { Logo } from './components/Logo';
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle } from './components/tremor';
+import { APP_PAGES, AppSidebar } from './components/shell/app-sidebar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from './components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip';
+import {
+  loadConversations,
+  newConversationId,
+  saveConversations,
+  titleFrom,
+  upsertConversation,
+  type Conversation,
+} from './lib/conversations';
 import { cn } from './lib/utils';
-import { RcArrow, RcChevRight, RcClose, RcMenu, RcMoon, RcPlus, RcSun, RcTrash } from './components/chat/rc-icons';
 import './styles/record-chat.css';
+import './styles/chatgpt-shell.css';
 
 let nextId = 1;
 
-const EXAMPLES = [
-  'Is Flint water safe?',
-  'Is there lead in Chicago water?',
-  'Does Denver water have PFAS?',
-  'Where does Jackson MS water come from?',
+const SUGGESTIONS = [
+  { q: 'Is Flint water safe?', hint: 'Lead, violations and the record' },
+  { q: 'Is there lead in Chicago water?', hint: 'Lead & Copper results' },
+  { q: 'Does Denver water have PFAS?', hint: 'UCMR 5 tests' },
+  { q: 'Where does Jackson MS water come from?', hint: 'Source to tap' },
 ];
 
-const EXPLORE = [
-  ['#/triage', 'Triage queue', 'For water teams: where to look first'],
-  ['#/impact', 'How accurate is it?', 'Checked against what happened'],
-  ['#/global', 'Beyond the U.S.', 'Ireland and the open record format'],
-  ['#/study', 'Help test Taproot', 'Ten minutes, anonymous'],
-] as const;
+const SIDEBAR_KEY = 'taproot-sidebar';
 
-const HISTORY_KEY = 'taproot-history';
-
-function loadHistory(): string[] {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    const arr: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter((q): q is string => typeof q === 'string').slice(0, 10) : [];
-  } catch {
-    return [];
-  }
+function useMediaQuery(query: string): boolean {
+  const get = () => (typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : false);
+  const [match, setMatch] = useState(get);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    on();
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, [query]);
+  return match;
 }
 
-function HeaderButton({
-  label,
-  onClick,
-  children,
-  buttonRef,
-}: {
-  label: string;
-  onClick: () => void;
-  children: React.ReactNode;
-  buttonRef?: React.Ref<HTMLButtonElement>;
-}) {
+function IconButton({ label, onClick, children, className }: { label: string; onClick: () => void; children: React.ReactNode; className?: string }) {
   return (
-    <button ref={buttonRef} type="button" onClick={onClick} aria-label={label} className="rc-btn quiet">
-      {children}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" onClick={onClick} aria-label={label} className={cn('cg-icon-btn', className)}>
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -66,16 +76,28 @@ export default function App() {
   const [listening, setListening] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [locating, setLocating] = useState(false);
-  const [history, setHistory] = useState<string[]>(loadHistory);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [info, setInfo] = useState<InfoDialogKind>(null);
   const [paletteOpen, setPaletteOpen] = useCommandPalette();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const mobile = useMediaQuery('(max-width: 767px)');
+  const [sideOpen, setSideOpen] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) !== 'closed';
+    } catch {
+      return true;
+    }
+  });
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   // Synchronous lock: two Enters in the same frame both see busy=false.
   const busyRef = useRef(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  // Bumped on New chat / switching chats so a late answer never lands in the wrong thread.
+  const genRef = useRef(0);
   const lastQuestion = useRef('');
+  const activeRef = useRef<string | null>(null);
+  activeRef.current = activeId;
 
   const empty = messages.length === 0;
   const contextPwsid =
@@ -84,21 +106,43 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      localStorage.setItem(SIDEBAR_KEY, sideOpen ? 'open' : 'closed');
     } catch {
-      // Private mode: history stays in memory only.
+      // Private mode: the rail state is per-visit only.
     }
-  }, [history]);
+  }, [sideOpen]);
+
+  // Every change to the open thread is saved under its conversation.
+  useEffect(() => {
+    if (!activeId || messages.length === 0) return;
+    setConversations((list) => {
+      const prev = list.find((c) => c.id === activeId);
+      const firstQ = messages.find((m) => m.role === 'user')?.text ?? '';
+      const conv: Conversation = {
+        id: activeId,
+        title: prev?.title ?? titleFrom(firstQ),
+        createdAt: prev?.createdAt ?? Date.now(),
+        updatedAt: Date.now(),
+        messages,
+      };
+      return saveConversations(upsertConversation(list, conv));
+    });
+  }, [messages, activeId]);
 
   async function run(q: string, pinPwsid?: string) {
+    const gen = genRef.current;
     const controller = new AbortController();
     abortRef.current = controller;
     busyRef.current = true;
     setBusy(true);
     lastQuestion.current = q;
+    if (!activeRef.current) {
+      const id = newConversationId();
+      activeRef.current = id;
+      setActiveId(id);
+    }
     setMessages((m) => [...m.map((x) => ({ ...x, fresh: false })), { id: nextId++, role: 'user', text: q, at: Date.now() }]);
     setInput('');
-    setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 10));
     const started = performance.now();
     try {
       const answer = await askTapWater(q, {
@@ -107,8 +151,10 @@ export default function App() {
         ...(contextPwsid ? { contextPwsid } : {}),
         ...(pinPwsid ? { pwsid: pinPwsid } : {}),
       });
+      if (gen !== genRef.current) return;
       setMessages((m) => [...m, { id: nextId++, role: 'assistant', answer: { ...answer, question: q }, fresh: true, elapsedMs: performance.now() - started }]);
     } catch (e) {
+      if (gen !== genRef.current) return;
       if (controller.signal.aborted) {
         setMessages((m) => [...m, { id: nextId++, role: 'assistant', stopped: true }]);
       } else {
@@ -116,9 +162,11 @@ export default function App() {
         toast.error(msg, { action: { label: 'Retry', onClick: () => void send(lastQuestion.current) } });
       }
     } finally {
-      abortRef.current = null;
-      busyRef.current = false;
-      setBusy(false);
+      if (gen === genRef.current) {
+        abortRef.current = null;
+        busyRef.current = false;
+        setBusy(false);
+      }
     }
   }
 
@@ -127,11 +175,16 @@ export default function App() {
     if (!q || busy || busyRef.current) return;
     busyRef.current = true;
     if (empty) {
-      // America.gov-style hand-off: the start view dissolves, then the
-      // conversation surface fades in with the question already placed.
+      // The centred start view dissolves, then the thread fades in with the
+      // question placed and the composer docked at the bottom.
       setLeaving(true);
+      const gen = genRef.current;
       window.setTimeout(() => {
         setLeaving(false);
+        if (gen !== genRef.current) {
+          busyRef.current = false;
+          return;
+        }
         void run(q, pinPwsid);
       }, 220);
       return;
@@ -163,11 +216,55 @@ export default function App() {
     abortRef.current?.abort();
   }
 
+  /** Leave the current thread: cancel any answer in flight without writing it anywhere. */
+  function detach() {
+    genRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    busyRef.current = false;
+    setBusy(false);
+    setLeaving(false);
+  }
+
   function newChat() {
-    stop();
+    detach();
     setMessages([]);
+    setActiveId(null);
+    activeRef.current = null;
     setInput('');
-    setMenuOpen(false);
+  }
+
+  function openChat(id: string) {
+    if (id === activeId) return;
+    const conv = conversations.find((c) => c.id === id);
+    if (!conv) return;
+    detach();
+    setMessages(conv.messages.map((m) => ({ ...m, fresh: false })));
+    nextId = Math.max(nextId, ...conv.messages.map((m) => m.id + 1));
+    setActiveId(id);
+    activeRef.current = id;
+    setInput('');
+  }
+
+  function deleteChat(id: string) {
+    setConversations((list) => saveConversations(list.filter((c) => c.id !== id)));
+    if (id === activeId) newChat();
+  }
+
+  function clearAll() {
+    setConversations(saveConversations([]));
+    newChat();
+    toast.success('All chats deleted from this browser.');
+  }
+
+  function regenerate(q: string) {
+    if (busy || busyRef.current) return;
+    // Drop the last question and its answer, then ask it again.
+    setMessages((m) => {
+      const lastUser = m.map((x) => x.role).lastIndexOf('user');
+      return lastUser >= 0 ? m.slice(0, lastUser) : m;
+    });
+    void run(q);
   }
 
   function toggleLocate() {
@@ -240,6 +337,20 @@ export default function App() {
     }
   }
 
+  const closeSide = useCallback(() => {
+    if (mobile) setDrawerOpen(false);
+    else setSideOpen(false);
+    // The sidebar goes inert: hand focus to the button that brings it back.
+    window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.cg-top [aria-label="Open sidebar"]')?.focus({ preventScroll: true }));
+  }, [mobile]);
+  const openSide = () => (mobile ? setDrawerOpen(true) : setSideOpen(true));
+  const railOpen = mobile ? drawerOpen : sideOpen;
+
+  // Leaving mobile width closes the drawer so it never reappears on rotate.
+  useEffect(() => {
+    if (!mobile) setDrawerOpen(false);
+  }, [mobile]);
+
   const composerProps = {
     input,
     onInputChange: setInput,
@@ -254,14 +365,11 @@ export default function App() {
     coordsActive: coords !== null,
   };
 
-  const links = (
+  const foot = (
     <>
-      <button type="button" onClick={() => setInfo('privacy')}>
-        Your privacy
-      </button>
-      <span aria-hidden="true"> · </span>
+      Taproot reads public EPA records and can make mistakes. It is not a test of your tap.{' '}
       <button type="button" onClick={() => setInfo('how')}>
-        How Taproot works
+        How it works
       </button>
     </>
   );
@@ -269,174 +377,111 @@ export default function App() {
   const dark = resolvedTheme === 'dark';
 
   return (
-    <div className="rc-app flex h-dvh flex-col bg-background text-foreground">
+    <div className={cn('cg-app', railOpen && !mobile && 'rail-open')}>
       <a className="sr-only focus:not-sr-only" href="#composer-input">
         Skip to message input
       </a>
-      <header className="rc-hdr">
-        <button type="button" onClick={newChat} className="rc-brand" aria-label="Taproot Atlas, new chat">
-          <Logo size={26} />
-          <span className="rc-brand-name">Taproot Atlas</span>
-          <span className="rc-brand-sub">Public water record</span>
-        </button>
-        {!empty && (
-          <HeaderButton label="New chat" onClick={newChat}>
-            <RcPlus />
-            <span className="txt">New chat</span>
-          </HeaderButton>
-        )}
-        <HeaderButton label="Menu" buttonRef={menuButtonRef} onClick={() => setMenuOpen(true)}>
-          <RcMenu />
-          <span className="txt">Menu</span>
-        </HeaderButton>
-      </header>
+      <AppSidebar
+        open={railOpen}
+        mobile={mobile}
+        onClose={closeSide}
+        conversations={conversations}
+        activeId={activeId}
+        onNewChat={newChat}
+        onSelect={openChat}
+        onDelete={deleteChat}
+        onClearAll={clearAll}
+        theme={theme}
+        onTheme={setTheme}
+        onInfo={setInfo}
+      />
 
-      {empty ? (
-        <main className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto', leaving && 'landing-dissolve-out')}>
-          <div className="rc-home stagger-entrance my-auto">
-            <div style={{ ['--stagger-index' as string]: 0 }} className="rc-kick">
-              Public water record · United States
-            </div>
-            <h1 style={{ ['--stagger-index' as string]: 1 }}>
-              Ask about the water at any US address <span>— answered from federal records.</span>
-            </h1>
-            <p style={{ ['--stagger-index' as string]: 2 }} className="rc-home-dek">
-              Where it comes from, what tests found in it, and how it reaches you. Every answer is filed with its system ID, source and date.
-            </p>
-            <div style={{ ['--stagger-index' as string]: 3 }}>
-              <Composer {...composerProps} label="Ask about your tap water" autoFocus foot={null} />
-            </div>
-            <div style={{ ['--stagger-index' as string]: 4 }} className="rc-sugg" aria-label="Example questions" role="group">
-              {EXAMPLES.map((q, i) => (
-                <button key={q} type="button" onClick={() => send(q)} aria-label={q}>
-                  <span className="n" aria-hidden="true">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <b>{q}</b>
-                  <RcArrow />
-                </button>
+      <div className="cg-main">
+        <header className="cg-top">
+          {!railOpen && (
+            <IconButton label="Open sidebar" onClick={openSide}>
+              <PanelLeft />
+            </IconButton>
+          )}
+          {!railOpen && !mobile && (
+            <IconButton label="New chat" onClick={newChat}>
+              <SquarePen />
+            </IconButton>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="cg-title" aria-label="Taproot Atlas menu">
+                <span>Taproot Atlas</span>
+                <span className="cg-title-sub">Public water record</span>
+                <ChevronDown className="cg-title-chev" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="cg-menu w-72">
+              <DropdownMenuLabel className="cg-menu-head">
+                <b>Taproot Atlas</b>
+                <span>Answers from US EPA water records: SDWIS, Lead &amp; Copper and UCMR 5.</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setPaletteOpen(true)}>
+                <CommandIcon className="size-4" /> Quick ask
+                <DropdownMenuShortcut>Ctrl K</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setInfo('how')}>
+                <Info className="size-4" /> How Taproot works
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setInfo('privacy')}>
+                <Shield className="size-4" /> Your privacy
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {APP_PAGES.map(({ href, label, hint, icon: Icon }) => (
+                <DropdownMenuItem key={href} onSelect={() => (window.location.hash = href)}>
+                  <Icon className="size-4" />
+                  <span className="flex-1">{label}</span>
+                  <span className="cg-menu-hint">{hint}</span>
+                </DropdownMenuItem>
               ))}
-            </div>
-            <p style={{ ['--stagger-index' as string]: 5 }} className="rc-home-foot">
-              {links}
-            </p>
-          </div>
-        </main>
-      ) : (
-        <main id="chat" className="animate-chat-surface-in flex min-h-0 flex-1 flex-col">
-          <ChatPane
-            messages={messages}
-            busy={busy}
-            onFollowUp={send}
-            composer={
-              <Composer
-                {...composerProps}
-                label="Message"
-                foot={
-                  <>
-                    Answers come from EPA records, not a test of your tap. {links}
-                  </>
-                }
-              />
-            }
-          />
-        </main>
-      )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <span className="flex-1" />
+          {mobile && !empty && (
+            <IconButton label="New chat" onClick={newChat}>
+              <SquarePen />
+            </IconButton>
+          )}
+          <IconButton label={dark ? 'Switch to light theme' : 'Switch to dark theme'} onClick={() => setTheme(dark ? 'light' : 'dark')}>
+            {dark ? <Sun /> : <Moon />}
+          </IconButton>
+        </header>
 
-      <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
-        <DrawerContent
-          className="rc-drawer gap-0 p-0 sm:p-0"
-          onCloseAutoFocus={(e) => {
-            e.preventDefault();
-            menuButtonRef.current?.focus();
-          }}
-        >
-          <DrawerTitle className="sr-only">Menu</DrawerTitle>
-          <DrawerDescription className="sr-only">New chat, other Taproot pages, recent questions and display settings</DrawerDescription>
-          <div className="rc-drw-h">
-            <span className="flex items-center gap-2.5">
-              <Logo size={22} />
-              <span className="rc-brand-name" style={{ fontSize: 17 }}>
-                Taproot Atlas
-              </span>
-            </span>
-            <DrawerClose asChild>
-              <button type="button" aria-label="Close menu" className="rc-btn icon ghost">
-                <RcClose />
-              </button>
-            </DrawerClose>
-          </div>
-          <div className="rc-drw-sec">
-            <button type="button" onClick={newChat} className="rc-btn primary w-full" style={{ height: 44 }}>
-              <RcPlus /> New chat
-            </button>
-          </div>
-          <div className="rc-drw-sec">
-            <span className="rc-lbl">Explore</span>
-            <nav aria-label="Explore">
-              {EXPLORE.map(([href, label, hint], i) => (
-                <a key={href} href={href} onClick={() => setMenuOpen(false)} className="rc-drw-a">
-                  <span className="n">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="min-w-0">
-                    {label}
-                    <span className="h">{hint}</span>
-                  </span>
-                  <RcChevRight />
-                </a>
-              ))}
-            </nav>
-          </div>
-          <div className="rc-drw-sec">
-            <span className="rc-lbl">Theme</span>
-            <div className="rc-seg" role="group" aria-label="Theme">
-              <button type="button" aria-pressed={!dark} onClick={() => setTheme('light')}>
-                <RcSun /> Day
-              </button>
-              <button type="button" aria-pressed={dark} onClick={() => setTheme('dark')}>
-                <RcMoon /> Night
-              </button>
-            </div>
-          </div>
-          <div className="rc-drw-sec">
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="rc-lbl">Recent questions</span>
-              {history.length > 0 && (
-                <button type="button" onClick={() => setHistory([])} aria-label="Clear recent questions" className="rc-btn icon sm ghost">
-                  <RcTrash />
-                </button>
-              )}
-            </div>
-            {history.length === 0 ? (
-              <p className="rc-drw-empty">Your questions stay in this browser.</p>
-            ) : (
-              <ul>
-                {history.map((q, i) => (
-                  <li key={q}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        send(q);
-                      }}
-                      className="rc-drw-a"
-                    >
-                      <span className="n">Q{i + 1}</span>
-                      <span className="t">{q}</span>
-                      <RcArrow />
-                    </button>
-                  </li>
+        {empty ? (
+          <main className={cn('cg-empty', leaving && 'landing-dissolve-out')}>
+            <div className="cg-empty-inner stagger-entrance">
+              <h1 style={{ ['--stagger-index' as string]: 0 }}>Where does your tap water come from?</h1>
+              <div style={{ ['--stagger-index' as string]: 1 }}>
+                <Composer {...composerProps} label="Ask about your tap water" autoFocus foot={null} />
+              </div>
+              <div style={{ ['--stagger-index' as string]: 2 }} className="cg-chips" role="group" aria-label="Example questions">
+                {SUGGESTIONS.map(({ q, hint }) => (
+                  <button key={q} type="button" onClick={() => send(q)} aria-label={q} title={hint}>
+                    {q}
+                  </button>
                 ))}
-              </ul>
-            )}
-          </div>
-          <div className="rc-drw-about">
-            <span className="rc-lbl mb-1.5 block">About</span>
-            <b>Taproot Atlas</b> reads public US EPA records — SDWIS violations, Lead &amp; Copper results and UCMR 5 PFAS tests — and answers in plain
-            language. Reported records only, never a real-time safety verdict.
-            <p className="mt-2 flex flex-wrap gap-x-1">{links}</p>
-          </div>
-        </DrawerContent>
-      </Drawer>
+              </div>
+            </div>
+            <p className="cg-empty-foot">{foot}</p>
+          </main>
+        ) : (
+          <main id="chat" className="animate-chat-surface-in flex min-h-0 flex-1 flex-col">
+            <ChatPane
+              messages={messages}
+              busy={busy}
+              onFollowUp={send}
+              onRegenerate={regenerate}
+              composer={<Composer {...composerProps} label="Message Taproot" placeholder="Ask a follow-up" foot={foot} />}
+            />
+          </main>
+        )}
+      </div>
 
       <InfoDialogs open={info} onOpenChange={setInfo} />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={(q) => send(q)} />

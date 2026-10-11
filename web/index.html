@@ -11,6 +11,10 @@
     <link rel="canonical" href="https://taproot-atlas-web-five.vercel.app/" />
     <meta name="theme-color" content="#0a3161" />
 
+    <script>
+      // Chat shell palette before first paint (record pages keep their own look).
+      if (!/^#\/(kit|triage|global|impact|study)/.test(location.hash)) document.documentElement.classList.add('cg-shell');
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
