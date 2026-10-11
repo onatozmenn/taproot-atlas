@@ -21,34 +21,34 @@ html.cg-shell {
   --cg-r-lg: 18px;
   --cg-r-xl: 28px;
 
-  /* Water palette (light): clear neutral surfaces with a cool cast, deep
+  /* Water palette (light): soft mid-grey surfaces (easy on the eyes, no pure white) with a cool cast, deep
      tidal ink, a tidal-blue register for links and a clear aqua accent
      reserved for motion and focus. */
-  --paper: #ffffff;
-  --field: #eff4f7;
-  --field-2: #eaf1f5;
-  --rule: #dde6ec;
+  --paper: #e4e7ea;
+  --field: #d9dde1;
+  --field-2: #d2d8dc;
+  --rule: #c9d0d5;
   --ink: #0c1c27;
-  --ink-2: #435766;
-  --ink-3: #5a6e7c;
+  --ink-2: #3a4c59;
+  --ink-3: #4d606c;
   --register: #0a6a91;
   --register-ink: #ffffff;
-  --register-tint: #e5f2f7;
-  --register-line: #9ccbdd;
+  --register-tint: #d3e2e9;
+  --register-line: #8bb9cb;
 
   --cg-aqua: #14a9c2;
   --cg-deep: #0b3a55;
   --cg-water: #3fb6d0;
   --cg-water-2: #9edbe8;
-  --cg-side: #f5f8fa;
-  --cg-side-hover: #e8eff3;
-  --cg-side-active: #dce8ef;
-  --cg-composer: #ffffff;
-  --cg-composer-border: #d9e3ea;
+  --cg-side: #dadee2;
+  --cg-side-hover: #ced4d9;
+  --cg-side-active: #c3cbd1;
+  --cg-composer: #eef0f2;
+  --cg-composer-border: #c4ccd2;
   --cg-composer-shadow: 0 1px 2px rgb(11 58 85 / .05), 0 8px 24px rgb(11 58 85 / .07);
   --cg-send: #0b3a55;
   --cg-send-ink: #ffffff;
-  --cg-send-off: #c8d5de;
+  --cg-send-off: #b4bfc7;
   --cg-scrim: rgb(5 20 30 / .42);
 
   --font-sans: var(--cg-font);
@@ -63,8 +63,8 @@ html.cg-shell {
   --ring: #2b97b8;
   --rp-sans: var(--cg-font);
   --rp-serif: var(--cg-font);
-  --popover: var(--paper);
-  --card: var(--paper);
+  --popover: #eef0f2;
+  --card: #eceef0;
   --sidebar: var(--cg-side);
 
   font-family: var(--cg-font);
@@ -72,6 +72,8 @@ html.cg-shell {
 }
 
 html.cg-shell.dark {
+  --popover: var(--paper);
+  --card: var(--paper);
   /* Water palette (dark): deep-water charcoal, never pure black. */
   --paper: #0f171d;
   --field: #1a242c;
@@ -175,7 +177,7 @@ html.cg-shell ::selection { background: color-mix(in oklab, var(--register) 25%,
 .cg-app .cg-user-more { color: var(--ink-3); }
 
 /* Menus (portalled, so scoped on <html>) */
-html.cg-shell .cg-menu { border-radius: 16px !important; padding: 6px; box-shadow: 0 10px 30px rgb(0 0 0 / .12), 0 0 0 1px var(--rule); background: var(--paper); font-family: var(--cg-font); }
+html.cg-shell .cg-menu { border-radius: 16px !important; padding: 6px; box-shadow: 0 10px 30px rgb(0 0 0 / .12), 0 0 0 1px var(--rule); background: var(--popover); font-family: var(--cg-font); }
 html.cg-shell.dark .cg-menu { background: #18232b; box-shadow: 0 10px 30px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .06); }
 html.cg-shell .cg-menu [data-slot='dropdown-menu-item'], html.cg-shell .cg-menu [data-slot='dropdown-menu-radio-item'] { border-radius: 10px !important; min-height: 38px; font-size: 14px; gap: 10px; }
 html.cg-shell .cg-menu-sub { font-size: 12px; font-weight: 500; color: var(--ink-3); padding-top: 4px; padding-bottom: 2px; }
