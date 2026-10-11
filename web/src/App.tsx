@@ -25,6 +25,7 @@ import {
   renameConversation,
   saveConversations,
   titleFrom,
+  threadTouch,
   upsertConversation,
   type Conversation,
 } from './lib/conversations';
@@ -146,7 +147,7 @@ export default function App({ page = null }: { page?: ShellPage | null } = {}) {
         titleSource: userTitled ? 'user' : 'auto',
         title: userTitled && prev ? prev.title : firstA ? autoTitle(firstQ, place) : titleFrom(firstQ),
         createdAt: prev?.createdAt ?? Date.now(),
-        updatedAt: Date.now(),
+        updatedAt: threadTouch(prev, messages.length),
         messages,
       };
       return saveConversations(upsertConversation(list, conv));

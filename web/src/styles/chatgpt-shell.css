@@ -145,6 +145,8 @@ html.cg-shell ::selection { background: color-mix(in oklab, var(--register) 25%,
 .cg-side-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; padding: 0 10px; border-radius: var(--cg-r-sm); font: 400 14px/1 var(--cg-font); color: var(--ink); text-align: left; text-decoration: none; transition: background-color .12s; }
 .cg-side-item:hover { background: var(--cg-side-hover); }
 .cg-side-item:focus-visible, .cg-chat-open:focus-visible, .cg-chat-more:focus-visible, .cg-user-row:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+/* Sidebar rows never glow blue: the ink outline carries keyboard focus. */
+.cg-user-row:focus-visible, .cg-chat-open:focus-visible { outline-color: var(--ink); }
 .cg-side-item > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cg-side-item.quiet { color: var(--ink-2); height: 34px; }
 .cg-side-item.quiet:hover { color: var(--ink); }

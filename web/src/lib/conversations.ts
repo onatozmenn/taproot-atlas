@@ -69,6 +69,16 @@ export function upsertConversation(list: Conversation[], conv: Conversation): Co
   return [conv, ...list.filter((c) => c.id !== conv.id)];
 }
 
+/**
+ * Last-activity timestamp for a thread: moves only when the thread gains
+ * messages (a question sent or an answer landed). Reopening a chat, toggling
+ * animation flags, or truncating for a retry must not push it to the top.
+ */
+export function threadTouch(prev: Conversation | undefined, messageCount: number, now = Date.now()): number {
+  if (!prev || messageCount > prev.messages.length) return now;
+  return prev.updatedAt;
+}
+
 /** Group label for the sidebar ("Today", "Yesterday", "Previous 7 days", "Older"). */
 export function groupLabel(at: number, now = Date.now()): string {
   const day = (t: number) => {

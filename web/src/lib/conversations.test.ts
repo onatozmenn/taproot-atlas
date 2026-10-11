@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CONVERSATIONS_KEY, groupLabel, loadConversations, saveConversations, titleFrom, upsertConversation, type Conversation } from './conversations';
+import { CONVERSATIONS_KEY, groupLabel, loadConversations, saveConversations, threadTouch, titleFrom, upsertConversation, type Conversation } from './conversations';
 
 function memStore(limit = Infinity) {
   const data = new Map<string, string>();
@@ -61,5 +61,15 @@ describe('conversations store', () => {
     expect(groupLabel(now - 86400_000, now)).toBe('Yesterday');
     expect(groupLabel(now - 5 * 86400_000, now)).toBe('Previous 7 days');
     expect(groupLabel(now - 90 * 86400_000, now)).toBe('Older');
+  });
+
+  it('only the thread written in moves to the top', () => {
+    const old = conv('a', 1000);
+    // Reopening (same message count) keeps the old timestamp.
+    expect(threadTouch(old, 1, 2000)).toBe(1000);
+    // A new message moves it to now.
+    expect(threadTouch(old, 2, 2000)).toBe(2000);
+    // A brand-new thread starts at now.
+    expect(threadTouch(undefined, 1, 2000)).toBe(2000);
   });
 });
