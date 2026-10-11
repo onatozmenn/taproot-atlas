@@ -11,6 +11,8 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   messages: ChatMsg[];
+  /** 'user' once renamed by hand: auto-titling never overwrites it. */
+  titleSource?: 'auto' | 'user';
 }
 
 export const CONVERSATIONS_KEY = 'taproot-conversations';
@@ -79,4 +81,47 @@ export function groupLabel(at: number, now = Date.now()): string {
   if (diff <= 7) return 'Previous 7 days';
   if (diff <= 30) return 'Previous 30 days';
   return 'Older';
+}
+
+const TOPICS: Array<[RegExp, string]> = [
+  [/\b(compare|versus|vs\.?)\b/i, 'comparison'],
+  [/\blead\b|kur\u015fun/i, 'lead'],
+  [/\b(pfas|pfoa|pfos|forever chemicals?)\b/i, 'PFAS'],
+  [/\b(nitrates?|arsenic|fluoride|chlorine|copper|uranium|radium|hardness|coliform|bacteria)\b/i, ''],
+  [/\b(violations?|complian\w*|fines?)\b/i, 'violations'],
+  [/\b(risk|forecast|score)\b/i, 'risk forecast'],
+  [/\b(inspect\w*|survey)\b/i, 'inspection'],
+  [/\b(come from|source|where does|watershed|reservoir)\b|nereden/i, 'water source'],
+  [/\b(reach|route|pipes?|pathway|get to)\b/i, 'route to tap'],
+  [/\b(safe|drink|healthy|clean)\b|g\u00fcvenli|i\u00e7ilir/i, 'water safety'],
+];
+
+/**
+ * A short ChatGPT-style title from the first question and its answer:
+ * "Flint water safety", "Chicago lead", "Detroit vs Flint". Falls back to
+ * the trimmed question when the answer names no place.
+ */
+export function autoTitle(question: string, place?: string | null): string {
+  const q = question.replace(/\s+/g, ' ').trim();
+  const cmp = q.match(/compare\s+(.+?)\s+(?:and|with|to|vs\.?)\s+(.+?)(?:\s+water)?[?.!]*$/i);
+  if (cmp) return titleFrom(`${cmp[1]} vs ${cmp[2]}`);
+  let topic = '';
+  for (const [re, label] of TOPICS) {
+    const m = q.match(re);
+    if (m) {
+      topic = label || (m[1] ?? m[0]).toLowerCase();
+      break;
+    }
+  }
+  const city = (place ?? '').replace(/,\s*[A-Z]{2}$/, '').trim();
+  if (city && topic) return titleFrom(`${city} ${topic}`);
+  if (city) return titleFrom(`${city} water`);
+  return titleFrom(q.replace(/[?.!]+$/, ''));
+}
+
+/** Rename one conversation by hand (empty names are ignored). */
+export function renameConversation(list: Conversation[], id: string, title: string): Conversation[] {
+  const t = title.replace(/\s+/g, ' ').trim().slice(0, 80);
+  if (!t) return list;
+  return list.map((c) => (c.id === id ? { ...c, title: t, titleSource: 'user' as const } : c));
 }

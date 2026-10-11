@@ -9,6 +9,7 @@ import {
   Moon,
   MoreHorizontal,
   PanelLeftClose,
+  Pencil,
   Search,
   Settings,
   Shield,
@@ -31,7 +32,7 @@ import {
 import { cn } from '@/lib/utils';
 import { groupLabel, type Conversation } from '../../lib/conversations';
 import type { InfoDialogKind } from '../chat/info-dialogs';
-import { Logo } from '../Logo';
+import { WaterMark } from './water-mark';
 
 export const APP_PAGES = [
   { href: '#/triage', label: 'Triage', hint: 'Where water teams look first', icon: ClipboardList },
@@ -51,6 +52,9 @@ export interface AppSidebarProps {
   onNewChat: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, title: string) => void;
+  /** Label of the page open in the shell (Triage, Impact…), if any. */
+  currentPage?: string | null;
   onClearAll: () => void;
   theme: string | undefined;
   onTheme: (t: string) => void;
@@ -114,7 +118,7 @@ export function AppSidebar(props: AppSidebarProps) {
         <div className="cg-side-inner">
           <div className="cg-side-top">
             <button type="button" className="cg-side-logo" onClick={() => { props.onNewChat(); after(); }} aria-label="Taproot Atlas, new chat">
-              <Logo size={22} />
+              <WaterMark size={24} />
             </button>
             <button type="button" className="cg-icon-btn" onClick={onClose} aria-label="Close sidebar">
               {mobile ? <X /> : <PanelLeftClose />}
@@ -160,7 +164,14 @@ export function AppSidebar(props: AppSidebarProps) {
             <nav className="cg-side-sec" aria-label="Taproot pages">
               <span className="cg-side-h">Explore</span>
               {APP_PAGES.map(({ href, label, hint, icon: Icon }) => (
-                <a key={href} href={href} className="cg-side-item quiet" title={hint} onClick={after}>
+                <a
+                  key={href}
+                  href={href}
+                  className={cn('cg-side-item quiet', props.currentPage === label && 'on')}
+                  aria-current={props.currentPage === label ? 'page' : undefined}
+                  title={hint}
+                  onClick={after}
+                >
                   <Icon />
                   <span>{label}</span>
                 </a>
@@ -181,20 +192,17 @@ export function AppSidebar(props: AppSidebarProps) {
                     <span className="cg-side-h">{g.label}</span>
                     <ul>
                       {g.items.map((c) => (
-                        <li key={c.id} className={cn('cg-chat', c.id === activeId && 'active')}>
-                          <button
-                            type="button"
-                            className="cg-chat-open"
-                            aria-current={c.id === activeId ? 'page' : undefined}
-                            onClick={() => { props.onSelect(c.id); after(); }}
-                            title={c.title}
-                          >
-                            {c.title}
-                          </button>
-                          <button type="button" className="cg-chat-del" aria-label={`Delete chat: ${c.title}`} onClick={() => props.onDelete(c.id)}>
-                            <Trash2 />
-                          </button>
-                        </li>
+                        <ChatRow
+                          key={c.id}
+                          conv={c}
+                          active={c.id === activeId && !props.currentPage}
+                          onOpen={() => {
+                            props.onSelect(c.id);
+                            after();
+                          }}
+                          onDelete={() => props.onDelete(c.id)}
+                          onRename={(t) => props.onRename(c.id, t)}
+                        />
                       ))}
                     </ul>
                   </div>
@@ -253,5 +261,76 @@ export function AppSidebar(props: AppSidebarProps) {
         </div>
       </aside>
     </>
+  );
+}
+
+/** One saved chat: open it, or use the "…" menu to Rename or Delete, like ChatGPT. */
+function ChatRow({ conv, active, onOpen, onDelete, onRename }: { conv: Conversation; active: boolean; onOpen: () => void; onDelete: () => void; onRename: (t: string) => void }) {
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(conv.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (renaming) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [renaming]);
+  const commit = () => {
+    setRenaming(false);
+    if (draft.trim() && draft.trim() !== conv.title) onRename(draft);
+  };
+  if (renaming) {
+    return (
+      <li className="cg-chat renaming">
+        <input
+          ref={inputRef}
+          className="cg-chat-rename"
+          aria-label="Chat name"
+          value={draft}
+          maxLength={80}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              e.stopPropagation();
+              setDraft(conv.title);
+              setRenaming(false);
+            }
+          }}
+        />
+      </li>
+    );
+  }
+  return (
+    <li className={cn('cg-chat', active && 'active')}>
+      <button type="button" className="cg-chat-open" aria-current={active ? 'page' : undefined} onClick={onOpen} title={conv.title}>
+        {conv.title}
+      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className="cg-chat-more" aria-label={`Options for ${conv.title}`}>
+            <MoreHorizontal />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="cg-menu w-44">
+          <DropdownMenuItem
+            onSelect={() => {
+              setDraft(conv.title);
+              // Let the menu close and hand focus back before the field takes it.
+              window.setTimeout(() => setRenaming(true), 0);
+            }}
+          >
+            <Pencil className="size-4" /> Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+            <Trash2 className="size-4" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </li>
   );
 }

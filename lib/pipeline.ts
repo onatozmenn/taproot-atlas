@@ -21,7 +21,7 @@ import { narrateGroundTruth, joinNarrative, type Narrative } from './narrator.js
 import { buildFactsMessage } from './llm-narrator.js';
 import { auditLlmNarrative, buildResolverFacts } from './guardrails.js';
 import { generateDeterministicSummary } from './fallback-template.js';
-import { classifyScope, greetingNarrative, offTopicNarrative } from './scope.js';
+import { classifyScope, greetingNarrative, offTopicNarrative, RECORD_FOLLOW_UP_RE, unresolvedPlaceName } from './scope.js';
 import { RISK_ASK_RE } from './risk.js';
 import { TRIAGE_ASK_RE, stateInText, triage } from './triage.js';
 import { findGlossaryEntry, glossaryFollowUps, CONTEXT_FOLLOW_UP_RE } from './glossary.js';
@@ -208,6 +208,10 @@ const COUNTRY_RE =
 /** World cities that share a name with a small US place. */
 const WORLD_CITIES = new Set(['paris', 'london', 'berlin', 'rome', 'madrid', 'athens', 'dublin', 'moscow', 'cairo', 'toronto', 'vancouver', 'lisbon', 'vienna', 'amsterdam', 'florence', 'naples', 'manchester', 'delhi', 'lima', 'sydney', 'melbourne']);
 
+/** World cities with no US namesake in the record: always outside coverage (no silent NYC default). */
+const WORLD_ONLY_RE =
+  /\b(ankara|istanbul|i\u0307stanbul|izmir|i\u0307zmir|bursa|antalya|konya|adana|eski\u015fehir|eskisehir|trabzon|tokyo|osaka|kyoto|beijing|shanghai|shenzhen|hong kong|singapore|seoul|mumbai|bangalore|bengaluru|karachi|lahore|dhaka|jakarta|bangkok|manila|hanoi|dubai|abu dhabi|riyadh|doha|tehran|baghdad|tel aviv|jerusalem|nairobi|lagos|johannesburg|cape town|casablanca|tunis|algiers|s\u00e3o paulo|sao paulo|rio de janeiro|buenos aires|bogot\u00e1|bogota|santiago de chile|mexico city|ciudad de m\u00e9xico|montreal|montr\u00e9al|ottawa|calgary|edmonton|brussels|munich|m\u00fcnchen|hamburg|frankfurt|zurich|z\u00fcrich|geneva|stockholm|oslo|copenhagen|helsinki|warsaw|prague|budapest|bucharest|sofia|belgrade|zagreb|kyiv|kiev|minsk|barcelona|milan|milano|marseille|lyon|glasgow|edinburgh|auckland|wellington|brisbane)\b/i;
+
 function placeIn(text: string): string | null {
   const hit = findPlaceInText(text);
   return hit ? hit.name : null;
@@ -223,6 +227,44 @@ function comparedPlaces(question: string): string[] {
     if (n && !out.includes(n)) out.push(n);
   }
   return out.length >= 2 ? out : [];
+}
+
+const fmtN = (n: number) => n.toLocaleString('en-US');
+
+/** One line of record facts per system, plus a lead verdict on health-based violations. */
+async function compareSystems(places: string[], deps: PipelineDeps): Promise<{ markdown: string; followUps: string[] } | null> {
+  // Snapshot records only: a comparison never invokes the model or live feeds.
+  const hermetic: PipelineDeps = { ...(deps.now ? { now: deps.now } : {}), recordSource: 'snapshot_fixture', findNearby: async () => [] };
+  const rows: Array<{ place: string; pwsid: string; health: number; line: string }> = [];
+  for (const place of places) {
+    const r = await answerCore({ question: `${place} water` }, hermetic);
+    const p = r.groundTruth.profile;
+    if (r.scope !== 'water' || !p || r.groundTruth.pwsid === 'UNKNOWN') return null;
+    const v = p.violationSummary;
+    const bits: string[] = [];
+    bits.push(`${v.healthBased5Years === 0 ? 'no' : fmtN(v.healthBased5Years)} health-based violation${v.healthBased5Years === 1 ? '' : 's'} in 5 years`);
+    if (p.leadSummary) bits.push(`latest lead ${p.leadSummary.latestPpb} ppb (action level 15)`);
+    if (p.pfas.tested) {
+      bits.push(
+        p.pfas.aboveMcl.length > 0
+          ? `PFAS above the limit (${p.pfas.aboveMcl.map((a) => a.name).slice(0, 2).join(', ')})`
+          : p.pfas.compoundsDetected.length > 0
+            ? 'PFAS detected below the limits'
+            : 'no PFAS detected',
+      );
+    }
+    if (p.population) bits.push(`serves ${fmtN(p.population)} people`);
+    rows.push({ place, pwsid: p.pwsid, health: v.healthBased5Years, line: bits.join(', ') });
+  }
+  if (rows.length < 2 || new Set(rows.map((r) => r.pwsid)).size < rows.length) return null;
+  const sorted = [...rows].sort((a, b) => a.health - b.health);
+  const [best, worst] = [sorted[0], sorted[sorted.length - 1]];
+  const lead =
+    best.health === worst.health
+      ? `**${rows.map((r) => r.place).join(' and ')} have the same number of health-based violations** in the last 5 years (${best.health === 0 ? 'none' : best.health}).`
+      : `**${best.place} has fewer health-based violations than ${worst.place}** in the last 5 years (${best.health} vs ${worst.health}).`;
+  const markdown = [lead, '', ...rows.map((r) => `- **${r.place}** (${r.pwsid}): ${r.line}.`), '', `${rows.length === 2 ? 'Both are' : 'All are'} past records, not a test of your tap.`].join('\n');
+  return { markdown, followUps: rows.slice(0, 3).map((r) => `Is ${r.place} water safe to drink?`) };
 }
 
 /**
@@ -258,6 +300,8 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
   }
   const compared = comparedPlaces(question);
   if (compared.length >= 2) {
+    const side = await compareSystems(compared.slice(0, 3), deps);
+    if (side) return redirect(side.markdown, side.followUps);
     return redirect(
       `I look at one city at a time for now. Pick one to start, then ask about the other.`,
       compared.slice(0, 3).map((c) => `Is ${c} water safe to drink?`),
@@ -270,10 +314,9 @@ async function answerSpecial(question: string, input: AskInput, deps: PipelineDe
       place ? [`Is ${place} water safe to drink?`, `Where does ${place} water come from?`] : EXAMPLE_FOLLOW_UPS,
     );
   }
-  if (COUNTRY_RE.test(question) && !/\b(new mexico)\b/i.test(question)) {
+  if ((COUNTRY_RE.test(question) || (input.lat === undefined && WORLD_ONLY_RE.test(question) && placeIn(question) === null)) && !/\b(new mexico)\b/i.test(question)) {
     return redirect(`Taproot covers U.S. public water systems today, plus Ireland’s at-risk list. Other countries need their regulator’s records first. [Where Taproot can go next](#/global)`, EXAMPLE_FOLLOW_UPS);
   }
-  void input;
   return null;
 }
 
@@ -437,8 +480,12 @@ async function answerCore(
   // question with an honest empty state, never a silent NYC default and
   // never an off-topic deflection. Directory hits always win.
   const namedPlace = !dirHit && !nationalHit && !pin ? findPlaceInText(question) : null;
+  // A capitalised place name that resolved to nothing ("Is Smallville
+  // water safe?") must never fall through to the NYC showcase system.
+  const unresolvedName =
+    !dirHit && !nationalHit && !pin && candidates.length === 0 && input.lat === undefined && !namedPlace ? unresolvedPlaceName(question) : null;
   const placeQuery = !dirHit && !nationalHit
-    ? detectPlaceQuery(question) ?? (namedPlace && namedPlace.stateNamed ? `${namedPlace.name}, ${namedPlace.state}` : null)
+    ? detectPlaceQuery(question) ?? (namedPlace && namedPlace.stateNamed ? `${namedPlace.name}, ${namedPlace.state}` : null) ?? unresolvedName
     : null;
   // A named city wins over the coordinate polygon: the web chat sends no
   // location, so coords are usually just the NYC default. An explicit city
@@ -695,7 +742,8 @@ async function answerCore(
   // and greeting questions return the redirect without invoking the model,
   // so "merhaba" can never become a water report and no model cost is spent.
   // "is that bad?" / "should I worry?" right after an answer refers to it.
-  const contextFollowUp = Boolean(contextHit || (nationalHit && input.contextPwsid)) && CONTEXT_FOLLOW_UP_RE.test(question.trim());
+  const contextFollowUp =
+    Boolean(contextHit || (nationalHit && input.contextPwsid)) && (CONTEXT_FOLLOW_UP_RE.test(question.trim()) || RECORD_FOLLOW_UP_RE.test(question));
   const scope =
     namedHit || contextFollowUp || (nationalHit && !input.contextPwsid) || (nationalHit && classifyScope(question) !== 'greeting')
       ? 'water'

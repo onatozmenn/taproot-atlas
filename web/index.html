@@ -9,11 +9,12 @@
       content="Ask in everyday words where tap water comes from. Answers cite the public water system, source basins, reported lab tests, and EPA compliance records — shown on a schematic map."
     />
     <link rel="canonical" href="https://taproot-atlas-web-five.vercel.app/" />
-    <meta name="theme-color" content="#0a3161" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f171d" media="(prefers-color-scheme: dark)" />
 
     <script>
-      // Chat shell palette before first paint (record pages keep their own look).
-      if (!/^#\/(kit|triage|global|impact|study)/.test(location.hash)) document.documentElement.classList.add('cg-shell');
+      // Water shell palette before first paint, on every route.
+      document.documentElement.classList.add('cg-shell');
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />

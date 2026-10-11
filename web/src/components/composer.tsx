@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, LocateFixed, Mic, Paperclip, Square } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -74,9 +74,14 @@ export function Composer(props: ComposerProps) {
     if (props.autoFocus && fine) taRef.current?.focus();
   }, [props.autoFocus]);
 
+  // A ripple spreads from the send button each time a question goes out.
+  const [ripple, setRipple] = useState(0);
   function submit() {
     const text = props.input.trim().slice(0, 2000);
-    if (text && !props.busy) props.onSend(text);
+    if (text && !props.busy) {
+      setRipple((r) => r + 1);
+      props.onSend(text);
+    }
   }
 
   return (
@@ -143,6 +148,12 @@ export function Composer(props: ComposerProps) {
             <button type="submit" disabled={!canSend} aria-label="Send message" className="cg-send">
               <ArrowUp strokeWidth={2.4} />
             </button>
+          )}
+          {ripple > 0 && (
+            <span key={ripple} className="cg-ripple" aria-hidden="true">
+              <i />
+              <i />
+            </span>
           )}
         </div>
       </div>

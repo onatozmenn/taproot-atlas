@@ -1,6 +1,17 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-type Which = 'privacy' | 'how' | null;
+type Which = 'privacy' | 'how' | 'keys' | null;
+
+const KEYS: Array<[string, string[]]> = [
+  ['New chat', ['Ctrl', 'Shift', 'O']],
+  ['Toggle sidebar', ['Ctrl', 'Shift', 'S']],
+  ['Focus the message box', ['Shift', 'Esc']],
+  ['Copy the last answer', ['Ctrl', 'Shift', 'C']],
+  ['Quick ask', ['Ctrl', 'K']],
+  ['Send message', ['Enter']],
+  ['New line', ['Shift', 'Enter']],
+  ['Keyboard shortcuts', ['Ctrl', '/']],
+];
 
 export function InfoDialogs({ open, onOpenChange }: { open: Which; onOpenChange: (w: Which) => void }) {
   return (
@@ -47,6 +58,26 @@ export function InfoDialogs({ open, onOpenChange }: { open: Which; onOpenChange:
               Check the linked EPA and utility sources for the official documents.
             </p>
           </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={open === 'keys'} onOpenChange={(o) => onOpenChange(o ? 'keys' : null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold tracking-tight">Keyboard shortcuts</DialogTitle>
+            <DialogDescription>On a Mac, use Cmd instead of Ctrl.</DialogDescription>
+          </DialogHeader>
+          <dl className="cg-keys">
+            {KEYS.map(([what, keys]) => (
+              <div key={what}>
+                <dt>{what}</dt>
+                <dd>
+                  {keys.map((k) => (
+                    <kbd key={k}>{k}</kbd>
+                  ))}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </DialogContent>
       </Dialog>
     </>

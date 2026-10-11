@@ -2,20 +2,55 @@ import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState, typ
 import { renderMarkdown } from '../../md';
 
 /** Close an unbalanced **bold** run so a half-revealed token never shows raw asterisks. */
-function balance(prefix: string): string {
+export function balance(prefix: string): string {
   const count = (prefix.match(/\*\*/g) ?? []).length;
   return count % 2 === 1 ? `${prefix}**` : prefix;
 }
 
-function prefersReducedMotion(): boolean {
+export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
 }
 
+/**
+ * Token boundaries for the stream: words with their trailing space, and
+ * long words split into ~4-character pieces, the way a model emits tokens.
+ * Returns cumulative character offsets, so `text.slice(0, ends[i])` is the
+ * text after token i.
+ */
+export function tokenEnds(text: string): number[] {
+  const ends: number[] = [];
+  const re = /\S+\s*|\s+/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const start = m.index;
+    const tok = m[0];
+    if (tok.trim().length > 8) {
+      for (let i = 4; i < tok.trimEnd().length; i += 4) ends.push(start + i);
+    }
+    ends.push(start + tok.length);
+  }
+  return ends;
+}
+
+/**
+ * Stream pace: about 55 tokens a second, eased so the first words land
+ * quickly and long answers never take more than 2.4 s. Returns how many
+ * tokens to show `elapsed` ms after the answer arrived.
+ */
+export function tokensAt(elapsed: number, total: number): number {
+  if (total <= 0) return 0;
+  const duration = Math.min(2400, Math.max(450, total * 18));
+  const t = Math.min(1, elapsed / duration);
+  // easeOutSine: brisk start, gentle landing.
+  const eased = Math.sin((t * Math.PI) / 2);
+  return t >= 1 ? total : Math.max(1, Math.round(eased * total));
+}
+
 interface StreamingAnswerProps {
   markdown: string;
-  /** Reveal word by word (new answers). Old answers render instantly. */
+  /** Stream token by token (new answers). Old answers render instantly. */
   animate: boolean;
   onDone?: () => void;
   /** Inline cite tags, set at the end of the last paragraph once the text is in. */
@@ -23,37 +58,33 @@ interface StreamingAnswerProps {
 }
 
 /**
- * Streams the answer in like America.gov's follow-up responses: a few words
- * per frame with a soft blur-in on the leading edge, then hands off to the
- * action row and follow-up pills. The full text is in the DOM for screen
- * readers from the start (aria-live announces once on completion).
+ * Streams the answer token by token with a soft droplet caret on the
+ * leading edge, then hands off to the action row. The answer is announced
+ * once on completion (aria-busy flips), never word by word.
  */
 export function StreamingAnswer({ markdown, animate, onDone, tail }: StreamingAnswerProps) {
-  const words = useMemo(() => markdown.split(/(\s+)/), [markdown]);
+  const ends = useMemo(() => tokenEnds(markdown), [markdown]);
   const skip = !animate || prefersReducedMotion();
-  const [count, setCount] = useState(skip ? words.length : 0);
+  const [count, setCount] = useState(skip ? ends.length : 0);
   const doneRef = useRef(false);
 
   useEffect(() => {
     if (skip) {
-      setCount(words.length);
+      setCount(ends.length);
       return;
     }
     let raf = 0;
-    let last = 0;
+    const t0 = performance.now();
     const step = (t: number) => {
-      if (t - last > 16) {
-        last = t;
-        // ~3 tokens per frame, a bit faster for long answers.
-        setCount((c) => Math.min(words.length, c + (words.length > 220 ? 6 : 3)));
-      }
-      raf = requestAnimationFrame(step);
+      const n = tokensAt(t - t0, ends.length);
+      setCount(n);
+      if (n < ends.length) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [skip, words.length]);
+  }, [skip, ends.length]);
 
-  const finished = count >= words.length;
+  const finished = count >= ends.length;
   useEffect(() => {
     if (finished && !doneRef.current) {
       doneRef.current = true;
@@ -61,21 +92,22 @@ export function StreamingAnswer({ markdown, animate, onDone, tail }: StreamingAn
     }
   }, [finished, onDone]);
 
-  const visible = finished ? markdown : balance(words.slice(0, count).join(''));
+  const visible = finished ? markdown : balance(markdown.slice(0, ends[count - 1] ?? 0));
   const nodes = renderMarkdown(visible);
-  if (finished && tail) {
+  const caret = <span key="caret" className="cg-caret" aria-hidden="true" />;
+  const extra = finished ? tail : caret;
+  if (extra) {
     const last = nodes[nodes.length - 1];
     if (isValidElement(last) && last.type === 'p') {
       const el = last as ReactElement<{ children?: ReactNode }>;
-      nodes[nodes.length - 1] = cloneElement(el, undefined, el.props.children, tail);
+      nodes[nodes.length - 1] = cloneElement(el, undefined, el.props.children, extra);
     } else {
-      nodes.push(<p key="cite-tail">{tail}</p>);
+      nodes.push(<p key="stream-tail">{extra}</p>);
     }
   }
   return (
-    <div className="answer-prose" aria-busy={!finished}>
+    <div className="answer-prose" aria-busy={!finished} data-streaming={!finished || undefined}>
       {nodes}
-      {!finished && <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[3px] bg-foreground/60 dot-pulse" aria-hidden="true" />}
     </div>
   );
 }
