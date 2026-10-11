@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act } from 'react';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, within } from '@testing-library/react';
 import { loadMaplibre } from '../RealMap';
 import { loadProfile } from '../../../../lib/profile';
 import type { TapAnswer } from '../../api';
@@ -116,6 +116,28 @@ describe('VisualAnswer picks one figure per question', () => {
       await vi.advanceTimersByTimeAsync(16000);
     });
     expect(screen.getByRole('img', { name: /Map of the area/ })).toBeTruthy();
+  });
+
+  it('map: the expand button opens the figure large in a dialog', async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as never);
+    class FakeMap {
+      on() {
+        return this;
+      }
+      remove() {}
+      isStyleLoaded() {
+        return true;
+      }
+    }
+    vi.mocked(loadMaplibre).mockResolvedValue({ Map: FakeMap } as never);
+    render(<VisualAnswer answer={answerFor('CO0116001', 'Where does Denver water come from?', 'source')} />);
+    const expand = await screen.findByRole('button', { name: /Expand map/ }, { timeout: 3000 });
+    fireEvent.click(expand);
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 3000 });
+    // The large figure renders inside the dialog (the modal hides the page copy).
+    const inner = within(dialog);
+    expect(inner.getByRole('application', { name: /Map of the area/ })).toBeTruthy();
+    expect(inner.queryByRole('button', { name: /Expand map/ })).toBeNull();
   });
 });
 

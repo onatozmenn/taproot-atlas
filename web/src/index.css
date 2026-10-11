@@ -252,6 +252,14 @@
 
 .scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
+/* Site scrollbar: a slim square thumb in the record's ink, quiet until hovered. */
+* { scrollbar-width: thin; scrollbar-color: var(--ink-3) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--ink-3); border-radius: 0; border: 3px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--ink-2); border: 3px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-corner { background: transparent; }
+
 @keyframes landing-dissolve-out { from { opacity: 1; transform: scale(1) } to { opacity: 0; transform: scale(.985) } }
 .landing-dissolve-out { will-change: opacity, transform; animation: landing-dissolve-out .24s var(--ease-out-cubic) forwards; }
 
