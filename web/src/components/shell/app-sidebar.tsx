@@ -211,14 +211,14 @@ export function AppSidebar(props: AppSidebarProps) {
             </section>
           </div>
 
+          <p className="cg-side-note">Chats saved in this browser</p>
           <div className="cg-side-foot">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="cg-user-row" aria-label="Settings">
-                  <span className="cg-user-av" aria-hidden="true">G</span>
+                  <Settings className="cg-user-ic" aria-hidden="true" />
                   <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate">Guest</span>
-                    <span className="cg-user-sub">Chats saved in this browser</span>
+                    <span className="block truncate">Settings</span>
                   </span>
                   <MoreHorizontal className="cg-user-more" />
                 </button>

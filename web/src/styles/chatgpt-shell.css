@@ -172,8 +172,8 @@ html.cg-shell ::selection { background: color-mix(in oklab, var(--register) 25%,
 .cg-side-foot { padding-top: 6px; border-top: 1px solid color-mix(in oklab, var(--rule) 70%, transparent); }
 .cg-user-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 50px; padding: 6px 8px; border-radius: var(--cg-r-sm); font: 500 14px/1.2 var(--cg-font); color: var(--ink); transition: background-color .12s; }
 .cg-user-row:hover, .cg-user-row[data-state='open'] { background: var(--cg-side-hover); }
-.cg-user-av { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px; background: var(--cg-deep); color: var(--paper); font: 600 13px/1 var(--cg-font); flex: none; }
-.cg-user-sub { display: block; font: 400 12px/1.3 var(--cg-font); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cg-user-ic { width: 20px; height: 20px; flex: none; color: var(--ink-2); }
+.cg-side-note { margin: 0 0 2px; padding: 0 8px; font: 400 11.5px/1.4 var(--cg-font); color: var(--ink-3); }
 .cg-app .cg-user-more { color: var(--ink-3); }
 
 /* Menus (portalled, so scoped on <html>) */
