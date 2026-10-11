@@ -251,7 +251,14 @@ export default function App({ page = null }: { page?: ShellPage | null } = {}) {
     setLeaving(false);
   }
 
+  /** Chat state lives under every hash-route page: opening a thread must also
+      show the chat route, or the conversation loads invisibly behind the page. */
+  function goChatRoute() {
+    if (window.location.hash.length > 2) window.location.hash = '#/';
+  }
+
   function newChat() {
+    goChatRoute();
     detach();
     setMessages([]);
     setActiveId(null);
@@ -260,9 +267,10 @@ export default function App({ page = null }: { page?: ShellPage | null } = {}) {
   }
 
   function openChat(id: string) {
-    if (id === activeId) return;
+    if (id === activeId && window.location.hash.length <= 2) return;
     const conv = conversations.find((c) => c.id === id);
     if (!conv) return;
+    goChatRoute();
     detach();
     setMessages(conv.messages.map((m) => ({ ...m, fresh: false })));
     nextId = Math.max(nextId, ...conv.messages.map((m) => m.id + 1));
