@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
+import { ArrowUp, LocateFixed, Mic, Paperclip, Square } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { RcArrow, RcAttach, RcLocate, RcMic, RcStop } from './chat/rc-icons';
-import '../styles/record-chat.css';
+import { cn } from '@/lib/utils';
+import '../styles/chatgpt-shell.css';
 
 interface ComposerProps {
   input: string;
@@ -19,8 +20,9 @@ interface ComposerProps {
   /** Accessible name for the field. */
   label: string;
   autoFocus?: boolean;
-  /** Footnote under the field (privacy links etc.). */
+  /** Line under the box (disclaimer, privacy links). `null` hides it. */
   foot?: React.ReactNode;
+  className?: string;
 }
 
 function Tool({
@@ -39,7 +41,7 @@ function Tool({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" aria-label={label} aria-pressed={active} disabled={disabled} onClick={onClick} className="rc-btn icon">
+        <button type="button" aria-label={label} aria-pressed={active} disabled={disabled} onClick={onClick} className="cg-tool">
           {children}
         </button>
       </TooltipTrigger>
@@ -49,9 +51,9 @@ function Tool({
 }
 
 /**
- * Public Record composer: a labelled government form field. "Question"
- * over a 2px ink box, quiet square tools, a register-blue Send that
- * becomes an ink-bordered Stop while records are read.
+ * Chat composer: a soft rounded box with an auto-growing field, quiet tools
+ * on the left and a round send button that turns into Stop while an answer
+ * is on its way. Enter sends, Shift+Enter adds a new line.
  */
 export function Composer(props: ComposerProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -62,7 +64,7 @@ export function Composer(props: ComposerProps) {
     const ta = taRef.current;
     if (!ta) return;
     ta.style.height = '0px';
-    ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`;
+    ta.style.height = `${Math.min(ta.scrollHeight, 208)}px`;
   }, [props.input]);
 
   useEffect(() => {
@@ -83,16 +85,12 @@ export function Composer(props: ComposerProps) {
         e.preventDefault();
         submit();
       }}
-      className="rc-composer"
+      className={cn('cg-composer', props.className)}
     >
-      <div className="rc-cmp-label">
-        <label htmlFor="composer-input">
-          Question<span className="sr-only"> — {props.label}</span>
+      <div className="cg-cmp-box" onClick={(e) => e.target === e.currentTarget && taRef.current?.focus()}>
+        <label htmlFor="composer-input" className="sr-only">
+          {props.label}
         </label>
-        <span aria-hidden="true">US city, ZIP, or system ID</span>
-      </div>
-      <div className="rc-cmp-box">
-        {props.busy && <div className="rc-cmp-prog" aria-hidden="true" />}
         <textarea
           id="composer-input"
           ref={taRef}
@@ -105,10 +103,10 @@ export function Composer(props: ComposerProps) {
               submit();
             }
           }}
-          placeholder={props.placeholder ?? 'Ask about your water…'}
-          className="rc-cmp-text"
+          placeholder={props.placeholder ?? 'Ask about any US city, ZIP or water system'}
+          className="cg-cmp-text"
         />
-        <div className="rc-cmp-bar">
+        <div className="cg-cmp-bar">
           <input
             ref={fileRef}
             type="file"
@@ -123,10 +121,7 @@ export function Composer(props: ComposerProps) {
             }}
           />
           <Tool label="Attach a text file" onClick={() => fileRef.current?.click()}>
-            <RcAttach />
-          </Tool>
-          <Tool label={props.listening ? 'Listening…' : 'Ask by voice'} onClick={props.onVoice} active={props.listening}>
-            <RcMic className={props.listening ? 'dot-pulse' : undefined} />
+            <Paperclip />
           </Tool>
           <Tool
             label={props.coordsActive ? 'Location on, tap to turn off' : 'Use my location'}
@@ -134,29 +129,27 @@ export function Composer(props: ComposerProps) {
             active={props.coordsActive}
             disabled={props.locating}
           >
-            <RcLocate className={props.locating ? 'dot-pulse' : undefined} />
+            <LocateFixed className={props.locating ? 'dot-pulse' : undefined} />
           </Tool>
-          <span className="spacer" />
-          <span className="hint" aria-hidden="true">
-            {props.busy ? 'Reading records…' : '↵ to send'}
-          </span>
+          <span className="cg-spacer" />
+          <Tool label={props.listening ? 'Listening…' : 'Ask by voice'} onClick={props.onVoice} active={props.listening}>
+            <Mic className={props.listening ? 'dot-pulse' : undefined} />
+          </Tool>
           {props.busy ? (
-            <button type="button" onClick={props.onStop} aria-label="Stop response" className="rc-btn stop">
-              <RcStop />
-              Stop
+            <button type="button" onClick={props.onStop} aria-label="Stop response" className="cg-send stop">
+              <Square fill="currentColor" strokeWidth={0} />
             </button>
           ) : (
-            <button type="submit" disabled={!canSend} aria-label="Send message" className="rc-btn primary">
-              Send
-              <RcArrow />
+            <button type="submit" disabled={!canSend} aria-label="Send message" className="cg-send">
+              <ArrowUp strokeWidth={2.4} />
             </button>
           )}
         </div>
       </div>
-      {props.foot !== undefined ? (
-        <div className="rc-cmp-foot">{props.foot}</div>
-      ) : (
-        <p className="rc-cmp-foot">Answers come from EPA records (SDWIS, Lead &amp; Copper Rule, UCMR 5), not a test of your tap.</p>
+      {props.foot !== null && (
+        <div className="cg-cmp-foot">
+          {props.foot ?? 'Taproot reads public EPA records and can be wrong. It is not a test of your tap.'}
+        </div>
       )}
     </form>
   );

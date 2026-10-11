@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import type { TapAnswer } from '../../api';
 import { SourceList, SourceToggle } from '../kit';
-import { RcCheck, RcCopy, RcDownVote, RcUp } from './rc-icons';
+import { Check, Copy, RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { sendFeedback } from '../../feedback';
 
 export interface SourceLink {
@@ -57,7 +57,7 @@ function IconAction({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" onClick={onClick} aria-label={label} aria-pressed={pressed} className={cn('rc-btn icon', pressed && 'on')}>
+        <button type="button" onClick={onClick} aria-label={label} aria-pressed={pressed} className={cn('cg-act', pressed && 'on')}>
           {children}
         </button>
       </TooltipTrigger>
@@ -76,9 +76,11 @@ export interface AnswerActionsProps {
   retrieved?: string;
   idPrefix?: string;
   highlight?: number | null;
+  /** Ask the same question again (latest answer only). */
+  onRegenerate?: () => void;
 }
 
-export function AnswerActions({ answer, copyText, sources: given, open: openProp, onToggleSources, retrieved, idPrefix, highlight }: AnswerActionsProps) {
+export function AnswerActions({ answer, copyText, sources: given, open: openProp, onToggleSources, retrieved, idPrefix, highlight, onRegenerate }: AnswerActionsProps) {
   const sources = given ?? (answer.scope === 'redirect' ? [] : sourcesFor(answer));
   const [openLocal, setOpenLocal] = useState(false);
   const open = openProp ?? openLocal;
@@ -108,20 +110,25 @@ export function AnswerActions({ answer, copyText, sources: given, open: openProp
 
   return (
     <div className="animate-message-action-in flex flex-col">
-      <div className="rc-acts">
-        {sources.length > 0 ? <SourceToggle sources={sources} open={open} onToggle={toggle} /> : <span className="mr-auto" />}
+      <div className="rc-acts cg-acts">
+        <IconAction label={copied ? 'Copied' : 'Copy'} onClick={() => void copy()}>
+          {copied ? <Check /> : <Copy />}
+        </IconAction>
         <IconAction label={rating === 'up' ? 'Remove rating' : 'Good response'} pressed={rating === 'up'} onClick={() => rate('up')}>
-          <RcUp />
+          <ThumbsUp />
         </IconAction>
         <IconAction label={rating === 'down' ? 'Remove rating' : 'Bad response'} pressed={rating === 'down'} onClick={() => rate('down')}>
-          <RcDownVote />
+          <ThumbsDown />
         </IconAction>
-        <IconAction label={copied ? 'Copied' : 'Copy'} onClick={() => void copy()}>
-          {copied ? <RcCheck /> : <RcCopy />}
-        </IconAction>
+        {onRegenerate && (
+          <IconAction label="Regenerate" onClick={onRegenerate}>
+            <RefreshCw />
+          </IconAction>
+        )}
+        {sources.length > 0 && <SourceToggle sources={sources} open={open} onToggle={toggle} />}
         {thanks && (
           <div role="status" className="rc-toast animate-feedback-popover-in">
-            <RcCheck />
+            <Check />
             <span>
               Thank you
               <small>Your rating helps fix the record.</small>

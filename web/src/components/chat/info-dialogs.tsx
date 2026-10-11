@@ -22,7 +22,7 @@ export function InfoDialogs({ open, onOpenChange }: { open: Which; onOpenChange:
             </section>
             <section>
               <h3 className="font-semibold">Limited retention</h3>
-              <p className="text-muted-foreground">Your recent questions stay in this browser only. Clear them anytime from the menu.</p>
+              <p className="text-muted-foreground">Your chats stay in this browser only. Delete them anytime from the sidebar.</p>
             </section>
           </div>
         </DialogContent>

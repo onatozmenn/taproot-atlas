@@ -5,9 +5,11 @@ import { AnswerActions, sourcesFor, type SourceLink } from './chat/answer-action
 import { EvidenceCard } from './chat/evidence-card';
 import { StreamingAnswer } from './chat/streaming-answer';
 import { LIVE_DELAYS, LIVE_STEPS, traceFor } from './chat/answer-trace';
-import { RcDown } from './chat/rc-icons';
-import { ClarifyCard, CitePill, FollowUpList, RecordChips, SourceRegister, ThinkingTrace, tagOf, useStages, type RecordChip } from './kit';
+import { ArrowDown } from 'lucide-react';
+import { Logo } from './Logo';
+import { ClarifyCard, CitePill, FollowUpList, RecordChips, ThinkingTrace, tagOf, useStages, type RecordChip } from './kit';
 import '../styles/record-chat.css';
+import '../styles/chatgpt-shell.css';
 
 export interface ChatMsg {
   id: number;
@@ -28,24 +30,41 @@ export interface ChatMsg {
 function LiveTrace() {
   const stage = useStages(LIVE_DELAYS);
   const steps = LIVE_STEPS.slice(0, stage + 1).map((label) => ({ label }));
-  return <ThinkingTrace steps={steps} working totalSteps={LIVE_STEPS.length} className="rc-col animate-message-in" />;
+  return (
+    <div className="cg-asst animate-message-in">
+      <AssistantMark busy />
+      <div className="cg-asst-body">
+        <ThinkingTrace steps={steps} working totalSteps={LIVE_STEPS.length} />
+      </div>
+    </div>
+  );
+}
+
+/** The small round mark beside every answer. */
+function AssistantMark({ busy }: { busy?: boolean }) {
+  return (
+    <span className={`cg-avatar${busy ? ' busy' : ''}`} aria-hidden="true">
+      <Logo size={18} />
+    </span>
+  );
 }
 
 interface ChatPaneProps {
   messages: ChatMsg[];
   busy: boolean;
   onFollowUp: (q: string) => void;
-  /** The question box, rendered in-flow as the last record of the thread. */
+  /** The question box, docked under the thread. */
   composer?: ReactNode;
+  /** Ask the latest answer's question again. */
+  onRegenerate?: (q: string) => void;
 }
 
 function ScrollToEnd() {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
   if (isAtBottom) return null;
   return (
-    <button type="button" onClick={() => void scrollToBottom()} aria-label="Scroll to end" className="rc-toend animate-option-pill-in">
-      <RcDown />
-      Latest answer
+    <button type="button" onClick={() => void scrollToBottom()} aria-label="Scroll to end" className="cg-toend animate-option-pill-in">
+      <ArrowDown />
     </button>
   );
 }
@@ -95,11 +114,13 @@ function AssistantTurn({
   isLatest,
   busy,
   onFollowUp,
+  onRegenerate,
 }: {
   msg: ChatMsg;
   isLatest: boolean;
   busy: boolean;
   onFollowUp: (q: string) => void;
+  onRegenerate?: (q: string) => void;
 }) {
   const answer = msg.answer as TapAnswer;
   const [revealed, setRevealed] = useState(!msg.fresh);
@@ -127,12 +148,11 @@ function AssistantTurn({
   });
 
   function goToSource(i: number) {
-    const wide = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1000px)').matches;
-    if (!wide) setSrcOpen(true);
+    setSrcOpen(true);
     setHl(i);
     window.clearTimeout(hlTimer.current);
     hlTimer.current = window.setTimeout(() => setHl(null), 2400);
-    window.setTimeout(() => document.getElementById(`${wide ? `${idBase}-m` : idBase}-${i + 1}`)?.focus({ preventScroll: false }), wide ? 0 : 320);
+    window.setTimeout(() => document.getElementById(`${idBase}-${i + 1}`)?.focus({ preventScroll: false }), 320);
   }
 
   const tail =
@@ -146,7 +166,9 @@ function AssistantTurn({
     ) : null;
 
   return (
-    <article className={`rc-turn animate-message-in${sources.length > 0 ? ' has-margin' : ''}`} aria-label="Answer">
+    <article className="cg-asst animate-message-in" aria-label="Answer">
+      <AssistantMark />
+      <div className="cg-asst-body rc-turn">
       {steps.length > 0 && <ThinkingTrace steps={steps} working={false} elapsedMs={msg.elapsedMs} />}
       <div className="rc-entry">
         <div className="rc-entry-strip">
@@ -188,11 +210,8 @@ function AssistantTurn({
             copyText={markdown}
             sources={sources}
             open={srcOpen}
-            onToggleSources={() => {
-              const wide = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1000px)').matches;
-              if (wide) goToSource(0);
-              else setSrcOpen(!srcOpen);
-            }}
+            onToggleSources={() => setSrcOpen(!srcOpen)}
+            onRegenerate={isLatest && onRegenerate && answer.question ? () => onRegenerate(answer.question as string) : undefined}
             retrieved={retrieved}
             idPrefix={idBase}
             highlight={hl}
@@ -200,50 +219,51 @@ function AssistantTurn({
           {chips.length > 0 && <FollowUpList items={chips} onPick={onFollowUp} disabled={busy} />}
         </>
       )}
-      {sources.length > 0 && (
-        <aside className="rc-margin" aria-label="Sources for this answer">
-          <SourceRegister sources={sources} retrieved={retrieved} idPrefix={`${idBase}-m`} highlight={hl} />
-          <p className="rc-note">
-            Record read {retrieved}. Reported results describe the past; they do not promise what is in your tap today.
-          </p>
-        </aside>
-      )}
+      </div>
     </article>
   );
 }
 
-export function ChatPane({ messages, busy, onFollowUp, composer }: ChatPaneProps) {
+export function ChatPane({ messages, busy, onFollowUp, composer, onRegenerate }: ChatPaneProps) {
   const lastAssistantId = [...messages].reverse().find((m) => m.role === 'assistant')?.id;
   return (
-    <StickToBottom className="relative min-h-0 flex-1 overflow-y-hidden" initial="smooth" resize="smooth" role="log">
-      <StickToBottom.Content className="scrollbar-thin">
-        <div className="rc-thread">
-          <h2 className="sr-only">Conversation with Taproot</h2>
-          {messages.map((m) =>
-            m.role === 'user' ? (
-              <div key={m.id} className="rc-umsg rc-col animate-message-in">
-                <div className="rc-umsg-box">
-                  <span className="rc-lbl">Question{clock(m.at) ? ` · ${clock(m.at)}` : ''}</span>
-                  <p>{m.text}</p>
+    <div className="cg-pane">
+      <StickToBottom className="relative min-h-0 flex-1 overflow-y-hidden" initial="smooth" resize="smooth" role="log">
+        <StickToBottom.Content className="scrollbar-thin">
+          <div className="cg-thread">
+            <h2 className="sr-only">Conversation with Taproot</h2>
+            {messages.map((m) =>
+              m.role === 'user' ? (
+                <div key={m.id} className="cg-user animate-message-in">
+                  <div className="cg-bubble" title={clock(m.at) ?? undefined}>
+                    <span className="sr-only">You said{clock(m.at) ? ` at ${clock(m.at)}` : ''}: </span>
+                    <span>{m.text}</span>
+                  </div>
                 </div>
-              </div>
-            ) : m.stopped || !m.answer ? (
-              <p key={m.id} className="rc-stopped rc-col animate-message-in" role="status">
-                Stopped. Ask again whenever you're ready.
-              </p>
-            ) : (
-              <AssistantTurn key={m.id} msg={m} isLatest={m.id === lastAssistantId && !busy} busy={busy} onFollowUp={onFollowUp} />
-            ),
-          )}
-          {busy && <LiveTrace />}
-          {composer != null && (
-            <div className="rc-col rc-dock">
-              <ScrollToEnd />
-              {composer}
-            </div>
-          )}
-        </div>
-      </StickToBottom.Content>
-    </StickToBottom>
+              ) : m.stopped || !m.answer ? (
+                <div key={m.id} className="cg-asst animate-message-in">
+                  <AssistantMark />
+                  <p className="cg-asst-body cg-stopped" role="status">
+                    Stopped. Ask again whenever you're ready.
+                  </p>
+                </div>
+              ) : (
+                <AssistantTurn
+                  key={m.id}
+                  msg={m}
+                  isLatest={m.id === lastAssistantId && !busy}
+                  busy={busy}
+                  onFollowUp={onFollowUp}
+                  onRegenerate={onRegenerate}
+                />
+              ),
+            )}
+            {busy && <LiveTrace />}
+          </div>
+        </StickToBottom.Content>
+        <ScrollToEnd />
+      </StickToBottom>
+      {composer != null && <div className="cg-dock">{composer}</div>}
+    </div>
   );
 }
