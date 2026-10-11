@@ -116,12 +116,15 @@
 .cg-chat.renaming { background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--ring); }
 .cg-chat-rename { width: 100%; height: 36px; padding: 0 10px; border: 0; outline: none; background: transparent; color: var(--ink); font: 400 14px/36px var(--cg-font); border-radius: var(--cg-r-sm); }
 .cg-chat-more:hover { color: var(--ink); background: color-mix(in oklab, var(--ink) 6%, transparent); }
-.cg-chat.active { box-shadow: inset 2px 0 0 var(--cg-water); }
+/* The selected chat is shown by its grey fill alone: no blue bar. */
+.cg-chat.active { box-shadow: none; }
 .cg-side-item.quiet.on { background: var(--cg-side-active); color: var(--ink); }
 
 /* ---------- Focus: one visible aqua ring everywhere ---------- */
 html.cg-shell .cg-app a:focus-visible, html.cg-shell .cg-app button:focus-visible, html.cg-shell .cg-app select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 html.cg-shell .cg-app .cg-chat-open:focus-visible, html.cg-shell .cg-app .cg-chat-more:focus-visible, html.cg-shell .cg-app .cg-side-item:focus-visible, html.cg-shell .cg-app .rc-fup:focus-visible { outline-offset: -2px; }
+/* Sidebar rows never glow blue: the ink outline carries keyboard focus. */
+html.cg-shell .cg-app .cg-user-row:focus-visible, html.cg-shell .cg-app .cg-chat-open:focus-visible { outline-color: var(--ink); }
 
 /* ---------- No layout shift ---------- */
 .cg-page, .cg-empty { scrollbar-gutter: stable; }
