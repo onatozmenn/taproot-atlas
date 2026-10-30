@@ -3,7 +3,19 @@ name: ci
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   pull_request:
+
+# Not: paths-ignore yalnizca push icin. PR'da filtre kullanmak, zorunlu
+# kontrol bekleyen PR'larda merge'u kilitliyor; dokuman PR'larini atlamak
+# icin ayri bir "degisiklik yok" isi gerekiyor, o is ayri bir degisiklik.
+# Ayni dalda yeni push gelince onceki kosuyu iptal et.
+# Ekim'de 20 dakika icinde 14 ardisik kosu acilmisti; hepsi ayni sonucu uretiyordu.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   core:
@@ -17,7 +29,11 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
-      - run: npm run eval
+      # Degerlendirme yalnizca PR'da kosar: merge edilmis kodun ayni eval'i
+      # tekrar kosmasi sonucu degistirmiyor, sadece dakika harciyor.
+      - name: Evaluate retrieval quality
+        if: github.event_name == 'pull_request'
+        run: npm run eval
 
   web:
     runs-on: ubuntu-latest
