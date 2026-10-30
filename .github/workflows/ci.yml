@@ -23,7 +23,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: npm run check
       - run: npm test
       # Degerlendirme yalnizca PR'da kosar: merge edilmis kodun ayni eval'i
