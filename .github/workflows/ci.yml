@@ -3,7 +3,16 @@ name: ci
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   pull_request:
+
+# Ayni dalda yeni push gelince onceki kosuyu iptal et.
+# Ekim'de 20 dakika icinde 14 ardisik kosu acilmisti; hepsi ayni sonucu uretiyordu.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   core:
@@ -14,10 +23,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm install
       - run: npm run check
       - run: npm test
-      - run: npm run eval
+      # Degerlendirme yalnizca PR'da kosar: merge edilmis kodun ayni eval'i
+      # tekrar kosmasi sonucu degistirmiyor, sadece dakika harciyor.
+      - name: Evaluate retrieval quality
+        if: github.event_name == 'pull_request'
+        run: npm run eval
 
   web:
     runs-on: ubuntu-latest
