@@ -8,6 +8,9 @@ on:
       - "docs/**"
   pull_request:
 
+# Not: paths-ignore yalnizca push icin. PR'da filtre kullanmak, zorunlu
+# kontrol bekleyen PR'larda merge'u kilitliyor; dokuman PR'larini atlamak
+# icin ayri bir "degisiklik yok" isi gerekiyor, o is ayri bir degisiklik.
 # Ayni dalda yeni push gelince onceki kosuyu iptal et.
 # Ekim'de 20 dakika icinde 14 ardisik kosu acilmisti; hepsi ayni sonucu uretiyordu.
 concurrency:
